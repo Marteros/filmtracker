@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import { authorizeDevice, requestDeviceCode, type TraktCredentials, type TraktDeviceCode } from '../services/trakt';
+import { beginTraktAuthorization, type TraktCredentials } from '../services/trakt';
 
 interface Props {
   open: boolean;
@@ -8,18 +8,15 @@ interface Props {
   onSave(token: string): void;
   onRemove(): void;
   trakt: TraktCredentials;
-  onSaveTrakt(clientId: string, clientSecret: string): void;
-  onConnectTrakt(accessToken: string): void;
+  onSaveTrakt(clientId: string): void;
   onSyncTrakt(): Promise<number>;
 }
 
-export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, onSaveTrakt, onConnectTrakt, onSyncTrakt }: Props) {
+export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, onSaveTrakt, onSyncTrakt }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [value, setValue] = useState(token);
   const [error, setError] = useState('');
   const [traktClientId, setTraktClientId] = useState(trakt.clientId);
-  const [traktClientSecret, setTraktClientSecret] = useState(trakt.clientSecret);
-  const [deviceCode, setDeviceCode] = useState<TraktDeviceCode>();
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -30,7 +27,7 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
     if (!open && element.open) element.close();
     if (open) {
       setValue(token); setError(''); setTraktClientId(trakt.clientId);
-      setTraktClientSecret(trakt.clientSecret); setTraktMessage(''); setDeviceCode(undefined);
+      setTraktMessage('');
     }
   }, [open, token, trakt]);
 
@@ -42,22 +39,14 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
   }
 
   async function startTraktLink() {
-    if (!traktClientId.trim() || !traktClientSecret.trim()) { setTraktMessage('Vul eerst je Trakt Client ID en Client Secret in.'); return; }
+    if (!traktClientId.trim()) { setTraktMessage('Vul eerst je Trakt Client ID in.'); return; }
     setBusy(true); setTraktMessage('');
     try {
-      onSaveTrakt(traktClientId.trim(), traktClientSecret.trim());
-      setDeviceCode(await requestDeviceCode(traktClientId.trim()));
+      const clientId = traktClientId.trim();
+      onSaveTrakt(clientId);
+      const authorizationUrl = await beginTraktAuthorization(clientId);
+      window.location.assign(authorizationUrl);
     } catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Trakt kon niet worden gekoppeld.'); }
-    finally { setBusy(false); }
-  }
-
-  async function confirmTraktLink() {
-    if (!deviceCode) return;
-    setBusy(true); setTraktMessage('');
-    try {
-      const accessToken = await authorizeDevice({ ...trakt, clientId: traktClientId.trim(), clientSecret: traktClientSecret.trim() }, deviceCode.device_code);
-      onConnectTrakt(accessToken); setDeviceCode(undefined); setTraktMessage('Trakt-account gekoppeld.');
-    } catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Trakt-koppeling mislukt.'); }
     finally { setBusy(false); }
   }
 
@@ -84,19 +73,12 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
           <label className="form-field" htmlFor="trakt-client-id">Client ID
             <input id="trakt-client-id" autoComplete="off" value={traktClientId} onChange={(event) => setTraktClientId(event.target.value)} />
           </label>
-          <label className="form-field" htmlFor="trakt-client-secret">Client Secret
-            <input id="trakt-client-secret" type="password" autoComplete="off" value={traktClientSecret} onChange={(event) => setTraktClientSecret(event.target.value)} />
-          </label>
           <p className="settings-help"><a href="https://trakt.tv/oauth/applications" target="_blank" rel="noreferrer">Trakt API-appgegevens</a></p>
           {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Trakt-account koppelen'}</button>}
-          {deviceCode && <div className="trakt-device-code">
-            <p>Open <a href={deviceCode.verification_url} target="_blank" rel="noreferrer">{deviceCode.verification_url}</a> en voer deze code in:</p>
-            <strong>{deviceCode.user_code}</strong>
-            <button className="save-button trakt-action" type="button" disabled={busy} onClick={confirmTraktLink}>Ik heb toestemming gegeven</button>
-          </div>}
+          {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
           {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
           {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
-          <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Je persoonlijke notities en beoordelingen blijven behouden. De Trakt-sleutel wordt lokaal op dit toestel bewaard.</p>
+          <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Je persoonlijke notities en beoordelingen blijven behouden. Alleen de Client ID en persoonlijke toegangstokens worden lokaal bewaard; er is geen Client Secret nodig.</p>
         </section>
       </form>
     </dialog>

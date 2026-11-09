@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MovieDialog } from './components/MovieDialog';
 import { MovieGrid } from './components/MovieGrid';
 import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
-import { getWatchedMovies, type TraktCredentials } from './services/trakt';
+import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
 import type { Movie, MovieDraft, MovieStatus } from './types';
 
 type Filter = 'all' | MovieStatus;
@@ -24,6 +24,36 @@ export default function App() {
   const [editingMovie, setEditingMovie] = useState<Movie>();
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [storageError, setStorageError] = useState('');
+  const [traktNotice, setTraktNotice] = useState('');
+  const traktCallbackHandled = useRef(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const returnedState = params.get('state');
+    const authError = params.get('error');
+    if ((!code && !authError) || traktCallbackHandled.current) return;
+    traktCallbackHandled.current = true;
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+
+    if (authError) {
+      setTraktNotice('Trakt-aanmelding is geannuleerd. Je kunt het koppelen opnieuw starten via Instellingen.');
+      return;
+    }
+    if (!code || !returnedState || !trakt.clientId) {
+      setTraktNotice('De Trakt-terugkoppeling is onvolledig. Controleer je Client ID en probeer opnieuw.');
+      return;
+    }
+    finishTraktAuthorization(trakt.clientId, code, returnedState)
+      .then((credentials) => {
+        settingsRepository.saveTrakt(credentials);
+        setTrakt(credentials);
+        setTraktNotice('Trakt is gekoppeld. Je kunt nu je kijkgeschiedenis synchroniseren.');
+      })
+      .catch((reason: unknown) => {
+        setTraktNotice(reason instanceof Error ? reason.message : 'Trakt koppelen is mislukt.');
+      });
+  }, [trakt.clientId]);
 
   const filteredMovies = useMemo(() => {
     const search = query.trim().toLocaleLowerCase('nl');
@@ -111,21 +141,18 @@ export default function App() {
     setSettingsOpen(false);
   }
 
-  function saveTraktCredentials(clientId: string, clientSecret: string) {
-    const next = { ...trakt, clientId, clientSecret };
-    settingsRepository.saveTrakt(next);
-    setTrakt(next);
-  }
-
-  function connectTrakt(accessToken: string) {
-    const next = { ...trakt, accessToken };
+  function saveTraktCredentials(clientId: string) {
+    const next = { clientId, accessToken: '', refreshToken: '', expiresAt: 0 };
     settingsRepository.saveTrakt(next);
     setTrakt(next);
   }
 
   async function syncTraktMovies(): Promise<number> {
     if (!trakt.clientId || !trakt.accessToken) throw new Error('Koppel eerst je Trakt-account.');
-    const watched = await getWatchedMovies(trakt.clientId, trakt.accessToken);
+    const watched = await getWatchedMovies(trakt, (updated) => {
+      settingsRepository.saveTrakt(updated);
+      setTrakt(updated);
+    });
     const next = [...movies];
     let changed = 0;
     for (const item of watched) {
@@ -184,6 +211,7 @@ export default function App() {
             </div>
           </div>
           {storageError && <p className="storage-error" role="alert">{storageError}</p>}
+          {traktNotice && <p className="trakt-message" role="status">{traktNotice}</p>}
           <MovieGrid
             movies={filteredMovies}
             hasMovies={movies.length > 0}
@@ -199,7 +227,7 @@ export default function App() {
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken}
-        trakt={trakt} onSaveTrakt={saveTraktCredentials} onConnectTrakt={connectTrakt} onSyncTrakt={syncTraktMovies} />
+        trakt={trakt} onSaveTrakt={saveTraktCredentials} onSyncTrakt={syncTraktMovies} />
     </>
   );
 }

@@ -41,11 +41,17 @@ export const settingsRepository = {
   clearToken: () => localStorage.removeItem(TOKEN_KEY),
   getTrakt: () => {
     try {
-      return JSON.parse(localStorage.getItem(TRAKT_SETTINGS_KEY) || '{"clientId":"","clientSecret":"","accessToken":""}') as { clientId: string; clientSecret: string; accessToken: string };
+      const saved = JSON.parse(localStorage.getItem(TRAKT_SETTINGS_KEY) || '{}') as Partial<{ clientId: string; clientSecret: string; accessToken: string; refreshToken: string; expiresAt: number }>;
+      const clean = {
+        clientId: saved.clientId || '', accessToken: saved.accessToken || '',
+        refreshToken: saved.refreshToken || '', expiresAt: saved.expiresAt || 0,
+      };
+      if (saved.clientSecret) localStorage.setItem(TRAKT_SETTINGS_KEY, JSON.stringify(clean));
+      return clean;
     } catch {
-      return { clientId: '', clientSecret: '', accessToken: '' };
+      return { clientId: '', accessToken: '', refreshToken: '', expiresAt: 0 };
     }
   },
-  saveTrakt: (value: { clientId: string; clientSecret: string; accessToken: string }) => localStorage.setItem(TRAKT_SETTINGS_KEY, JSON.stringify(value)),
+  saveTrakt: (value: { clientId: string; accessToken: string; refreshToken: string; expiresAt: number }) => localStorage.setItem(TRAKT_SETTINGS_KEY, JSON.stringify(value)),
   clearTrakt: () => localStorage.removeItem(TRAKT_SETTINGS_KEY),
 };
