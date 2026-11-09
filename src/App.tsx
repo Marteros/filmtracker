@@ -4,6 +4,7 @@ import { MovieGrid } from './components/MovieGrid';
 import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
+import { getWatchedMovies, type TraktCredentials } from './services/trakt';
 import type { Movie, MovieDraft, MovieStatus } from './types';
 
 type Filter = 'all' | MovieStatus;
@@ -15,6 +16,7 @@ function createId() {
 export default function App() {
   const [movies, setMovies] = useState<Movie[]>(() => movieRepository.getAll());
   const [token, setToken] = useState(() => settingsRepository.getToken());
+  const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
@@ -109,11 +111,57 @@ export default function App() {
     setSettingsOpen(false);
   }
 
+  function saveTraktCredentials(clientId: string, clientSecret: string) {
+    const next = { ...trakt, clientId, clientSecret };
+    settingsRepository.saveTrakt(next);
+    setTrakt(next);
+  }
+
+  function connectTrakt(accessToken: string) {
+    const next = { ...trakt, accessToken };
+    settingsRepository.saveTrakt(next);
+    setTrakt(next);
+  }
+
+  async function syncTraktMovies(): Promise<number> {
+    if (!trakt.clientId || !trakt.accessToken) throw new Error('Koppel eerst je Trakt-account.');
+    const watched = await getWatchedMovies(trakt.clientId, trakt.accessToken);
+    const next = [...movies];
+    let changed = 0;
+    for (const item of watched) {
+      const entry = item.movie;
+      if (!entry?.title) continue;
+      const tmdbId = entry.ids?.tmdb;
+      const matchIndex = next.findIndex((movie) => (tmdbId && movie.tmdbId === tmdbId)
+        || (movie.title.toLocaleLowerCase('nl') === entry.title.toLocaleLowerCase('nl') && movie.year === (entry.year ? String(entry.year) : undefined)));
+      if (matchIndex >= 0) {
+        const old = next[matchIndex];
+        if (old.status !== 'seen') {
+          next[matchIndex] = { ...old, status: 'seen' };
+          changed += 1;
+        }
+        continue;
+      }
+      next.push({
+        id: createId(), tmdbId, title: entry.title,
+        year: entry.year ? String(entry.year) : undefined,
+        status: 'seen', palette: Math.floor(Math.random() * 8),
+        addedAt: item.last_watched_at ? Date.parse(item.last_watched_at) || Date.now() : Date.now(),
+      });
+      changed += 1;
+    }
+    if (changed && !persist(next)) throw new Error('Synchroniseren lukte niet. Controleer de vrije opslagruimte op dit toestel.');
+    return changed;
+  }
+
   return (
     <>
       {selectedMovie ? <MovieDetailsPage movie={selectedMovie} token={token} onBack={() => setSelectedMovie(undefined)} /> : <main className="app">
         <header className="topbar">
-          <h1 className="page-title">Films</h1>
+          <div className="brand-lockup">
+            <h1 className="page-title">Frame</h1>
+            <p className="header-subtitle">Jouw persoonlijke filmjournaal</p>
+          </div>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
@@ -150,7 +198,8 @@ export default function App() {
       {!selectedMovie && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
-      <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken} />
+      <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken}
+        trakt={trakt} onSaveTrakt={saveTraktCredentials} onConnectTrakt={connectTrakt} onSyncTrakt={syncTraktMovies} />
     </>
   );
 }

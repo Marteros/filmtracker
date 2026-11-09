@@ -23,6 +23,12 @@ Open **Filmgegevens instellen** en plak je TMDb API Read Access Token (Bearer). 
 
 Zoeksuggesties en posterafbeeldingen vragen internet. Handmatig films toevoegen en de opgeslagen collectie bekijken blijven offline beschikbaar.
 
+## Trakt-kijkgeschiedenis synchroniseren
+
+Open **TMDb-instellingen**, vul onder **Trakt-synchronisatie** de Client ID en Client Secret van je Trakt API-app in en kies **Trakt-account koppelen**. Open de getoonde Trakt-activatielink, voer de code in en keer terug naar Frame om de koppeling te bevestigen. Daarna kun je **Synchroniseer kijkgeschiedenis** gebruiken. Dit is eenrichtingsverkeer: Trakt-films worden in Frame als gezien toegevoegd of gemarkeerd; lokale beoordelingen en notities blijven behouden. Er worden geen gegevens vanuit Frame naar Trakt gestuurd.
+
+De Trakt Client Secret en toegangstoken worden lokaal in de browser opgeslagen. Omdat Frame een statische client-side app is, zijn deze gegevens niet echt geheim en kunnen ze op dit toestel uitleesbaar zijn. Gebruik deze koppeling alleen voor persoonlijk gebruik; voor een openbare dienst hoort OAuth via een backend te lopen. Synchroniseren vereist internet; de geïmporteerde collectie blijft daarna lokaal beschikbaar.
+
 ## Componenten
 
 - `MovieDialog` beheert het formulier en validatie voor toevoegen/bewerken.

@@ -2,6 +2,7 @@ import type { Movie } from '../types';
 
 const MOVIES_KEY = 'frame-film-journal-v1';
 const TOKEN_KEY = 'frame-tmdb-token-v1';
+const TRAKT_SETTINGS_KEY = 'frame-trakt-settings-v1';
 
 export interface MovieRepository {
   getAll(): Movie[];
@@ -38,4 +39,13 @@ export const settingsRepository = {
   },
   saveToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
   clearToken: () => localStorage.removeItem(TOKEN_KEY),
+  getTrakt: () => {
+    try {
+      return JSON.parse(localStorage.getItem(TRAKT_SETTINGS_KEY) || '{"clientId":"","clientSecret":"","accessToken":""}') as { clientId: string; clientSecret: string; accessToken: string };
+    } catch {
+      return { clientId: '', clientSecret: '', accessToken: '' };
+    }
+  },
+  saveTrakt: (value: { clientId: string; clientSecret: string; accessToken: string }) => localStorage.setItem(TRAKT_SETTINGS_KEY, JSON.stringify(value)),
+  clearTrakt: () => localStorage.removeItem(TRAKT_SETTINGS_KEY),
 };
