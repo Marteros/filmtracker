@@ -45,6 +45,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   color: #315466;
 }
 .icon-button:hover { background: white; }
+.icon-button svg { width: 22px; height: 22px; stroke-width: 1.8; }
 
 .collection { padding-top: 25px; }
 .toolbar { margin-bottom: 25px; }
@@ -97,14 +98,17 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .card-actions { opacity: 1; }
 .poster-frame .card-actions { z-index: 3; }
 .card-action {
-  width: 34px;
-  height: 34px;
-  border-color: #fff9;
-  background: #f8f9f2ed;
-  color: #17364a;
-  font-size: 17px;
+  width: 30px;
+  height: 30px;
+  border-color: #ffffff48;
+  background: #122a3ab8;
+  color: #f3f5f2;
+  font-size: 14px;
+  backdrop-filter: blur(8px);
 }
-.card-action.delete { color: #a5413a; }
+.card-action.delete { color: #f0b9ad; }
+.card-action:hover { background: #122a3ae8; color: #f0c878; }
+.card-action.delete:hover { color: #ffc2b5; }
 .card-content { padding: 11px 2px 0; }
 .card-title {
   color: #142a3b;

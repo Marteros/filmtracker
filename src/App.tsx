@@ -116,7 +116,7 @@ export default function App() {
           <h1 className="page-title">Films</h1>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 13.5 1.1.9-1.1 1.9-1.4-.5a7.9 7.9 0 0 1-1.4.8l-.2 1.5h-2.2l-.5-1.4a7.9 7.9 0 0 1-1.6 0l-.5 1.4H9.4l-.2-1.5a7.9 7.9 0 0 1-1.4-.8l-1.4.5-1.1-1.9 1.1-.9a7.4 7.4 0 0 1 0-1.6l-1.1-.9 1.1-1.9 1.4.5a7.9 7.9 0 0 1 1.4-.8l.2-1.5h2.2l.5 1.4a7.9 7.9 0 0 1 1.6 0l.5-1.4h2.2l.2 1.5a7.9 7.9 0 0 1 1.4.8l1.4-.5 1.1 1.9-1.1.9a7.4 7.4 0 0 1 0 1.6Z"/></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
             </button>
           </div>
         </header>
