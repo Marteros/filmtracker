@@ -1,4 +1,4 @@
-const CACHE_NAME = 'frame-shell-v3';
+const CACHE_NAME = 'frame-shell-v4';
 const APP_SHELL = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', (event) => {
@@ -31,9 +31,16 @@ self.addEventListener('fetch', (event) => {
 
   if (request.mode === 'navigate') {
     event.respondWith((async () => {
-      const cached = await caches.match(request) || await caches.match('./index.html');
-      if (cached) return cached;
-      return fetch(request);
+      try {
+        const response = await fetch(request);
+        if (response.ok) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put('./index.html', response.clone());
+        }
+        return response;
+      } catch {
+        return (await caches.match(request)) || (await caches.match('./index.html')) || Response.error();
+      }
     })());
     return;
   }
