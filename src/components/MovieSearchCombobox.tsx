@@ -54,7 +54,13 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
         value={value}
         onChange={(event) => { onValueChange(event.target.value); setFocused(true); setActiveIndex(-1); }}
         onFocus={() => setFocused(true)}
-        onBlur={(event) => { if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) setFocused(false); }}
+        onBlur={(event) => {
+          if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) {
+            // iOS Safari can blur the input before dispatching the tapped
+            // option's click. Keep the list mounted long enough for that click.
+            window.setTimeout(() => setFocused(false), 250);
+          }
+        }}
         onKeyDown={onKeyDown}
       />
       {focused && (state === 'success' || state === 'empty' || state === 'loading') && (
@@ -75,6 +81,7 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
                 // Select on pointer-down: mobile Safari may blur the input and
                 // remove the suggestion before its subsequent click event.
                 onPointerDown={(event) => { event.preventDefault(); choose(movie); }}
+                onClick={() => choose(movie)}
                 onMouseEnter={() => setActiveIndex(index)}
               >
                 {poster ? <img className="suggestion-poster" src={poster} alt="" loading="lazy" /> : <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">▧</span>}
