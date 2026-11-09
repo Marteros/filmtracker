@@ -31,6 +31,14 @@ export interface TmdbMovieDetails extends TmdbMovie {
   backdrop_path?: string | null;
 }
 
+export interface TmdbCastMember {
+  id: number;
+  name: string;
+  character: string;
+  profile_path?: string | null;
+  order: number;
+}
+
 export interface MovieDraft {
   title: string;
   year: string;

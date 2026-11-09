@@ -5,7 +5,7 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
 import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
-import { getMovieDetails } from './services/tmdb';
+import { getMovieDetails, tmdbPoster } from './services/tmdb';
 import type { Movie, MovieDraft, MovieStatus } from './types';
 
 type Filter = 'all' | MovieStatus;
@@ -215,6 +215,12 @@ export default function App() {
         <header className="topbar">
           <div className="brand-lockup">
             <h1 className="page-title">Films die blijven hangen.</h1>
+          </div>
+          <div className="hero-poster-stack" aria-hidden="true">
+            {movies.filter((movie) => movie.posterPath).slice(0, 3).map((movie, index) => (
+              <img key={movie.id} src={tmdbPoster(movie.posterPath, 'w342')} alt="" className={`hero-poster hero-poster-${index + 1}`} />
+            ))}
+            {!movies.some((movie) => movie.posterPath) && <div className="hero-poster-placeholder"><span /><span /><span /></div>}
           </div>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>

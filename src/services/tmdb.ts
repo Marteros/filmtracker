@@ -1,4 +1,4 @@
-import type { TmdbMovie, TmdbMovieDetails } from '../types';
+import type { TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
 
 const API_ROOT = 'https://api.themoviedb.org/3';
 const IMAGE_ROOT = 'https://image.tmdb.org/t/p';
@@ -50,6 +50,24 @@ export async function getMovieDetails(id: number, token: string, signal: AbortSi
   if (response.status === 401) throw new TmdbError('De TMDb-token is ongeldig. Controleer je instellingen.', 'auth');
   if (!response.ok) throw new TmdbError('Filmgegevens zijn tijdelijk niet beschikbaar.', 'request');
   return await response.json() as TmdbMovieDetails;
+}
+
+export async function getMovieCast(id: number, token: string, signal: AbortSignal): Promise<TmdbCastMember[]> {
+  const url = new URL(`${API_ROOT}/movie/${id}/credits`);
+  url.searchParams.set('language', 'nl-NL');
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, signal });
+  if (!response.ok) throw new TmdbError('De acteurs konden niet worden opgehaald.', response.status === 401 ? 'auth' : 'request');
+  const payload = await response.json() as { cast?: TmdbCastMember[] };
+  return (payload.cast || []).sort((a, b) => a.order - b.order);
+}
+
+export async function getActorMovieCredits(id: number, token: string, signal: AbortSignal): Promise<TmdbMovie[]> {
+  const url = new URL(`${API_ROOT}/person/${id}/movie_credits`);
+  url.searchParams.set('language', 'nl-NL');
+  const response = await fetch(url, { headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' }, signal });
+  if (!response.ok) throw new TmdbError('De films van deze acteur konden niet worden opgehaald.', response.status === 401 ? 'auth' : 'request');
+  const payload = await response.json() as { cast?: TmdbMovie[] };
+  return (payload.cast || []).sort((a, b) => (b.release_date || '').localeCompare(a.release_date || ''));
 }
 
 export function tmdbPoster(path: string | null | undefined, size = 'w342'): string | undefined {
