@@ -5,7 +5,18 @@ import './app.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).catch(() => undefined);
+    const wasControlled = Boolean(navigator.serviceWorker.controller);
+    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then((registration) => {
+      // iOS may not check for a new worker promptly when the home-screen app opens.
+      return registration.update();
+    }).catch(() => undefined);
+
+    let refreshed = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!wasControlled || refreshed) return;
+      refreshed = true;
+      window.location.reload();
+    });
   });
 }
 

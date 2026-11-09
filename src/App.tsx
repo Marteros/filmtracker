@@ -116,7 +116,6 @@ export default function App() {
             <button className="icon-button" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 13.5 1.1.9-1.1 1.9-1.4-.5a7.9 7.9 0 0 1-1.4.8l-.2 1.5h-2.2l-.5-1.4a7.9 7.9 0 0 1-1.6 0l-.5 1.4H9.4l-.2-1.5a7.9 7.9 0 0 1-1.4-.8l-1.4.5-1.1-1.9 1.1-.9a7.4 7.4 0 0 1 0-1.6l-1.1-.9 1.1-1.9 1.4.5a7.9 7.9 0 0 1 1.4-.8l.2-1.5h2.2l.5 1.4a7.9 7.9 0 0 1 1.6 0l.5-1.4h2.2l.2 1.5a7.9 7.9 0 0 1 1.4.8l1.4-.5 1.1 1.9-1.1.9a7.4 7.4 0 0 1 0 1.6Z"/></svg>
             </button>
-            <button className="add-button" type="button" onClick={openAddDialog}><span aria-hidden="true">＋</span> Voeg film toe</button>
           </div>
         </header>
 
