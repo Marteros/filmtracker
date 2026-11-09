@@ -2,6 +2,7 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './app.css';
+import './design.css';
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
