@@ -22,6 +22,15 @@ export interface TmdbMovie {
   overview?: string;
 }
 
+export interface TmdbMovieDetails extends TmdbMovie {
+  overview?: string;
+  tagline?: string;
+  runtime?: number | null;
+  genres?: Array<{ id: number; name: string }>;
+  vote_average?: number;
+  backdrop_path?: string | null;
+}
+
 export interface MovieDraft {
   title: string;
   year: string;

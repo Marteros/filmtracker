@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { MovieDialog } from './components/MovieDialog';
 import { MovieGrid } from './components/MovieGrid';
 import { SettingsDialog } from './components/SettingsDialog';
+import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
 import type { Movie, MovieDraft, MovieStatus } from './types';
 
@@ -19,6 +20,7 @@ export default function App() {
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie>();
+  const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [storageError, setStorageError] = useState('');
 
   const filteredMovies = useMemo(() => {
@@ -109,7 +111,7 @@ export default function App() {
 
   return (
     <>
-      <main className="app">
+      {selectedMovie ? <MovieDetailsPage movie={selectedMovie} token={token} onBack={() => setSelectedMovie(undefined)} /> : <main className="app">
         <header className="topbar">
           <h1 className="page-title">Films</h1>
           <div className="header-actions">
@@ -141,10 +143,11 @@ export default function App() {
             emptyMessage={query && !filteredMovies.length ? 'Geen zoekresultaten' : undefined}
             onEdit={openEditDialog}
             onDelete={removeMovie}
+            onOpen={setSelectedMovie}
           />
         </section>
-      </main>
-      <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>
+      </main>}
+      {!selectedMovie && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken} />

@@ -13,14 +13,16 @@ const PALETTES = [
   'linear-gradient(145deg,#556d61,#31413b 58%,#151d1c)',
 ];
 
-interface Props { movie: Movie; onEdit(movie: Movie): void; onDelete(id: string): void }
+interface Props { movie: Movie; onEdit(movie: Movie): void; onDelete(id: string): void; onOpen(movie: Movie): void }
 
-export function MovieCard({ movie, onEdit, onDelete }: Props) {
+export function MovieCard({ movie, onEdit, onDelete, onOpen }: Props) {
   const poster = tmdbPoster(movie.posterPath);
   return (
     <article className="movie-card">
-      <div className="poster" style={{ '--poster': PALETTES[movie.palette % PALETTES.length] } as CSSProperties}>
-        {poster && <img className="poster-image" src={poster} alt={`Poster van ${movie.title}`} loading="lazy" onError={(event) => event.currentTarget.remove()} />}
+      <div className="poster-frame">
+        <button className="poster" style={{ '--poster': PALETTES[movie.palette % PALETTES.length] } as CSSProperties} type="button" aria-label={`Bekijk informatie over ${movie.title}`} onClick={() => onOpen(movie)}>
+          {poster && <img className="poster-image" src={poster} alt="" loading="lazy" onError={(event) => event.currentTarget.remove()} />}
+        </button>
         <div className="card-actions">
           <button className="card-action" type="button" aria-label={`Bewerk ${movie.title}`} onClick={() => onEdit(movie)}>✎</button>
           <button className="card-action delete" type="button" aria-label={`Verwijder ${movie.title}`} onClick={() => onDelete(movie.id)}>×</button>
