@@ -238,7 +238,7 @@ export default function App() {
             <div className="filters" role="group" aria-label="Filter films">
               {([['all', 'Alles'], ['seen', 'Gezien'], ['watchlist', 'Te zien']] as const).map(([value, label]) => (
                 <button key={value} className={`filter${filter === value ? ' active' : ''}`} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
-                  {label}{value === 'all' && <span>{movies.length}</span>}
+                  {label}{filter === value && <span>{value === 'all' ? movies.length : movies.filter((movie) => movie.status === value).length}</span>}
                 </button>
               ))}
             </div>
