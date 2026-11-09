@@ -1,0 +1,35 @@
+export type MovieStatus = 'seen' | 'watchlist';
+export type MovieRating = 1 | 2 | 3 | 4 | 5;
+
+export interface Movie {
+  id: string;
+  tmdbId?: number;
+  title: string;
+  year?: string;
+  status: MovieStatus;
+  rating?: MovieRating;
+  note?: string;
+  posterPath?: string;
+  palette: number;
+  addedAt: number;
+}
+
+export interface TmdbMovie {
+  id: number;
+  title: string;
+  release_date?: string;
+  poster_path?: string | null;
+  overview?: string;
+}
+
+export interface MovieDraft {
+  title: string;
+  year: string;
+  status: MovieStatus;
+  rating?: MovieRating;
+  note: string;
+  tmdbId?: number;
+  posterPath?: string;
+}
+
+export type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error' | 'offline' | 'unconfigured';
