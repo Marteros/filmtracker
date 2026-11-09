@@ -27,7 +27,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .app { width: min(100% - 48px, 1120px); padding-bottom: 56px; }
 .topbar {
   position: relative;
-  height: 112px;
+  height: 246px;
   overflow: hidden;
   margin-top: 16px;
   padding: 0 26px;
@@ -39,9 +39,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .topbar::after {
   position: absolute;
   top: 50%;
-  right: 90px;
-  width: 190px;
-  height: 190px;
+  right: 10%;
+  width: 345px;
+  height: 345px;
   transform: translateY(-50%);
   border: 1px solid #e5c17a30;
   border-radius: 50%;
@@ -49,17 +49,33 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   content: "";
   pointer-events: none;
 }
-.brand-lockup { position: relative; z-index: 1; }
+.topbar::before {
+  position: absolute;
+  top: 50%;
+  right: 23%;
+  width: 120px;
+  height: 180px;
+  transform: translateY(-50%) rotate(8deg);
+  border: 1px solid #f0d99b80;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at 50% 68%, #e6bf7177, transparent 31%), linear-gradient(145deg, #aa7852 0%, #3d5a69 42%, #142d3f 82%);
+  box-shadow: 0 18px 34px #07172270, inset 0 0 0 9px #102b3b40;
+  content: "";
+}
+.brand-lockup { position: relative; z-index: 1; max-width: 66%; }
+.header-eyebrow { margin: 0 0 12px; color: #e4bf78; font-size: 12px; }
 .page-title {
   margin: 0;
   color: #f4f5f1;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: 35px;
+  font-size: clamp(34px, 5vw, 54px);
   font-weight: 500;
-  letter-spacing: -.8px;
+  letter-spacing: -1.4px;
+  line-height: 1.02;
 }
-.header-subtitle { margin: 3px 0 0; color: #c8d5d8; font-size: 12px; }
-.header-actions { position: relative; z-index: 1; gap: 8px; }
+.header-subtitle { margin: 12px 0 0; color: #c8d5d8; font-size: 14px; }
+.header-count { margin: 18px 0 0; color: #f0c878; font-size: 12px; }
+.header-actions { position: absolute; z-index: 2; top: 20px; right: 20px; gap: 8px; }
 .icon-button {
   width: 42px;
   height: 42px;
@@ -306,9 +322,15 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 @media (max-width: 650px) {
   .app { width: calc(100% - 32px); }
-  .topbar { height: 96px; margin-top: 10px; padding: 0 18px; }
-  .topbar::after { right: 60px; width: 150px; height: 150px; }
-  .page-title { font-size: 31px; }
+  .topbar { height: 250px; margin-top: 10px; padding: 22px 18px; }
+  .topbar::after { top: 59%; right: -27%; width: 250px; height: 250px; }
+  .topbar::before { top: 60%; right: 8%; width: 78px; height: 118px; opacity: .8; }
+  .brand-lockup { max-width: 78%; }
+  .header-eyebrow { margin-bottom: 10px; font-size: 11px; }
+  .page-title { max-width: 270px; font-size: clamp(30px, 8vw, 38px); }
+  .header-subtitle { max-width: 210px; font-size: 12px; line-height: 1.45; }
+  .header-count { margin-top: 14px; }
+  .header-actions { top: 12px; right: 12px; }
   .collection { padding-top: 18px; }
   .toolbar { gap: 12px; margin-bottom: 20px; }
   .collection-controls { gap: 8px; }
