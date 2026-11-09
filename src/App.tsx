@@ -214,10 +214,7 @@ export default function App() {
       {selectedMovie ? <MovieDetailsPage movie={selectedMovie} token={token} onBack={() => setSelectedMovie(undefined)} /> : <main className="app">
         <header className="topbar">
           <div className="brand-lockup">
-            <p className="header-eyebrow">Frame · jouw filmjournaal</p>
             <h1 className="page-title">Films die blijven hangen.</h1>
-            <p className="header-subtitle">Verzamel wat je zag en wat je nog wilt zien.</p>
-            <p className="header-count">{movies.length} {movies.length === 1 ? 'film' : 'films'} in je collectie</p>
           </div>
           <div className="header-actions">
             <button className="icon-button" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
