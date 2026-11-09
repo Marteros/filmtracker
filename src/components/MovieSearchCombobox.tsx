@@ -78,9 +78,8 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
                 role="option"
                 aria-selected={activeIndex === index}
                 className={`suggestion-item${activeIndex === index ? ' highlighted' : ''}`}
-                // Select on pointer-down: mobile Safari may blur the input and
-                // remove the suggestion before its subsequent click event.
-                onPointerDown={(event) => { event.preventDefault(); choose(movie); }}
+                // Select on click, not pointer-down, so touch gestures can scroll
+                // the suggestions list without selecting an item accidentally.
                 onClick={() => choose(movie)}
                 onMouseEnter={() => setActiveIndex(index)}
               >
