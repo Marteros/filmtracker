@@ -5,9 +5,11 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
 import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
+import { getMovieDetails } from './services/tmdb';
 import type { Movie, MovieDraft, MovieStatus } from './types';
 
 type Filter = 'all' | MovieStatus;
+type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -18,6 +20,8 @@ export default function App() {
   const [token, setToken] = useState(() => settingsRepository.getToken());
   const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
   const [filter, setFilter] = useState<Filter>('all');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+  const [yearFilter, setYearFilter] = useState('all');
   const [query, setQuery] = useState('');
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -60,9 +64,18 @@ export default function App() {
     return movies.filter((movie) => {
       const matchesFilter = filter === 'all' || movie.status === filter;
       const matchesQuery = !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase('nl').includes(search);
-      return matchesFilter && matchesQuery;
-    }).sort((a, b) => b.addedAt - a.addedAt);
-  }, [filter, movies, query]);
+      const matchesYear = yearFilter === 'all' || movie.year === yearFilter;
+      return matchesFilter && matchesQuery && matchesYear;
+    }).sort((a, b) => {
+      if (sortOrder === 'oldest') return a.addedAt - b.addedAt;
+      if (sortOrder === 'title') return a.title.localeCompare(b.title, 'nl');
+      if (sortOrder === 'year') return (Number(b.year) || 0) - (Number(a.year) || 0) || a.title.localeCompare(b.title, 'nl');
+      if (sortOrder === 'rating') return (b.rating || 0) - (a.rating || 0) || b.addedAt - a.addedAt;
+      return b.addedAt - a.addedAt;
+    });
+  }, [filter, movies, query, sortOrder, yearFilter]);
+
+  const years = useMemo(() => [...new Set(movies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort((a, b) => Number(b) - Number(a)), [movies]);
 
   function persist(next: Movie[]) {
     try {
@@ -163,15 +176,30 @@ export default function App() {
         || (movie.title.toLocaleLowerCase('nl') === entry.title.toLocaleLowerCase('nl') && movie.year === (entry.year ? String(entry.year) : undefined)));
       if (matchIndex >= 0) {
         const old = next[matchIndex];
-        if (old.status !== 'seen') {
-          next[matchIndex] = { ...old, status: 'seen' };
+        let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
+        if (!updated.posterPath && tmdbId && token) {
+          try {
+            const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
+            if (details.poster_path) updated = { ...updated, posterPath: details.poster_path };
+          } catch { /* Keep the local film even if TMDb is temporarily unavailable. */ }
+        }
+        if (updated !== old) {
+          next[matchIndex] = updated;
           changed += 1;
         }
         continue;
       }
+      let posterPath: string | undefined;
+      if (tmdbId && token) {
+        try {
+          const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
+          posterPath = details.poster_path || undefined;
+        } catch { /* Poster lookup is optional; the movie still imports. */ }
+      }
       next.push({
         id: createId(), tmdbId, title: entry.title,
         year: entry.year ? String(entry.year) : undefined,
+        posterPath,
         status: 'seen', palette: Math.floor(Math.random() * 8),
         addedAt: item.last_watched_at ? Date.parse(item.last_watched_at) || Date.now() : Date.now(),
       });
@@ -208,6 +236,23 @@ export default function App() {
                   {label}{value === 'all' && <span>{movies.length}</span>}
                 </button>
               ))}
+            </div>
+            <div className="collection-controls">
+              <label className="select-control">Jaar
+                <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}>
+                  <option value="all">Alle jaren</option>
+                  {years.map((year) => <option key={year} value={year}>{year}</option>)}
+                </select>
+              </label>
+              <label className="select-control">Sorteren
+                <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)}>
+                  <option value="newest">Nieuw toegevoegd</option>
+                  <option value="oldest">Oudst toegevoegd</option>
+                  <option value="title">Titel A–Z</option>
+                  <option value="year">Jaar: nieuw naar oud</option>
+                  <option value="rating">Hoogste beoordeling</option>
+                </select>
+              </label>
             </div>
           </div>
           {storageError && <p className="storage-error" role="alert">{storageError}</p>}

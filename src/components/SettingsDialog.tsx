@@ -78,7 +78,7 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
           {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
           {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
           {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
-          <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Je persoonlijke notities en beoordelingen blijven behouden. Alleen de Client ID en persoonlijke toegangstokens worden lokaal bewaard; er is geen Client Secret nodig.</p>
+          <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Posters worden via TMDb opgehaald als je daar een token voor hebt ingesteld. Je notities en beoordelingen blijven behouden. Er is geen Trakt Client Secret nodig.</p>
         </section>
       </form>
     </dialog>
