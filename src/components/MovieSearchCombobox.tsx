@@ -72,9 +72,10 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
                 role="option"
                 aria-selected={activeIndex === index}
                 className={`suggestion-item${activeIndex === index ? ' highlighted' : ''}`}
-                onPointerDown={(event) => event.preventDefault()}
+                // Select on pointer-down: mobile Safari may blur the input and
+                // remove the suggestion before its subsequent click event.
+                onPointerDown={(event) => { event.preventDefault(); choose(movie); }}
                 onMouseEnter={() => setActiveIndex(index)}
-                onClick={() => choose(movie)}
               >
                 {poster ? <img className="suggestion-poster" src={poster} alt="" loading="lazy" /> : <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">▧</span>}
                 <span className="suggestion-info"><span className="suggestion-title">{movie.title}</span><span className="suggestion-meta">{year ? `Film · ${year}` : 'Film'}</span></span>
