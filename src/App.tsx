@@ -76,7 +76,6 @@ export default function App() {
   }, [filter, movies, query, sortOrder, yearFilter]);
 
   const years = useMemo(() => [...new Set(movies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort((a, b) => Number(b) - Number(a)), [movies]);
-
   function persist(next: Movie[]) {
     try {
       movieRepository.saveAll(next);
@@ -228,19 +227,29 @@ export default function App() {
             </button>
           </div>
         </header>
+        <div className="mobile-appbar">
+          <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
+          <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
 
         <section className="collection" aria-label="Filmcollectie">
+          <div className="mobile-collection-heading">
+            <h1>Mijn films</h1>
+            <span>{movies.length}</span>
+          </div>
           <div className="toolbar">
             <label className="search-box">
               <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.8" /><path d="m13.2 13.2 4 4" /></svg>
               <input type="search" aria-label="Zoek films" value={query} onChange={(event) => setQuery(event.target.value)} />
             </label>
             <div className="filters" role="group" aria-label="Filter films">
-              {([['all', 'Alles'], ['seen', 'Gezien'], ['watchlist', 'Te zien']] as const).map(([value, label]) => (
-                <button key={value} className={`filter${filter === value ? ' active' : ''}`} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
-                  {label}{filter === value && <span>{value === 'all' ? movies.length : movies.filter((movie) => movie.status === value).length}</span>}
-                </button>
-              ))}
+                {([['all', 'Alles'], ['seen', 'Gezien'], ['watchlist', 'Te zien']] as const).map(([value, label]) => (
+                  <button key={value} className={`filter${filter === value ? ' active' : ''}`} type="button" aria-pressed={filter === value} onClick={() => setFilter(value)}>
+                    {label}<span className="filter-count">{value === 'all' ? movies.length : movies.filter((movie) => movie.status === value).length}</span>
+                  </button>
+                ))}
             </div>
             <div className="collection-controls">
               <label className="select-control">Jaar
