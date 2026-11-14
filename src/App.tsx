@@ -3,13 +3,15 @@ import { MovieDialog } from './components/MovieDialog';
 import { MovieGrid } from './components/MovieGrid';
 import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
+import { DiscoverPage } from './components/DiscoverPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
 import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
-import { getMovieDetails, tmdbPoster } from './services/tmdb';
-import type { Movie, MovieDraft, MovieStatus } from './types';
+import { getMovieDetails } from './services/tmdb';
+import type { Movie, MovieDraft, MovieStatus, TmdbMovie } from './types';
 
 type Filter = 'all' | MovieStatus;
 type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
+type AppTab = 'history' | 'discover';
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -20,6 +22,7 @@ export default function App() {
   const [token, setToken] = useState(() => settingsRepository.getToken());
   const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
   const [filter, setFilter] = useState<Filter>('all');
+  const [activeTab, setActiveTab] = useState<AppTab>('history');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [yearFilter, setYearFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -27,6 +30,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie>();
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
+  const [selectedDiscoveryMovie, setSelectedDiscoveryMovie] = useState<TmdbMovie>();
   const [storageError, setStorageError] = useState('');
   const [traktNotice, setTraktNotice] = useState('');
   const traktCallbackHandled = useRef(false);
@@ -121,6 +125,57 @@ export default function App() {
     setMovieDialogOpen(true);
   }
 
+  function findSavedMovie(movie: TmdbMovie) {
+    const year = movie.release_date?.slice(0, 4);
+    return movies.find((saved) => saved.tmdbId === movie.id
+      || (saved.title.toLocaleLowerCase('nl') === movie.title.toLocaleLowerCase('nl') && saved.year === year));
+  }
+
+  function saveDiscoveredMovie(movie: TmdbMovie): Movie | undefined {
+    const existing = findSavedMovie(movie);
+    if (existing) return existing;
+    const saved: Movie = {
+      id: createId(),
+      tmdbId: movie.id,
+      title: movie.title,
+      year: movie.release_date?.slice(0, 4),
+      status: 'watchlist',
+      posterPath: movie.poster_path || undefined,
+      palette: Math.floor(Math.random() * 8),
+      addedAt: Date.now(),
+    };
+    return persist([...movies, saved]) ? saved : undefined;
+  }
+
+  function openDiscoveredDetails(movie: TmdbMovie) {
+    const saved = findSavedMovie(movie);
+    if (saved) {
+      setSelectedDiscoveryMovie(undefined);
+      setSelectedMovie(saved);
+      return;
+    }
+    setSelectedDiscoveryMovie(movie);
+    setSelectedMovie({
+      id: `discover-${movie.id}`,
+      tmdbId: movie.id,
+      title: movie.title,
+      year: movie.release_date?.slice(0, 4),
+      status: 'watchlist',
+      posterPath: movie.poster_path || undefined,
+      palette: 0,
+      addedAt: Date.now(),
+    });
+  }
+
+  function addDiscoveredFromDetails() {
+    if (!selectedDiscoveryMovie) return;
+    const saved = saveDiscoveredMovie(selectedDiscoveryMovie);
+    if (saved) {
+      setSelectedMovie(saved);
+      setSelectedDiscoveryMovie(undefined);
+    }
+  }
+
   function openEditDialog(movie: Movie) {
     setEditingMovie(movie);
     setMovieDialogOpen(true);
@@ -210,30 +265,41 @@ export default function App() {
 
   return (
     <>
-      {selectedMovie ? <MovieDetailsPage movie={selectedMovie} token={token} onBack={() => setSelectedMovie(undefined)} /> : <main className="app">
-        <header className="topbar">
-          <div className="brand-lockup">
-            <h1 className="page-title">Films die blijven hangen.</h1>
-          </div>
-          <div className="hero-poster-stack" aria-hidden="true">
-            {movies.filter((movie) => movie.posterPath).slice(0, 3).map((movie, index) => (
-              <img key={movie.id} src={tmdbPoster(movie.posterPath, 'w342')} alt="" className={`hero-poster hero-poster-${index + 1}`} />
-            ))}
-            {!movies.some((movie) => movie.posterPath) && <div className="hero-poster-placeholder"><span /><span /><span /></div>}
-          </div>
-          <div className="header-actions">
-            <button className="icon-button" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-          </div>
-        </header>
-        <div className="mobile-appbar">
-          <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
-          <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+      {!selectedMovie && <header className="desktop-appbar">
+        <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
+        <nav className="desktop-main-nav" aria-label="Hoofdnavigatie">
+          <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => setActiveTab('history')}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3.5 12a8.5 8.5 0 1 0 2.4-5.9L3.5 8.5" /><path d="M3.5 4.5v4h4M12 7v5l3.2 2" /></svg>
+            <span>Geschiedenis</span>
           </button>
-        </div>
-
+          <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => setActiveTab('discover')}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
+            <span>Ontdekken</span>
+          </button>
+        </nav>
+        <button className="desktop-settings" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </header>}
+      {!selectedMovie && <header className="mobile-appbar">
+        <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
+        <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </header>}
+      {selectedMovie ? <MovieDetailsPage
+        movie={selectedMovie}
+        token={token}
+        discoveryPreview={Boolean(selectedDiscoveryMovie)}
+        onAddToWatchlist={addDiscoveredFromDetails}
+        onBack={() => { setSelectedMovie(undefined); setSelectedDiscoveryMovie(undefined); }}
+      /> : activeTab === 'discover' ? <DiscoverPage
+        token={token}
+        collection={movies}
+        onAdd={(movie) => Boolean(saveDiscoveredMovie(movie))}
+        onOpen={openDiscoveredDetails}
+        onSettings={() => setSettingsOpen(true)}
+      /> : <main className="app">
         <section className="collection" aria-label="Filmcollectie">
           <div className="mobile-collection-heading">
             <h1>Mijn films</h1>
@@ -282,7 +348,22 @@ export default function App() {
           />
         </section>
       </main>}
-      {!selectedMovie && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
+      {!selectedMovie && activeTab === 'history' && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
+      {!selectedMovie && <div className="mobile-bottom-actions">
+      <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
+        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => setActiveTab('history')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.4-5.9L3.5 8.5" /><path d="M3.5 4.5v4h4M12 7v5l3.2 2" /></svg>
+          <span className="sr-only">Geschiedenis</span>
+        </button>
+        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => setActiveTab('discover')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
+          <span className="sr-only">Ontdekken</span>
+        </button>
+      </nav>
+      <button className="mobile-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+      </button>
+      </div>}
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken}

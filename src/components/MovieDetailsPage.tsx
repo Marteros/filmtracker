@@ -2,9 +2,15 @@ import { useEffect, useState } from 'react';
 import type { Movie, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
 import { getActorMovieCredits, getMovieCast, getMovieDetails, tmdbPoster } from '../services/tmdb';
 
-interface Props { movie: Movie; token: string; onBack(): void }
+interface Props {
+  movie: Movie;
+  token: string;
+  onBack(): void;
+  discoveryPreview?: boolean;
+  onAddToWatchlist?(): void;
+}
 
-export function MovieDetailsPage({ movie, token, onBack }: Props) {
+export function MovieDetailsPage({ movie, token, onBack, discoveryPreview = false, onAddToWatchlist }: Props) {
   const [details, setDetails] = useState<TmdbMovieDetails>();
   const [error, setError] = useState('');
   const [cast, setCast] = useState<TmdbCastMember[]>([]);
@@ -59,7 +65,7 @@ export function MovieDetailsPage({ movie, token, onBack }: Props) {
           {poster ? <img className="details-poster" src={poster} alt={`Poster van ${movie.title}`} /> : <div className="details-poster-placeholder">{movie.title}</div>}
         </div>
         <div className="details-copy">
-          <p className="details-kicker">{movie.status === 'seen' ? 'Gezien' : 'Op je kijklijst'}{year ? ` · ${year}` : ''}</p>
+          <p className="details-kicker">{discoveryPreview ? 'Ontdekt' : movie.status === 'seen' ? 'Gezien' : 'Op je kijklijst'}{year ? ` · ${year}` : ''}</p>
           <h1>{movie.title}</h1>
           {details?.tagline && <p className="details-tagline">{details.tagline}</p>}
           <div className="details-facts">
@@ -68,6 +74,7 @@ export function MovieDetailsPage({ movie, token, onBack }: Props) {
             {details?.vote_average ? <span className="details-vote">★ {details.vote_average.toFixed(1)} / 10</span> : null}
           </div>
           {movie.rating && <p className="details-rating" aria-label={`Jouw beoordeling: ${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)} <small>Jouw beoordeling</small></p>}
+          {discoveryPreview && <button className="details-add-to-watchlist" type="button" onClick={onAddToWatchlist}>Zet op kijklijst</button>}
         </div>
       </section>
       <section className="details-description">
@@ -101,7 +108,6 @@ export function MovieDetailsPage({ movie, token, onBack }: Props) {
               const filmPoster = tmdbPoster(film.poster_path, 'w185');
               return <article className="actor-movie" key={film.id}>
                 {filmPoster ? <img src={filmPoster} alt={`Poster van ${film.title}`} loading="lazy" /> : <div className="actor-movie-placeholder" aria-hidden="true">{film.title.slice(0, 1)}</div>}
-                <strong>{film.title}</strong>
                 {film.release_date && <span>{film.release_date.slice(0, 4)}</span>}
               </article>;
             })}

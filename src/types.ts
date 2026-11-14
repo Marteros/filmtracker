@@ -20,6 +20,13 @@ export interface TmdbMovie {
   release_date?: string;
   poster_path?: string | null;
   overview?: string;
+  vote_average?: number;
+  genre_ids?: number[];
+}
+
+export interface TmdbGenre {
+  id: number;
+  name: string;
 }
 
 export interface TmdbMovieDetails extends TmdbMovie {

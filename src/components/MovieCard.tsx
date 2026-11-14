@@ -22,10 +22,11 @@ export function MovieCard({ movie, onEdit, onDelete, onOpen }: Props) {
       <div className="poster-frame">
         <button className="poster" style={{ '--poster': PALETTES[movie.palette % PALETTES.length] } as CSSProperties} type="button" aria-label={`Bekijk informatie over ${movie.title}`} onClick={() => onOpen(movie)}>
           {poster && <img className="poster-image" src={poster} alt="" loading="lazy" onError={(event) => event.currentTarget.remove()} />}
+          <span className="poster-details-hint">Bekijk details</span>
         </button>
         <div className="card-actions">
-          <button className="card-action" type="button" aria-label={`Bewerk ${movie.title}`} onClick={() => onEdit(movie)}>✎</button>
-          <button className="card-action delete" type="button" aria-label={`Verwijder ${movie.title}`} onClick={() => onDelete(movie.id)}>×</button>
+          <button className="card-action delete" type="button" aria-label={`Verwijder ${movie.title}`} data-tooltip="Verwijderen" onClick={() => onDelete(movie.id)}>×</button>
+          <button className="card-action" type="button" aria-label={`Bewerk ${movie.title}`} data-tooltip="Bewerken" onClick={() => onEdit(movie)}>✎</button>
         </div>
       </div>
       <div className="card-content">
