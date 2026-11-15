@@ -31,10 +31,11 @@ export function MovieCard({ movie, onEdit, onDelete, onOpen }: Props) {
       </div>
       <div className="card-content">
         <h2 className="card-title">{movie.title}</h2>
-        <div className="card-meta">
-          <span className={`status-pill${movie.status === 'seen' ? ' seen' : ''}`}>{movie.status === 'seen' ? 'Gezien' : 'Wil ik zien'}</span>
-          {movie.status === 'seen' && movie.rating && <span className="card-stars" aria-label={`${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)}</span>}
-        </div>
+        {movie.rating ? (
+          <div className="card-meta">
+            <span className="card-stars" aria-label={`${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)}</span>
+          </div>
+        ) : null}
         {movie.note && <p className="card-note">{movie.note}</p>}
       </div>
     </article>
