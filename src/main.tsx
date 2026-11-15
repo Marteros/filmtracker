@@ -4,6 +4,8 @@ import App from './App';
 import './app.css';
 import './design.css';
 
+history.scrollRestoration = 'manual';
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const wasControlled = Boolean(navigator.serviceWorker.controller);

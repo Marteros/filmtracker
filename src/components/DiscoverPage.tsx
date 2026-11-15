@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getDiscoveryMovies, searchMovies, tmdbPoster, type DiscoveryCategory } from '../services/tmdb';
 import { SearchField } from './SearchField';
 import type { Movie, TmdbMovie } from '../types';
@@ -11,6 +11,7 @@ interface Props {
   onAdd(movie: TmdbMovie): boolean;
   onOpen(movie: TmdbMovie): void;
   onSettings(): void;
+  hidden?: boolean;
 }
 
 const SECTIONS: Array<{ id: DiscoveryCategory; title: string }> = [
@@ -25,7 +26,7 @@ function matchingMovie(movie: TmdbMovie, collection: Movie[]) {
     || (saved.title.toLocaleLowerCase('nl') === movie.title.toLocaleLowerCase('nl') && saved.year === year));
 }
 
-export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, onOpen, onSettings }: Props) {
+export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, onOpen, onSettings, hidden = false }: Props) {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TmdbMovie[]>([]);
   const [feeds, setFeeds] = useState<Partial<Record<DiscoveryCategory, TmdbMovie[]>>>({});
@@ -36,6 +37,32 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [retry, setRetry] = useState(0);
+  const overviewScrollRef = useRef(0);
+  const restoreOverviewScrollRef = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    if (selectedSection) {
+      window.scrollTo(0, 0);
+      return;
+    }
+    if (restoreOverviewScrollRef.current !== null) {
+      const top = restoreOverviewScrollRef.current;
+      restoreOverviewScrollRef.current = null;
+      window.scrollTo(0, top);
+    }
+  }, [selectedSection]);
+
+  function openSection(section: DiscoveryCategory) {
+    overviewScrollRef.current = window.scrollY;
+    setSelectedSection(section);
+    setError('');
+  }
+
+  function closeSection() {
+    restoreOverviewScrollRef.current = overviewScrollRef.current;
+    setSelectedSection(undefined);
+    setError('');
+  }
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 280);
@@ -132,9 +159,9 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
   }
 
   return (
-    <main className="app discover-page">
+    <main className="app discover-page" hidden={hidden}>
       <header className={`discover-header${selectedSection ? ' has-section' : ''}`}><h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Ontdekken'}</h1>
-        {selectedSection && <button className="discover-back" type="button" onClick={() => { setSelectedSection(undefined); setError(''); }}>← Terug</button>}
+        {selectedSection && <button className="discover-back" type="button" onClick={closeSection}>← Terug</button>}
       </header>
 
       {!token ? (
@@ -168,7 +195,7 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
                 <section className="discover-section" key={id} aria-labelledby={`discover-${id}`}>
                   <div className="discover-section-heading">
                     <h2 id={`discover-${id}`}>{title}</h2>
-                    <button type="button" onClick={() => { setSelectedSection(id); setError(''); }}>Bekijk alles <span aria-hidden="true">→</span></button>
+                    <button type="button" onClick={() => openSection(id)}>Bekijk alles <span aria-hidden="true">→</span></button>
                   </div>
                   {feeds[id]?.length ? <div className="discover-rail">{feeds[id].slice(0, 12).map(renderCard)}</div> : (
                     <div className="discover-rail discover-rail-skeleton" aria-label={`${title} laden`} role="status">

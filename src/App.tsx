@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MovieDialog } from './components/MovieDialog';
 import { MovieGrid } from './components/MovieGrid';
 import { SettingsDialog } from './components/SettingsDialog';
@@ -22,6 +22,7 @@ export default function App() {
   const [token, setToken] = useState(() => settingsRepository.getToken());
   const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
   const [activeTab, setActiveTab] = useState<AppTab>('history');
+  const [discoverMounted, setDiscoverMounted] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [yearFilter, setYearFilter] = useState('all');
   const [query, setQuery] = useState('');
@@ -36,6 +37,7 @@ export default function App() {
   const [storageError, setStorageError] = useState('');
   const [traktNotice, setTraktNotice] = useState('');
   const traktCallbackHandled = useRef(false);
+  const filterDialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -69,6 +71,37 @@ export default function App() {
     setMobileFiltersOpen(false);
     setMobileSearchOpen(false);
   }, [activeTab, selectedMovie]);
+
+  useEffect(() => {
+    const element = filterDialogRef.current;
+    if (!element) return;
+    if (mobileFiltersOpen && !element.open) element.showModal();
+    if (!mobileFiltersOpen && element.open) element.close();
+  }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    let armed = false;
+    const timer = window.setTimeout(() => { armed = true; }, 300);
+    function closeOnScroll() {
+      if (!armed) return;
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      setMobileSearchOpen(false);
+    }
+    window.addEventListener('scroll', closeOnScroll, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('scroll', closeOnScroll);
+    };
+  }, [mobileSearchOpen]);
+
+  useEffect(() => {
+    if (activeTab === 'discover') setDiscoverMounted(true);
+  }, [activeTab]);
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   const isWatchlist = activeTab === 'watchlist';
   const statusMovies = useMemo(
@@ -139,6 +172,38 @@ export default function App() {
     setMobileSearchOpen(false);
     setEditingMovie(undefined);
     setMovieDialogOpen(true);
+  }
+
+  function switchTab(tab: AppTab) {
+    if (tab === 'discover') setDiscoverMounted(true);
+    if (tab !== activeTab) setActiveTab(tab);
+    window.scrollTo(0, 0);
+  }
+
+  function openMovie(movie: Movie) {
+    setSelectedDiscoveryMovie(undefined);
+    setSelectedMovie(movie);
+  }
+
+  function closeDetails() {
+    setSelectedMovie(undefined);
+    setSelectedDiscoveryMovie(undefined);
+  }
+
+  function changeYearFilter(value: string) {
+    setYearFilter(value);
+    window.scrollTo(0, 0);
+  }
+
+  function changeSortOrder(value: SortOrder) {
+    setSortOrder(value);
+    window.scrollTo(0, 0);
+  }
+
+  function resetFilters() {
+    setYearFilter('all');
+    setSortOrder('newest');
+    window.scrollTo(0, 0);
   }
 
   function findSavedMovie(movie: TmdbMovie) {
@@ -281,18 +346,18 @@ export default function App() {
 
   return (
     <>
-      {!selectedMovie && <header className="desktop-appbar">
+      <header className="desktop-appbar">
         <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
         <nav className="desktop-main-nav" aria-label="Hoofdnavigatie">
-          <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => setActiveTab('history')}>
+          <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
             <span>Home</span>
           </button>
-          <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => setActiveTab('watchlist')}>
+          <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
             <span>Watchlist</span>
           </button>
-          <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => setActiveTab('discover')}>
+          <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
             <span>Ontdekken</span>
           </button>
@@ -300,8 +365,8 @@ export default function App() {
         <button className="desktop-settings" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
-      </header>}
-      {!selectedMovie && <header className="mobile-appbar">
+      </header>
+      <header className="mobile-appbar">
         {mobileSearchOpen ? (
           <div
             className="mobile-search-inline"
@@ -359,22 +424,8 @@ export default function App() {
             </div>
           </>
         )}
-      </header>}
-      {selectedMovie ? <MovieDetailsPage
-        movie={selectedMovie}
-        token={token}
-        discoveryPreview={Boolean(selectedDiscoveryMovie)}
-        onAddToWatchlist={addDiscoveredFromDetails}
-        onBack={() => { setSelectedMovie(undefined); setSelectedDiscoveryMovie(undefined); }}
-      /> : activeTab === 'discover' ? <DiscoverPage
-        token={token}
-        collection={movies}
-        query={discoverQuery}
-        onQueryChange={setDiscoverQuery}
-        onAdd={(movie) => Boolean(saveDiscoveredMovie(movie))}
-        onOpen={openDiscoveredDetails}
-        onSettings={() => setSettingsOpen(true)}
-      /> : <main className="app">
+      </header>
+      <main className="app" hidden={activeTab === 'discover'}>
         <section className="collection" aria-label={isWatchlist ? 'Watchlist' : 'Filmcollectie'}>
           <div className="mobile-collection-heading">
             <h1>{isWatchlist ? 'Watchlist' : 'Watch history'}</h1>
@@ -384,13 +435,13 @@ export default function App() {
             <SearchField value={query} onChange={setQuery} label="Zoek films" placeholder="Zoek op filmtitel…" />
             <div className="collection-controls">
               <label className="select-control">Jaar
-                <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}>
+                <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
                   <option value="all">Alle jaren</option>
                   {years.map((year) => <option key={year} value={year}>{year}</option>)}
                 </select>
               </label>
               <label className="select-control">Sorteren
-                <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)}>
+                <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
                   <option value="newest">Nieuw toegevoegd</option>
                   <option value="oldest">Oudst toegevoegd</option>
                   <option value="title">Titel A–Z</option>
@@ -409,49 +460,72 @@ export default function App() {
             emptyMessage={query && !visibleMovies.length ? 'Geen zoekresultaten' : !collectionCount ? (isWatchlist ? 'Nog geen films op je watchlist' : 'Nog geen gezien films') : undefined}
             onEdit={openEditDialog}
             onDelete={removeMovie}
-            onOpen={setSelectedMovie}
+            onOpen={openMovie}
           />
         </section>
-      </main>}
-      {!selectedMovie && (activeTab === 'history' || activeTab === 'watchlist') && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
-      {!selectedMovie && mobileFiltersOpen && (activeTab === 'history' || activeTab === 'watchlist') && (
-        <>
-          <div className="mobile-filter-backdrop" aria-hidden="true" onClick={() => setMobileFiltersOpen(false)} />
-          <section className="mobile-filter-sheet" id="mobile-filters" role="dialog" aria-label="Filters">
-            <div className="mobile-filter-heading">
-              <h2>Filters</h2>
-              <button type="button" aria-label="Filters sluiten" onClick={() => setMobileFiltersOpen(false)}>×</button>
-            </div>
-            <label className="mobile-filter-field">Jaar
-              <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => setYearFilter(event.target.value)}>
-                <option value="all">Alle jaren</option>
-                {years.map((year) => <option key={year} value={year}>{year}</option>)}
-              </select>
-            </label>
-            <label className="mobile-filter-field">Sorteren
-              <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)}>
-                <option value="newest">Nieuw toegevoegd</option>
-                <option value="oldest">Oudst toegevoegd</option>
-                <option value="title">Titel A–Z</option>
-                <option value="year">Jaar: nieuw naar oud</option>
-                <option value="rating">Hoogste beoordeling</option>
-              </select>
-            </label>
-            <button className="mobile-filter-reset" type="button" onClick={() => { setYearFilter('all'); setSortOrder('newest'); }}>Filters wissen</button>
-          </section>
-        </>
-      )}
-      {!selectedMovie && <div className="mobile-bottom-actions">
+      </main>
+      {discoverMounted && <DiscoverPage
+        hidden={activeTab !== 'discover'}
+        token={token}
+        collection={movies}
+        query={discoverQuery}
+        onQueryChange={setDiscoverQuery}
+        onAdd={(movie) => Boolean(saveDiscoveredMovie(movie))}
+        onOpen={openDiscoveredDetails}
+        onSettings={() => setSettingsOpen(true)}
+      />}
+      {selectedMovie && <MovieDetailsPage
+        movie={selectedMovie}
+        token={token}
+        discoveryPreview={Boolean(selectedDiscoveryMovie)}
+        onAddToWatchlist={addDiscoveredFromDetails}
+        onClose={closeDetails}
+      />}
+      {(activeTab === 'history' || activeTab === 'watchlist') && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
+      <dialog
+        ref={filterDialogRef}
+        className="movie-dialog mobile-filter-dialog"
+        id="mobile-filters"
+        aria-labelledby="mobile-filters-title"
+        onCancel={(event) => { event.preventDefault(); setMobileFiltersOpen(false); }}
+        onClose={() => setMobileFiltersOpen(false)}
+        onClick={(event) => { if (event.target === filterDialogRef.current) setMobileFiltersOpen(false); }}
+      >
+        <form onSubmit={(event) => { event.preventDefault(); setMobileFiltersOpen(false); }}>
+          <div className="dialog-head">
+            <h2 id="mobile-filters-title">Filters</h2>
+            <button type="button" className="close-button" aria-label="Filters sluiten" onClick={() => setMobileFiltersOpen(false)}>×</button>
+          </div>
+          <label className="form-field">Jaar
+            <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
+              <option value="all">Alle jaren</option>
+              {years.map((year) => <option key={year} value={year}>{year}</option>)}
+            </select>
+          </label>
+          <label className="form-field">Sorteren
+            <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
+              <option value="newest">Nieuw toegevoegd</option>
+              <option value="oldest">Oudst toegevoegd</option>
+              <option value="title">Titel A–Z</option>
+              <option value="year">Jaar: nieuw naar oud</option>
+              <option value="rating">Hoogste beoordeling</option>
+            </select>
+          </label>
+          <button className="save-button" type="submit">Klaar</button>
+          <button className="remove-token" type="button" onClick={resetFilters}>Filters wissen</button>
+        </form>
+      </dialog>
+      <div className="mobile-bottom-actions">
       <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
-        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => setActiveTab('history')}>
+        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
           <span className="sr-only">Home</span>
         </button>
-        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => setActiveTab('watchlist')}>
+        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
           <span className="sr-only">Watchlist</span>
         </button>
-        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => setActiveTab('discover')}>
+        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
           <span className="sr-only">Ontdekken</span>
         </button>
@@ -459,7 +533,7 @@ export default function App() {
       <button className="mobile-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
-      </div>}
+      </div>
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken}
