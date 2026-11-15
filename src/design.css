@@ -706,6 +706,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .discover-header h1 { font-size: 31px; }
   .discover-header p { margin-top: 5px; font-size: 13px; }
   .discover-search { min-height: 46px; }
+  .discover-page > .discover-search { display: none; }
   .discover-search input { font-size: 16px; }
   .discover-filters { align-items: stretch; flex-direction: column; gap: 10px; margin-top: 13px; }
   .discover-categories { gap: 5px; overflow-x: auto; flex-wrap: nowrap; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
@@ -826,7 +827,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .discover-page { margin: 0 auto; }
 .mobile-bottom-actions { display: none; }
 .mobile-filter-button, .mobile-filter-backdrop, .mobile-filter-sheet { display: none; }
-.mobile-search-backdrop, .mobile-search-panel { display: none; }
 .sr-only {
   position: absolute;
   width: 1px;
@@ -967,12 +967,14 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     cursor: pointer;
   }
   .collection-controls { display: none; }
+  .toolbar { display: none; }
   .floating-add-button { display: none; }
   .app, .discover-page { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 }
 
 @media (min-width: 651px) {
   .mobile-appbar, .mobile-bottom-actions { display: none; }
+  .mobile-search-backdrop, .mobile-search-panel { display: none; }
 }
 
 .discover-header { min-height: 54px; }
