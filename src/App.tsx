@@ -38,6 +38,7 @@ export default function App() {
   const [traktNotice, setTraktNotice] = useState('');
   const traktCallbackHandled = useRef(false);
   const filterDialogRef = useRef<HTMLDialogElement>(null);
+  const detailsHistoryRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -101,6 +102,18 @@ export default function App() {
 
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
+    function onPopState() {
+      if (detailsHistoryRef.current) {
+        detailsHistoryRef.current = false;
+        setSelectedMovie(undefined);
+        setSelectedDiscoveryMovie(undefined);
+      }
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const isWatchlist = activeTab === 'watchlist';
@@ -183,9 +196,17 @@ export default function App() {
   function openMovie(movie: Movie) {
     setSelectedDiscoveryMovie(undefined);
     setSelectedMovie(movie);
+    if (!detailsHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frame: 'details' }, '');
+      detailsHistoryRef.current = true;
+    }
   }
 
   function closeDetails() {
+    if (detailsHistoryRef.current) {
+      window.history.back();
+      return;
+    }
     setSelectedMovie(undefined);
     setSelectedDiscoveryMovie(undefined);
   }
@@ -233,19 +254,23 @@ export default function App() {
     if (saved) {
       setSelectedDiscoveryMovie(undefined);
       setSelectedMovie(saved);
-      return;
+    } else {
+      setSelectedDiscoveryMovie(movie);
+      setSelectedMovie({
+        id: `discover-${movie.id}`,
+        tmdbId: movie.id,
+        title: movie.title,
+        year: movie.release_date?.slice(0, 4),
+        status: 'watchlist',
+        posterPath: movie.poster_path || undefined,
+        palette: 0,
+        addedAt: Date.now(),
+      });
     }
-    setSelectedDiscoveryMovie(movie);
-    setSelectedMovie({
-      id: `discover-${movie.id}`,
-      tmdbId: movie.id,
-      title: movie.title,
-      year: movie.release_date?.slice(0, 4),
-      status: 'watchlist',
-      posterPath: movie.poster_path || undefined,
-      palette: 0,
-      addedAt: Date.now(),
-    });
+    if (!detailsHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frame: 'details' }, '');
+      detailsHistoryRef.current = true;
+    }
   }
 
   function addDiscoveredFromDetails() {

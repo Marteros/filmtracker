@@ -39,6 +39,7 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
   const [retry, setRetry] = useState(0);
   const overviewScrollRef = useRef(0);
   const restoreOverviewScrollRef = useRef<number | null>(null);
+  const sectionHistoryRef = useRef(false);
 
   useLayoutEffect(() => {
     if (selectedSection) {
@@ -56,13 +57,34 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
     overviewScrollRef.current = window.scrollY;
     setSelectedSection(section);
     setError('');
+    if (!sectionHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frame: 'discoverSection' }, '');
+      sectionHistoryRef.current = true;
+    }
   }
 
   function closeSection() {
+    if (sectionHistoryRef.current) {
+      window.history.back();
+      return;
+    }
     restoreOverviewScrollRef.current = overviewScrollRef.current;
     setSelectedSection(undefined);
     setError('');
   }
+
+  useEffect(() => {
+    function onPopState() {
+      if (sectionHistoryRef.current) {
+        sectionHistoryRef.current = false;
+        restoreOverviewScrollRef.current = overviewScrollRef.current;
+        setSelectedSection(undefined);
+        setError('');
+      }
+    }
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 280);
