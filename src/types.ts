@@ -6,6 +6,7 @@ export interface Movie {
   tmdbId?: number;
   title: string;
   year?: string;
+  releaseDate?: string;
   status: MovieStatus;
   rating?: MovieRating;
   note?: string;
@@ -52,6 +53,7 @@ export interface TmdbCastMember {
 export interface MovieDraft {
   title: string;
   year: string;
+  releaseDate?: string;
   status: MovieStatus;
   rating?: MovieRating;
   note: string;

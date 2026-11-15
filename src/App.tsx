@@ -6,6 +6,7 @@ import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { DiscoverPage } from './components/DiscoverPage';
 import { SearchField } from './components/SearchField';
 import { InsightsPage } from './components/InsightsPage';
+import { AgendaPage } from './components/AgendaPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
 import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
 import { getMovieDetails } from './services/tmdb';
@@ -33,6 +34,7 @@ export default function App() {
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [agendaOpen, setAgendaOpen] = useState(false);
   const [editingMovie, setEditingMovie] = useState<Movie>();
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [selectedDiscoveryMovie, setSelectedDiscoveryMovie] = useState<TmdbMovie>();
@@ -41,6 +43,7 @@ export default function App() {
   const traktCallbackHandled = useRef(false);
   const filterDialogRef = useRef<HTMLDialogElement>(null);
   const detailsHistoryRef = useRef(false);
+  const agendaHistoryRef = useRef(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -73,7 +76,7 @@ export default function App() {
   useEffect(() => {
     setMobileFiltersOpen(false);
     setMobileSearchOpen(false);
-  }, [activeTab, selectedMovie]);
+  }, [activeTab, selectedMovie, agendaOpen]);
 
   useEffect(() => {
     const element = filterDialogRef.current;
@@ -107,11 +110,18 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    function onPopState() {
+    function onPopState(event: PopStateEvent) {
       if (detailsHistoryRef.current) {
+        if (event.state?.frameDetails) return;
         detailsHistoryRef.current = false;
         setSelectedMovie(undefined);
         setSelectedDiscoveryMovie(undefined);
+        return;
+      }
+      if (agendaHistoryRef.current) {
+        if (event.state?.frameAgenda) return;
+        agendaHistoryRef.current = false;
+        setAgendaOpen(false);
       }
     }
     window.addEventListener('popstate', onPopState);
@@ -175,6 +185,7 @@ export default function App() {
       id: old?.id || createId(),
       title: draft.title,
       year: draft.year || undefined,
+      releaseDate: draft.releaseDate || old?.releaseDate,
       status: draft.status,
       rating: draft.status === 'seen' ? draft.rating : undefined,
       note: draft.note || undefined,
@@ -206,6 +217,23 @@ export default function App() {
     window.scrollTo(0, 0);
   }
 
+  function openAgenda() {
+    if (agendaOpen) return;
+    setAgendaOpen(true);
+    if (!agendaHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frameAgenda: true }, '');
+      agendaHistoryRef.current = true;
+    }
+  }
+
+  function closeAgenda() {
+    if (agendaHistoryRef.current) {
+      window.history.back();
+      return;
+    }
+    setAgendaOpen(false);
+  }
+
   function openMovie(movie: Movie) {
     setSelectedDiscoveryMovie(undefined);
     setSelectedMovie(movie);
@@ -213,6 +241,20 @@ export default function App() {
       window.history.pushState({ ...(window.history.state || {}), frameDetails: true }, '');
       detailsHistoryRef.current = true;
     }
+  }
+
+  function openMovieFromAgenda(movie: Movie) {
+    if (agendaHistoryRef.current) {
+      agendaHistoryRef.current = false;
+      setAgendaOpen(false);
+      window.history.replaceState({ ...(window.history.state || {}), frameDetails: true }, '');
+      detailsHistoryRef.current = true;
+      setSelectedDiscoveryMovie(undefined);
+      setSelectedMovie(movie);
+      return;
+    }
+    setAgendaOpen(false);
+    openMovie(movie);
   }
 
   function closeDetails() {
@@ -254,6 +296,7 @@ export default function App() {
       tmdbId: movie.id,
       title: movie.title,
       year: movie.release_date?.slice(0, 4),
+      releaseDate: movie.release_date || undefined,
       status: 'watchlist',
       posterPath: movie.poster_path || undefined,
       palette: Math.floor(Math.random() * 8),
@@ -274,6 +317,7 @@ export default function App() {
         tmdbId: movie.id,
         title: movie.title,
         year: movie.release_date?.slice(0, 4),
+        releaseDate: movie.release_date || undefined,
         status: 'watchlist',
         posterPath: movie.poster_path || undefined,
         palette: 0,
@@ -311,7 +355,7 @@ export default function App() {
     persist(movies.filter((item) => item.id !== id));
   }
 
-  const enrichMovie = useCallback((id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath'>>) => {
+  const enrichMovie = useCallback((id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>) => {
     setMovies((prev) => {
       const next = prev.map((m) => (m.id === id ? { ...m, ...patch } : m));
       try { movieRepository.saveAll(next); } catch { /* ignore */ }
@@ -377,12 +421,13 @@ export default function App() {
         const old = next[matchIndex];
         let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
         if (!updated.watchedAt && watchedAt) updated = { ...updated, watchedAt };
-        if (!updated.posterPath && tmdbId && token) {
+        if ((!updated.posterPath || !updated.releaseDate) && tmdbId && token) {
           try {
             const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
-            if (details.poster_path) updated = { ...updated, posterPath: details.poster_path };
+            if (!updated.posterPath && details.poster_path) updated = { ...updated, posterPath: details.poster_path };
             if (!updated.runtime && details.runtime) updated = { ...updated, runtime: details.runtime };
             if (!updated.genres?.length && details.genres?.length) updated = { ...updated, genres: details.genres.map((g) => g.name) };
+            if (!updated.releaseDate && details.release_date) updated = { ...updated, releaseDate: details.release_date };
           } catch { /* Keep the local film even if TMDb is temporarily unavailable. */ }
         }
         if (updated !== old) {
@@ -394,17 +439,20 @@ export default function App() {
       let posterPath: string | undefined;
       let runtime: number | undefined;
       let genres: string[] | undefined;
+      let releaseDate: string | undefined;
       if (tmdbId && token) {
         try {
           const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
           posterPath = details.poster_path || undefined;
           runtime = details.runtime || undefined;
           if (details.genres?.length) genres = details.genres.map((g) => g.name);
+          releaseDate = details.release_date || undefined;
         } catch { /* Poster lookup is optional; the movie still imports. */ }
       }
       next.push({
         id: createId(), tmdbId, title: entry.title,
         year: entry.year ? String(entry.year) : undefined,
+        releaseDate,
         posterPath, runtime, genres,
         status: 'seen', palette: Math.floor(Math.random() * 8),
         addedAt: watchedAt || Date.now(),
@@ -543,6 +591,7 @@ export default function App() {
         onClose={closeDetails}
         onEnrich={enrichMovie}
       />}
+      <AgendaPage open={agendaOpen} movies={movies} onClose={closeAgenda} onOpen={openMovieFromAgenda} />
       <dialog
         ref={filterDialogRef}
         className="movie-dialog mobile-filter-dialog"
@@ -577,7 +626,11 @@ export default function App() {
         </form>
       </dialog>
       <div className="mobile-bottom-actions">
-      <div className="bottom-bar-spacer" aria-hidden="true" />
+      <div className="bottom-bar-side left">
+        <button className="mobile-add-button agenda-button" type="button" aria-label="Agenda" title="Agenda" onClick={openAgenda}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
+        </button>
+      </div>
       <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
         <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>

@@ -8,7 +8,7 @@ interface Props {
   onClose(): void;
   discoveryPreview?: boolean;
   onAddToWatchlist?(): void;
-  onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath'>>): void;
+  onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
 }
 
 export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onAddToWatchlist, onEnrich }: Props) {
@@ -41,10 +41,11 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
     getMovieDetails(movie.tmdbId, token, controller.signal)
       .then((data) => {
         setDetails(data);
-        const patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath'>> = {};
+        const patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>> = {};
         if (!movie.runtime && data.runtime) patch.runtime = data.runtime;
         if (!movie.genres?.length && data.genres?.length) patch.genres = data.genres.map((g) => g.name);
         if (!movie.posterPath && data.poster_path) patch.posterPath = data.poster_path;
+        if (!movie.releaseDate && data.release_date) patch.releaseDate = data.release_date;
         if (Object.keys(patch).length) onEnrich?.(movie.id, patch);
       })
       .catch((reason: unknown) => {
@@ -57,7 +58,7 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
       })
       .finally(() => { if (!controller.signal.aborted) setCastLoading(false); });
     return () => controller.abort();
-  }, [movie.tmdbId, token, movie.id, movie.runtime, movie.genres, movie.posterPath, onEnrich]);
+  }, [movie.tmdbId, token, movie.id, movie.runtime, movie.genres, movie.posterPath, movie.releaseDate, onEnrich]);
 
   useEffect(() => {
     if (!selectedActor || !token) return;

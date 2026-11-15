@@ -804,8 +804,9 @@ html.details-open, html.details-open body { overflow: hidden; }
   column-gap: 12px;
   pointer-events: none;
 }
-.bottom-bar-spacer { justify-self: end; }
-.bottom-bar-side { justify-self: start; display: flex; align-items: center; }
+.bottom-bar-side { display: flex; align-items: center; pointer-events: auto; }
+.bottom-bar-side.left { justify-self: end; }
+.bottom-bar-side:not(.left) { justify-self: start; }
 .mobile-bottom-tabs {
   display: flex;
   align-items: center;
@@ -1072,3 +1073,41 @@ html.details-open, html.details-open body { overflow: hidden; }
   .insights-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .month-bar-row { grid-template-columns: 76px 1fr 24px; }
 }
+
+/* Agenda */
+.agenda-button {
+  border: 1px solid #cbd4d9;
+  background: #f8f9f8;
+  color: #17364a;
+  box-shadow: 0 8px 28px #142a3b20;
+}
+.agenda-button:hover { background: #edf3f4; }
+.agenda-dialog { background: #122a3a; }
+.agenda-page { max-width: 860px; margin: 0 auto; }
+.agenda-header { margin: 24px 0 28px; }
+.agenda-header h1 { margin: 6px 0 8px; color: #f5f6f2; font-family: Georgia, "Times New Roman", serif; font-size: clamp(34px, 5vw, 48px); font-weight: 500; letter-spacing: -1px; }
+.agenda-intro, .agenda-empty { color: #d4dfe1; font-size: 15px; }
+.agenda-empty { margin-top: 18px; max-width: 46ch; line-height: 1.6; }
+.agenda-groups { display: grid; gap: 26px; }
+.agenda-group h2 { margin: 0 0 12px; color: #e3bc70; font-family: Georgia, "Times New Roman", serif; font-size: 22px; font-weight: 500; }
+.agenda-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.agenda-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 56px 1fr;
+  align-items: center;
+  gap: 14px;
+  padding: 10px;
+  border: 1px solid #ffffff2e;
+  border-radius: 8px;
+  background: #ffffff0a;
+  color: #f5f6f2;
+  text-align: left;
+  cursor: pointer;
+}
+.agenda-item:hover { background: #ffffff14; border-color: #ffffff45; }
+.agenda-item img, .agenda-poster-fallback { width: 56px; height: 84px; border-radius: 4px; object-fit: cover; background: #294557; display: grid; place-items: center; }
+.agenda-poster-fallback { color: #f0d69a; font-family: Georgia, serif; font-size: 22px; }
+.agenda-item-copy { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.agenda-item-title { font-size: 15px; font-weight: 650; color: #f5f6f2; }
+.agenda-item-meta { font-size: 13px; color: #c2ced0; }

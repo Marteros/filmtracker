@@ -16,6 +16,7 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [year, setYear] = useState('');
+  const [releaseDate, setReleaseDate] = useState('');
   const [status, setStatus] = useState<'seen' | 'watchlist'>('watchlist');
   const [rating, setRating] = useState<MovieRating>();
   const [watchedAt, setWatchedAt] = useState('');
@@ -41,11 +42,12 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
     if (!open && element.open) element.close();
     if (open) {
       setTitle(movie?.title || ''); setYear(movie?.year || '');
+      setReleaseDate(movie?.releaseDate || '');
       const nextStatus = movie?.status || 'watchlist';
       setStatus(nextStatus); setRating(movie?.rating);
       setWatchedAt(nextStatus === 'seen' ? (toDateInput(movie?.watchedAt) || todayInput()) : '');
       setNote(movie?.note || ''); setError('');
-      setSelected(movie?.tmdbId ? { id: movie.tmdbId, title: movie.title, poster_path: movie.posterPath } : undefined);
+      setSelected(movie?.tmdbId ? { id: movie.tmdbId, title: movie.title, poster_path: movie.posterPath, release_date: movie.releaseDate } : undefined);
       focusFrame = requestAnimationFrame(() => titleRef.current?.focus());
     }
     return () => cancelAnimationFrame(focusFrame);
@@ -56,7 +58,7 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
     const cleanTitle = title.trim();
     if (!cleanTitle) { setError('Vul een filmtitel in.'); titleRef.current?.focus(); return; }
     const result = onSave({
-      title: cleanTitle, year, status, rating: status === 'seen' ? rating : undefined,
+      title: cleanTitle, year, releaseDate: releaseDate || selected?.release_date || undefined, status, rating: status === 'seen' ? rating : undefined,
       watchedAt: status === 'seen' ? (watchedAt || todayInput()) : undefined,
       note: note.trim(), tmdbId: selected?.id, posterPath: selected?.poster_path || undefined,
     });
@@ -65,6 +67,7 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
 
   function chooseMovie(result: TmdbMovie) {
     setSelected(result); setTitle(result.title); setYear(result.release_date?.slice(0, 4) || '');
+    setReleaseDate(result.release_date || '');
     setError('');
   }
 
