@@ -302,31 +302,11 @@ export default function App() {
         </button>
       </header>}
       {!selectedMovie && <header className="mobile-appbar">
-        <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
-        <div className="mobile-appbar-actions">
-          <button
-            className="mobile-search-toggle"
-            type="button"
-            aria-label="Zoeken"
-            aria-expanded={mobileSearchOpen}
-            aria-controls="mobile-search-panel"
-            title="Zoeken"
-            onClick={() => { setMobileSearchOpen((open) => !open); setMobileFiltersOpen(false); }}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-          </button>
-          <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
-        </div>
-      </header>}
-      {!selectedMovie && mobileSearchOpen && (
-        <>
-          <div className="mobile-search-backdrop" aria-hidden="true" onClick={() => setMobileSearchOpen(false)} />
-          <section
-            className="mobile-search-panel"
-            id="mobile-search-panel"
-            role="dialog"
+        {mobileSearchOpen ? (
+          <div
+            className="mobile-search-inline"
+            id="mobile-search"
+            role="search"
             aria-label="Zoeken"
             onKeyDown={(event) => { if (event.key === 'Escape') setMobileSearchOpen(false); }}
           >
@@ -337,9 +317,38 @@ export default function App() {
               placeholder="Zoek op filmtitel…"
               autoFocus
             />
-          </section>
-        </>
-      )}
+            <button
+              className="mobile-search-close"
+              type="button"
+              aria-label="Zoeken sluiten"
+              title="Zoeken sluiten"
+              onClick={() => setMobileSearchOpen(false)}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+            </button>
+          </div>
+        ) : (
+          <>
+            <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
+            <div className="mobile-appbar-actions">
+              <button
+                className="mobile-search-toggle"
+                type="button"
+                aria-label="Zoeken"
+                aria-expanded={false}
+                aria-controls="mobile-search"
+                title="Zoeken"
+                onClick={() => { setMobileSearchOpen(true); setMobileFiltersOpen(false); }}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+              </button>
+              <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </>
+        )}
+      </header>}
       {selectedMovie ? <MovieDetailsPage
         movie={selectedMovie}
         token={token}
