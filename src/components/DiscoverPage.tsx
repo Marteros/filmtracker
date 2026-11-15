@@ -58,7 +58,7 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
     setSelectedSection(section);
     setError('');
     if (!sectionHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frame: 'discoverSection' }, '');
+      window.history.pushState({ ...(window.history.state || {}), frameSection: true }, '');
       sectionHistoryRef.current = true;
     }
   }
@@ -74,13 +74,13 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
   }
 
   useEffect(() => {
-    function onPopState() {
-      if (sectionHistoryRef.current) {
-        sectionHistoryRef.current = false;
-        restoreOverviewScrollRef.current = overviewScrollRef.current;
-        setSelectedSection(undefined);
-        setError('');
-      }
+    function onPopState(event: PopStateEvent) {
+      if (!sectionHistoryRef.current) return;
+      if (event.state?.frameSection) return;
+      sectionHistoryRef.current = false;
+      restoreOverviewScrollRef.current = overviewScrollRef.current;
+      setSelectedSection(undefined);
+      setError('');
     }
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);

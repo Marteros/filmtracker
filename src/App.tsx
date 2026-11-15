@@ -197,7 +197,7 @@ export default function App() {
     setSelectedDiscoveryMovie(undefined);
     setSelectedMovie(movie);
     if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frame: 'details' }, '');
+      window.history.pushState({ ...(window.history.state || {}), frameDetails: true }, '');
       detailsHistoryRef.current = true;
     }
   }
@@ -268,7 +268,7 @@ export default function App() {
       });
     }
     if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frame: 'details' }, '');
+      window.history.pushState({ ...(window.history.state || {}), frameDetails: true }, '');
       detailsHistoryRef.current = true;
     }
   }
