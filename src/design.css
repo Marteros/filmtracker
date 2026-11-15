@@ -107,7 +107,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .icon-button:hover { background: #315669; }
 .icon-button svg { width: 22px; height: 22px; stroke-width: 1.8; }
 
-.collection { padding-top: 25px; }
+.collection { padding-top: 0; }
 .toolbar { margin-bottom: 25px; }
 .collection-controls { display: flex; align-items: center; gap: 8px; }
 .select-control { display: flex; align-items: center; gap: 7px; color: #536772; font-size: 12px; white-space: nowrap; }
