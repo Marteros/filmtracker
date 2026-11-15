@@ -812,7 +812,7 @@ html.details-open, html.details-open body { overflow: hidden; }
   align-items: center;
   gap: 4px;
   padding: 5px;
-  border: 1px solid #cbd4d9;
+  border: 2px solid #b8c4ca;
   border-radius: 999px;
   background: #f8f9f8f2;
   box-shadow: 0 8px 28px #142a3b20;
@@ -845,7 +845,7 @@ html.details-open, html.details-open body { overflow: hidden; }
   height: 52px;
   flex: none;
   place-items: center;
-  border: 0;
+  border: 2px solid #f8f9f8;
   border-radius: 50%;
   background: #17364a;
   color: #fff;
@@ -1076,7 +1076,7 @@ html.details-open, html.details-open body { overflow: hidden; }
 
 /* Agenda */
 .agenda-button {
-  border: 1px solid #cbd4d9;
+  border: 2px solid #b8c4ca;
   background: #f8f9f8;
   color: #17364a;
   box-shadow: 0 8px 28px #142a3b20;
