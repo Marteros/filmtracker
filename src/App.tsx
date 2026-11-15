@@ -25,6 +25,8 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [yearFilter, setYearFilter] = useState('all');
   const [query, setQuery] = useState('');
+  const [discoverQuery, setDiscoverQuery] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -65,6 +67,7 @@ export default function App() {
 
   useEffect(() => {
     setMobileFiltersOpen(false);
+    setMobileSearchOpen(false);
   }, [activeTab, selectedMovie]);
 
   const isWatchlist = activeTab === 'watchlist';
@@ -133,6 +136,7 @@ export default function App() {
 
   function openAddDialog() {
     setMobileFiltersOpen(false);
+    setMobileSearchOpen(false);
     setEditingMovie(undefined);
     setMovieDialogOpen(true);
   }
@@ -299,10 +303,43 @@ export default function App() {
       </header>}
       {!selectedMovie && <header className="mobile-appbar">
         <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
-        <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
+        <div className="mobile-appbar-actions">
+          <button
+            className="mobile-search-toggle"
+            type="button"
+            aria-label="Zoeken"
+            aria-expanded={mobileSearchOpen}
+            aria-controls="mobile-search-panel"
+            title="Zoeken"
+            onClick={() => { setMobileSearchOpen((open) => !open); setMobileFiltersOpen(false); }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+          </button>
+          <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
       </header>}
+      {!selectedMovie && mobileSearchOpen && (
+        <>
+          <div className="mobile-search-backdrop" aria-hidden="true" onClick={() => setMobileSearchOpen(false)} />
+          <section
+            className="mobile-search-panel"
+            id="mobile-search-panel"
+            role="dialog"
+            aria-label="Zoeken"
+            onKeyDown={(event) => { if (event.key === 'Escape') setMobileSearchOpen(false); }}
+          >
+            <SearchField
+              value={activeTab === 'discover' ? discoverQuery : query}
+              onChange={activeTab === 'discover' ? setDiscoverQuery : setQuery}
+              label="Zoek films"
+              placeholder="Zoek op filmtitel…"
+              autoFocus
+            />
+          </section>
+        </>
+      )}
       {selectedMovie ? <MovieDetailsPage
         movie={selectedMovie}
         token={token}
@@ -312,6 +349,8 @@ export default function App() {
       /> : activeTab === 'discover' ? <DiscoverPage
         token={token}
         collection={movies}
+        query={discoverQuery}
+        onQueryChange={setDiscoverQuery}
         onAdd={(movie) => Boolean(saveDiscoveredMovie(movie))}
         onOpen={openDiscoveredDetails}
         onSettings={() => setSettingsOpen(true)}
@@ -404,7 +443,7 @@ export default function App() {
         aria-expanded={mobileFiltersOpen}
         aria-controls="mobile-filters"
         title="Filters"
-        onClick={() => setMobileFiltersOpen((open) => !open)}
+        onClick={() => { setMobileFiltersOpen((open) => !open); setMobileSearchOpen(false); }}
       >
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
       </button>}

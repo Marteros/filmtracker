@@ -15,7 +15,8 @@
 }
 
 * { box-sizing: border-box; }
-html, body { min-height: 100%; background: var(--bg); }
+html, body { min-height: 100%; overflow-x: clip; background: var(--bg); }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 body { color: var(--ink); }
 button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
@@ -412,7 +413,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     height: calc(54px + env(safe-area-inset-top));
     align-items: center;
     justify-content: space-between;
-    margin: 0 -16px;
+    margin: 0;
     padding: env(safe-area-inset-top) 16px 0;
     border-bottom: 1px solid #cbd4d9;
     background: #e9edf0ed;
@@ -440,6 +441,42 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     -webkit-tap-highlight-color: transparent;
   }
   .mobile-settings svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-appbar-actions { display: flex; align-items: center; gap: 8px; }
+  .mobile-search-toggle {
+    display: grid;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    border: 1px solid #cbd4d9;
+    border-radius: 12px;
+    background: #f8f9f8;
+    color: #17364a;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-search-toggle[aria-expanded="true"] { border-color: #176b73; background: #dce8e7; color: #145a61; }
+  .mobile-search-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-search-backdrop {
+    position: fixed;
+    z-index: 14;
+    inset: 0;
+    display: block;
+    background: #102b3b14;
+  }
+  .mobile-search-panel {
+    position: fixed;
+    z-index: 31;
+    top: calc(54px + env(safe-area-inset-top));
+    right: 0;
+    left: 0;
+    display: block;
+    padding: 10px 16px 12px;
+    border-bottom: 1px solid #cbd4d9;
+    background: #e9edf0f5;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+  .mobile-search-panel .discover-search { width: 100%; max-width: none; min-height: 46px; }
   .mobile-collection-heading {
     display: flex;
     align-items: baseline;
@@ -465,7 +502,9 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 @media (max-width: 380px) {
   .app { width: calc(100% - 24px); }
-  .mobile-appbar { margin-inline: -12px; padding-right: 12px; padding-left: 12px; }
+  .discover-page { width: calc(100% - 24px); }
+  .discover-categories { margin-right: -12px; padding-right: 12px; }
+  .mobile-appbar { padding-right: 12px; padding-left: 12px; }
   .collection-controls { grid-template-columns: 1fr; }
   .select-control { justify-content: space-between; }
 }
@@ -667,6 +706,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .discover-header h1 { font-size: 31px; }
   .discover-header p { margin-top: 5px; font-size: 13px; }
   .discover-search { min-height: 46px; }
+  .discover-search input { font-size: 16px; }
   .discover-filters { align-items: stretch; flex-direction: column; gap: 10px; margin-top: 13px; }
   .discover-categories { gap: 5px; overflow-x: auto; flex-wrap: nowrap; margin-right: -16px; padding-right: 16px; scrollbar-width: none; }
   .discover-categories::-webkit-scrollbar { display: none; }
@@ -786,6 +826,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .discover-page { margin: 0 auto; }
 .mobile-bottom-actions { display: none; }
 .mobile-filter-button, .mobile-filter-backdrop, .mobile-filter-sheet { display: none; }
+.mobile-search-backdrop, .mobile-search-panel { display: none; }
 .sr-only {
   position: absolute;
   width: 1px;
@@ -913,7 +954,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     border-radius: 8px;
     background: #fff;
     color: #17364a;
-    font-size: 14px;
+    font-size: 16px;
   }
   .mobile-filter-reset {
     min-height: 44px;

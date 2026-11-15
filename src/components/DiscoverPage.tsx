@@ -6,6 +6,8 @@ import type { Movie, TmdbMovie } from '../types';
 interface Props {
   token: string;
   collection: Movie[];
+  query: string;
+  onQueryChange(value: string): void;
   onAdd(movie: TmdbMovie): boolean;
   onOpen(movie: TmdbMovie): void;
   onSettings(): void;
@@ -23,8 +25,7 @@ function matchingMovie(movie: TmdbMovie, collection: Movie[]) {
     || (saved.title.toLocaleLowerCase('nl') === movie.title.toLocaleLowerCase('nl') && saved.year === year));
 }
 
-export function DiscoverPage({ token, collection, onAdd, onOpen, onSettings }: Props) {
-  const [query, setQuery] = useState('');
+export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, onOpen, onSettings }: Props) {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TmdbMovie[]>([]);
   const [feeds, setFeeds] = useState<Partial<Record<DiscoveryCategory, TmdbMovie[]>>>({});
@@ -145,7 +146,7 @@ export function DiscoverPage({ token, collection, onAdd, onOpen, onSettings }: P
         </section>
       ) : (
         <>
-          <SearchField value={query} onChange={setQuery} label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" />
+          <SearchField value={query} onChange={onQueryChange} label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" />
           {actionError && <p className="discover-inline-error" role="alert">{actionError}</p>}
           {error && <div className="discover-inline-error" role="alert">{error} <button type="button" onClick={() => setRetry((value) => value + 1)}>Opnieuw proberen</button></div>}
           {loading ? (
