@@ -18,9 +18,20 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
   const [year, setYear] = useState('');
   const [status, setStatus] = useState<'seen' | 'watchlist'>('watchlist');
   const [rating, setRating] = useState<MovieRating>();
+  const [watchedAt, setWatchedAt] = useState('');
   const [note, setNote] = useState('');
   const [selected, setSelected] = useState<TmdbMovie>();
   const [error, setError] = useState('');
+
+  function toDateInput(value?: number) {
+    if (!value) return '';
+    const d = new Date(value);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+  function todayInput() { return toDateInput(Date.now()); }
 
   useEffect(() => {
     const element = dialogRef.current;
@@ -30,7 +41,9 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
     if (!open && element.open) element.close();
     if (open) {
       setTitle(movie?.title || ''); setYear(movie?.year || '');
-      setStatus(movie?.status || 'watchlist'); setRating(movie?.rating);
+      const nextStatus = movie?.status || 'watchlist';
+      setStatus(nextStatus); setRating(movie?.rating);
+      setWatchedAt(nextStatus === 'seen' ? (toDateInput(movie?.watchedAt) || todayInput()) : '');
       setNote(movie?.note || ''); setError('');
       setSelected(movie?.tmdbId ? { id: movie.tmdbId, title: movie.title, poster_path: movie.posterPath } : undefined);
       focusFrame = requestAnimationFrame(() => titleRef.current?.focus());
@@ -44,6 +57,7 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
     if (!cleanTitle) { setError('Vul een filmtitel in.'); titleRef.current?.focus(); return; }
     const result = onSave({
       title: cleanTitle, year, status, rating: status === 'seen' ? rating : undefined,
+      watchedAt: status === 'seen' ? (watchedAt || todayInput()) : undefined,
       note: note.trim(), tmdbId: selected?.id, posterPath: selected?.poster_path || undefined,
     });
     if (result) setError(result);
@@ -73,12 +87,20 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
           <input id="movie-year" type="number" min="1888" max="2100" inputMode="numeric" value={year} onChange={(event) => setYear(event.target.value)} />
           </label>
           <label className="form-field" htmlFor="movie-status">Status
-            <select id="movie-status" value={status} onChange={(event) => setStatus(event.target.value as 'seen' | 'watchlist')}>
+            <select id="movie-status" value={status} onChange={(event) => {
+              const next = event.target.value as 'seen' | 'watchlist';
+              setStatus(next);
+              if (next === 'seen' && !watchedAt) setWatchedAt(todayInput());
+              if (next === 'watchlist') { setRating(undefined); setWatchedAt(''); }
+            }}>
               <option value="watchlist">Wil ik zien</option><option value="seen">Gezien</option>
             </select>
           </label>
         </div>
         {status === 'seen' && <RatingInput value={rating} onChange={setRating} />}
+        {status === 'seen' && <label className="form-field" htmlFor="movie-watched-at">Gezien op
+          <input id="movie-watched-at" type="date" value={watchedAt} onChange={(event) => setWatchedAt(event.target.value)} />
+        </label>}
         <label className="form-field" htmlFor="movie-note">Notitie
           <textarea id="movie-note" rows={3} maxLength={240} value={note} onChange={(event) => setNote(event.target.value)} />
         </label>

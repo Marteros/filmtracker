@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { beginTraktAuthorization, type TraktCredentials } from '../services/trakt';
 
+type BackupMode = 'merge' | 'replace';
+
 interface Props {
   open: boolean;
   token: string;
@@ -10,15 +12,21 @@ interface Props {
   trakt: TraktCredentials;
   onSaveTrakt(clientId: string): void;
   onSyncTrakt(): Promise<number>;
+  onExport(): void;
+  onImport(file: File, mode: BackupMode): Promise<string>;
 }
 
-export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, onSaveTrakt, onSyncTrakt }: Props) {
+export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, onSaveTrakt, onSyncTrakt, onExport, onImport }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [value, setValue] = useState(token);
   const [error, setError] = useState('');
   const [traktClientId, setTraktClientId] = useState(trakt.clientId);
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [backupMode, setBackupMode] = useState<BackupMode>('merge');
+  const [backupMessage, setBackupMessage] = useState('');
+  const [backupBusy, setBackupBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const element = dialogRef.current;
@@ -28,6 +36,8 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
     if (open) {
       setValue(token); setError(''); setTraktClientId(trakt.clientId);
       setTraktMessage('');
+      setBackupMessage('');
+      if (fileRef.current) fileRef.current.value = '';
     }
   }, [open, token, trakt]);
 
@@ -57,6 +67,28 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
     finally { setBusy(false); }
   }
 
+  function exportBackup() {
+    onExport();
+    setBackupMessage('Back-up gedownload.');
+  }
+
+  async function importBackup(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const file = fileRef.current?.files?.[0];
+    if (!file) { setBackupMessage('Kies eerst een back-upbestand.'); return; }
+    if (backupMode === 'replace' && !window.confirm('Dit vervangt je huidige collectie. Wil je doorgaan?')) return;
+    setBackupBusy(true); setBackupMessage('');
+    try {
+      const message = await onImport(file, backupMode);
+      setBackupMessage(message);
+      if (fileRef.current) fileRef.current.value = '';
+    } catch (reason) {
+      setBackupMessage(reason instanceof Error ? reason.message : 'Importeren mislukt.');
+    } finally {
+      setBackupBusy(false);
+    }
+  }
+
   return (
     <dialog ref={dialogRef} className="movie-dialog settings-dialog" aria-labelledby="settings-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClose={onClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
       <form onSubmit={submit}>
@@ -79,6 +111,24 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
           {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
           {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
           <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Posters worden via TMDb opgehaald als je daar een token voor hebt ingesteld. Je notities en beoordelingen blijven behouden. Er is geen Trakt Client Secret nodig.</p>
+        </section>
+        <section className="backup-settings" aria-labelledby="backup-settings-title">
+          <h3 id="backup-settings-title">Gegevens &amp; back-up</h3>
+          <p className="settings-help">Exporteer je collectie als JSON-bestand. TMDb- en Trakt-tokens worden niet meegenomen.</p>
+          <button className="save-button trakt-action" type="button" onClick={exportBackup}>Exporteer collectie</button>
+          <form className="backup-import" onSubmit={importBackup}>
+            <label className="form-field" htmlFor="backup-file">Back-upbestand
+              <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" />
+            </label>
+            <label className="form-field" htmlFor="backup-mode">Importeren als
+              <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
+                <option value="merge">Samenvoegen (duplicaten overslaan)</option>
+                <option value="replace">Alles vervangen</option>
+              </select>
+            </label>
+            <button className="save-button trakt-action" type="submit" disabled={backupBusy}>{backupBusy ? 'Importeren…' : 'Importeer collectie'}</button>
+          </form>
+          {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
         </section>
       </form>
     </dialog>

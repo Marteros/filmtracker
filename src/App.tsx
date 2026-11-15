@@ -1,17 +1,19 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { MovieDialog } from './components/MovieDialog';
 import { MovieGrid } from './components/MovieGrid';
 import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { DiscoverPage } from './components/DiscoverPage';
 import { SearchField } from './components/SearchField';
+import { InsightsPage } from './components/InsightsPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
 import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
 import { getMovieDetails } from './services/tmdb';
+import { downloadBackup, importBackup, type ImportMode } from './services/backup';
 import type { Movie, MovieDraft, TmdbMovie } from './types';
 
 type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
-type AppTab = 'history' | 'watchlist' | 'discover';
+type AppTab = 'history' | 'watchlist' | 'discover' | 'insights';
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -152,6 +154,13 @@ export default function App() {
     }
   }
 
+  function parseWatchedAt(value?: string): number | undefined {
+    if (!value) return undefined;
+    const [y, m, d] = value.split('-').map(Number);
+    if (!y || !m || !d) return undefined;
+    return new Date(y, m - 1, d).getTime();
+  }
+
   function handleSave(draft: MovieDraft): string | null {
     const duplicate = movies.find((movie) => {
       if (movie.id === editingMovie?.id) return false;
@@ -161,6 +170,7 @@ export default function App() {
     if (duplicate) return `“${duplicate.title}” staat al in je collectie. Je kunt die film bewerken.`;
 
     const old = editingMovie;
+    const watchedAt = draft.status === 'seen' ? (parseWatchedAt(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
     const nextMovie: Movie = {
       id: old?.id || createId(),
       title: draft.title,
@@ -169,9 +179,12 @@ export default function App() {
       rating: draft.status === 'seen' ? draft.rating : undefined,
       note: draft.note || undefined,
       tmdbId: draft.tmdbId,
-      posterPath: draft.posterPath,
+      posterPath: draft.posterPath || old?.posterPath,
       palette: old?.palette ?? Math.floor(Math.random() * 8),
       addedAt: old?.addedAt ?? Date.now(),
+      watchedAt,
+      runtime: draft.runtime ?? old?.runtime,
+      genres: draft.genres ?? old?.genres,
     };
     const next = old ? movies.map((movie) => movie.id === old.id ? nextMovie : movie) : [...movies, nextMovie];
     if (!persist(next)) return 'Opslaan lukte niet. Controleer de vrije opslagruimte op dit toestel.';
@@ -298,6 +311,15 @@ export default function App() {
     persist(movies.filter((item) => item.id !== id));
   }
 
+  const enrichMovie = useCallback((id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath'>>) => {
+    setMovies((prev) => {
+      const next = prev.map((m) => (m.id === id ? { ...m, ...patch } : m));
+      try { movieRepository.saveAll(next); } catch { /* ignore */ }
+      return next;
+    });
+    setSelectedMovie((current) => (current && current.id === id ? { ...current, ...patch } : current));
+  }, []);
+
   function saveToken(value: string) {
     try {
       settingsRepository.saveToken(value);
@@ -320,6 +342,22 @@ export default function App() {
     setTrakt(next);
   }
 
+  function exportCollection() {
+    downloadBackup(movies);
+  }
+
+  async function importCollection(file: File, mode: ImportMode): Promise<string> {
+    const result = await importBackup(file, movies, mode);
+    if (!persist(result.movies)) throw new Error('Importeren lukte niet. Controleer de vrije opslagruimte op dit toestel.');
+    if (mode === 'replace') {
+      return `${result.added} ${result.added === 1 ? 'film' : 'films'} geïmporteerd (collectie vervangen).`;
+    }
+    const parts = [`${result.added} ${result.added === 1 ? 'film' : 'films'} toegevoegd`];
+    if (result.skipped) parts.push(`${result.skipped} overgeslagen`);
+    if (result.invalid) parts.push(`${result.invalid} ongeldig`);
+    return `${parts.join(', ')}.`;
+  }
+
   async function syncTraktMovies(): Promise<number> {
     if (!trakt.clientId || !trakt.accessToken) throw new Error('Koppel eerst je Trakt-account.');
     const watched = await getWatchedMovies(trakt, (updated) => {
@@ -334,13 +372,17 @@ export default function App() {
       const tmdbId = entry.ids?.tmdb;
       const matchIndex = next.findIndex((movie) => (tmdbId && movie.tmdbId === tmdbId)
         || (movie.title.toLocaleLowerCase('nl') === entry.title.toLocaleLowerCase('nl') && movie.year === (entry.year ? String(entry.year) : undefined)));
+      const watchedAt = item.last_watched_at ? Date.parse(item.last_watched_at) || undefined : undefined;
       if (matchIndex >= 0) {
         const old = next[matchIndex];
         let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
+        if (!updated.watchedAt && watchedAt) updated = { ...updated, watchedAt };
         if (!updated.posterPath && tmdbId && token) {
           try {
             const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
             if (details.poster_path) updated = { ...updated, posterPath: details.poster_path };
+            if (!updated.runtime && details.runtime) updated = { ...updated, runtime: details.runtime };
+            if (!updated.genres?.length && details.genres?.length) updated = { ...updated, genres: details.genres.map((g) => g.name) };
           } catch { /* Keep the local film even if TMDb is temporarily unavailable. */ }
         }
         if (updated !== old) {
@@ -350,18 +392,23 @@ export default function App() {
         continue;
       }
       let posterPath: string | undefined;
+      let runtime: number | undefined;
+      let genres: string[] | undefined;
       if (tmdbId && token) {
         try {
           const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
           posterPath = details.poster_path || undefined;
+          runtime = details.runtime || undefined;
+          if (details.genres?.length) genres = details.genres.map((g) => g.name);
         } catch { /* Poster lookup is optional; the movie still imports. */ }
       }
       next.push({
         id: createId(), tmdbId, title: entry.title,
         year: entry.year ? String(entry.year) : undefined,
-        posterPath,
+        posterPath, runtime, genres,
         status: 'seen', palette: Math.floor(Math.random() * 8),
-        addedAt: item.last_watched_at ? Date.parse(item.last_watched_at) || Date.now() : Date.now(),
+        addedAt: watchedAt || Date.now(),
+        watchedAt: watchedAt || Date.now(),
       });
       changed += 1;
     }
@@ -373,20 +420,6 @@ export default function App() {
     <>
       <header className="desktop-appbar">
         <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
-        <nav className="desktop-main-nav" aria-label="Hoofdnavigatie">
-          <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
-            <span>Home</span>
-          </button>
-          <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
-            <span>Watchlist</span>
-          </button>
-          <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
-            <span>Ontdekken</span>
-          </button>
-        </nav>
         <button className="desktop-settings" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
@@ -450,7 +483,7 @@ export default function App() {
           </>
         )}
       </header>
-      <main className="app" hidden={activeTab === 'discover'}>
+      <main className="app" hidden={!(activeTab === 'history' || activeTab === 'watchlist')}>
         <section className="collection" aria-label={isWatchlist ? 'Watchlist' : 'Filmcollectie'}>
           <div className="mobile-collection-heading">
             <h1>{isWatchlist ? 'Watchlist' : 'Watch history'}</h1>
@@ -459,13 +492,15 @@ export default function App() {
           <div className="toolbar">
             <SearchField value={query} onChange={setQuery} label="Zoek films" placeholder="Zoek op filmtitel…" />
             <div className="collection-controls">
-              <label className="select-control">Jaar
+              <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>
+                <span className="select-label-text">Jaar</span>
                 <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
                   <option value="all">Alle jaren</option>
                   {years.map((year) => <option key={year} value={year}>{year}</option>)}
                 </select>
               </label>
-              <label className="select-control">Sorteren
+              <label className={`select-control${sortOrder !== 'newest' ? ' active' : ''}`}>
+                <span className="select-label-text">Sorteren</span>
                 <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
                   <option value="newest">Nieuw toegevoegd</option>
                   <option value="oldest">Oudst toegevoegd</option>
@@ -499,14 +534,15 @@ export default function App() {
         onOpen={openDiscoveredDetails}
         onSettings={() => setSettingsOpen(true)}
       />}
+      {activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
       {selectedMovie && <MovieDetailsPage
         movie={selectedMovie}
         token={token}
         discoveryPreview={Boolean(selectedDiscoveryMovie)}
         onAddToWatchlist={addDiscoveredFromDetails}
         onClose={closeDetails}
+        onEnrich={enrichMovie}
       />}
-      {(activeTab === 'history' || activeTab === 'watchlist') && <button className="floating-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>+</button>}
       <dialog
         ref={filterDialogRef}
         className="movie-dialog mobile-filter-dialog"
@@ -541,28 +577,36 @@ export default function App() {
         </form>
       </dialog>
       <div className="mobile-bottom-actions">
+      <div className="bottom-bar-spacer" aria-hidden="true" />
       <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
         <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
-          <span className="sr-only">Home</span>
+          <span className="tab-label">Home</span>
         </button>
         <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
-          <span className="sr-only">Watchlist</span>
+          <span className="tab-label">Watchlist</span>
         </button>
         <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
-          <span className="sr-only">Ontdekken</span>
+          <span className="tab-label">Ontdekken</span>
+        </button>
+        <button type="button" className={activeTab === 'insights' ? 'active' : ''} aria-current={activeTab === 'insights' ? 'page' : undefined} onClick={() => switchTab('insights')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5" /><path d="M8 19v-6" /><path d="M12 19V9" /><path d="M16 19V7" /><path d="M20 19v-9" /></svg>
+          <span className="tab-label">Inzichten</span>
         </button>
       </nav>
-      <button className="mobile-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-      </button>
+      <div className="bottom-bar-side">
+        <button className="mobile-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+        </button>
+      </div>
       </div>
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken}
-        trakt={trakt} onSaveTrakt={saveTraktCredentials} onSyncTrakt={syncTraktMovies} />
+        trakt={trakt} onSaveTrakt={saveTraktCredentials} onSyncTrakt={syncTraktMovies}
+        onExport={exportCollection} onImport={importCollection} />
     </>
   );
 }

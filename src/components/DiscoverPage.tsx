@@ -195,7 +195,9 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
         </section>
       ) : (
         <>
-          <SearchField value={query} onChange={onQueryChange} label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" />
+          <div className="toolbar discover-toolbar">
+            <SearchField value={query} onChange={onQueryChange} label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" />
+          </div>
           {actionError && <p className="discover-inline-error" role="alert">{actionError}</p>}
           {error && <div className="discover-inline-error" role="alert">{error} <button type="button" onClick={() => setRetry((value) => value + 1)}>Opnieuw proberen</button></div>}
           {loading ? (

@@ -8,9 +8,10 @@ interface Props {
   onClose(): void;
   discoveryPreview?: boolean;
   onAddToWatchlist?(): void;
+  onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath'>>): void;
 }
 
-export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onAddToWatchlist }: Props) {
+export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onAddToWatchlist, onEnrich }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [details, setDetails] = useState<TmdbMovieDetails>();
   const [error, setError] = useState('');
@@ -38,7 +39,14 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
     const controller = new AbortController();
     setCastLoading(true); setCastError('');
     getMovieDetails(movie.tmdbId, token, controller.signal)
-      .then(setDetails)
+      .then((data) => {
+        setDetails(data);
+        const patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath'>> = {};
+        if (!movie.runtime && data.runtime) patch.runtime = data.runtime;
+        if (!movie.genres?.length && data.genres?.length) patch.genres = data.genres.map((g) => g.name);
+        if (!movie.posterPath && data.poster_path) patch.posterPath = data.poster_path;
+        if (Object.keys(patch).length) onEnrich?.(movie.id, patch);
+      })
       .catch((reason: unknown) => {
         if (reason instanceof Error && reason.name !== 'AbortError') setError(reason.message);
       });
@@ -49,7 +57,7 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
       })
       .finally(() => { if (!controller.signal.aborted) setCastLoading(false); });
     return () => controller.abort();
-  }, [movie.tmdbId, token]);
+  }, [movie.tmdbId, token, movie.id, movie.runtime, movie.genres, movie.posterPath, onEnrich]);
 
   useEffect(() => {
     if (!selectedActor || !token) return;
@@ -67,6 +75,7 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
   const backdrop = details?.backdrop_path ? tmdbPoster(details.backdrop_path, 'w780') : undefined;
   const poster = tmdbPoster(movie.posterPath, 'w500');
   const year = details?.release_date?.slice(0, 4) || movie.year;
+  const watchedLabel = movie.watchedAt ? new Date(movie.watchedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
 
   return (
     <dialog
@@ -94,6 +103,7 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
               {details?.vote_average ? <span className="details-vote">★ {details.vote_average.toFixed(1)} / 10</span> : null}
             </div>
             {movie.rating && <p className="details-rating" aria-label={`Jouw beoordeling: ${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)} <small>Jouw beoordeling</small></p>}
+            {watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
             {discoveryPreview && <button className="details-add-to-watchlist" type="button" onClick={onAddToWatchlist}>Zet op kijklijst</button>}
           </div>
         </section>

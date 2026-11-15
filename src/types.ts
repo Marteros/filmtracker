@@ -12,6 +12,9 @@ export interface Movie {
   posterPath?: string;
   palette: number;
   addedAt: number;
+  watchedAt?: number;
+  runtime?: number;
+  genres?: string[];
 }
 
 export interface TmdbMovie {
@@ -54,6 +57,9 @@ export interface MovieDraft {
   note: string;
   tmdbId?: number;
   posterPath?: string;
+  watchedAt?: string;
+  runtime?: number;
+  genres?: string[];
 }
 
 export type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error' | 'offline' | 'unconfigured';
