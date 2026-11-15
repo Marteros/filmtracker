@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getDiscoveryMovies, searchMovies, tmdbPoster, type DiscoveryCategory } from '../services/tmdb';
+import { SearchField } from './SearchField';
 import type { Movie, TmdbMovie } from '../types';
 
 interface Props {
@@ -99,7 +100,7 @@ export function DiscoverPage({ token, collection, onAdd, onOpen, onSettings }: P
     return (
       <article className="discover-card" key={movie.id}>
         <div className="discover-poster">
-          {poster ? <img src={poster} alt="" loading="lazy" /> : <span className="discover-poster-fallback">{movie.title.slice(0, 1)}</span>}
+          {poster ? <img src={poster} alt="" loading="lazy" decoding="async" /> : <span className="discover-poster-fallback">{movie.title.slice(0, 1)}</span>}
           <button className="discover-poster-open" type="button" onClick={() => onOpen(movie)} aria-label={`Bekijk details van ${movie.title}`}>
             <span className="discover-poster-hint">Bekijk details</span>
           </button>
@@ -131,7 +132,7 @@ export function DiscoverPage({ token, collection, onAdd, onOpen, onSettings }: P
 
   return (
     <main className="app discover-page">
-      <header className="discover-header"><h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Ontdekken'}</h1>
+      <header className={`discover-header${selectedSection ? ' has-section' : ''}`}><h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Ontdekken'}</h1>
         {selectedSection && <button className="discover-back" type="button" onClick={() => { setSelectedSection(undefined); setError(''); }}>← Terug</button>}
       </header>
 
@@ -144,11 +145,7 @@ export function DiscoverPage({ token, collection, onAdd, onOpen, onSettings }: P
         </section>
       ) : (
         <>
-          <label className="discover-search">
-            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.8" /><path d="m13.2 13.2 4 4" /></svg>
-            <input type="search" aria-label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" value={query} onChange={(event) => setQuery(event.target.value)} />
-            {query && <button type="button" aria-label="Zoekopdracht wissen" onClick={() => setQuery('')}>×</button>}
-          </label>
+          <SearchField value={query} onChange={setQuery} label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" />
           {actionError && <p className="discover-inline-error" role="alert">{actionError}</p>}
           {error && <div className="discover-inline-error" role="alert">{error} <button type="button" onClick={() => setRetry((value) => value + 1)}>Opnieuw proberen</button></div>}
           {loading ? (

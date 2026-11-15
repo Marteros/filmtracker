@@ -93,7 +93,7 @@ export function MovieDetailsPage({ movie, token, onBack, discoveryPreview = fals
           {cast.slice(0, 24).map((actor) => {
             const portrait = tmdbPoster(actor.profile_path, 'w185');
             return <button key={actor.id} className={`cast-person${selectedActor?.id === actor.id ? ' selected' : ''}`} type="button" aria-pressed={selectedActor?.id === actor.id} onClick={() => setSelectedActor(actor)}>
-              {portrait ? <img className="cast-portrait" src={portrait} alt="" loading="lazy" /> : <span className="cast-portrait cast-initials" aria-hidden="true">{actor.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('')}</span>}
+              {portrait ? <img className="cast-portrait" src={portrait} alt="" loading="lazy" decoding="async" /> : <span className="cast-portrait cast-initials" aria-hidden="true">{actor.name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('')}</span>}
               <span className="cast-name">{actor.name}</span>
               {actor.character && <span className="cast-character">{actor.character}</span>}
             </button>;
@@ -107,7 +107,7 @@ export function MovieDetailsPage({ movie, token, onBack, discoveryPreview = fals
             {actorMovies.slice(0, 20).map((film) => {
               const filmPoster = tmdbPoster(film.poster_path, 'w185');
               return <article className="actor-movie" key={film.id}>
-                {filmPoster ? <img src={filmPoster} alt={`Poster van ${film.title}`} loading="lazy" /> : <div className="actor-movie-placeholder" aria-hidden="true">{film.title.slice(0, 1)}</div>}
+                {filmPoster ? <img src={filmPoster} alt={`Poster van ${film.title}`} loading="lazy" decoding="async" /> : <div className="actor-movie-placeholder" aria-hidden="true">{film.title.slice(0, 1)}</div>}
                 {film.release_date && <span>{film.release_date.slice(0, 4)}</span>}
               </article>;
             })}

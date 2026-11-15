@@ -108,31 +108,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 
 .collection { padding-top: 25px; }
 .toolbar { margin-bottom: 25px; }
-.search-box {
-  height: 44px;
-  border-color: #c6d0d5;
-  border-radius: 7px;
-  background: #f8f9f8;
-}
-.search-box input { font-size: 15px; }
-.filters {
-  padding: 4px;
-  border: 1px solid #c6d0d5;
-  border-radius: 7px;
-  background: #e1e7e9;
-}
-.filter {
-  height: 32px;
-  border-radius: 4px;
-  color: #536772;
-  font-size: 13px;
-}
-.filter.active {
-  background: #17364a;
-  color: #fff;
-  box-shadow: none;
-}
-.filter.active span { color: #d3b276; }
 .collection-controls { display: flex; align-items: center; gap: 8px; }
 .select-control { display: flex; align-items: center; gap: 7px; color: #536772; font-size: 12px; white-space: nowrap; }
 .select-control select {
@@ -147,7 +122,11 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 
 .movie-grid { grid-template-columns: repeat(auto-fill, minmax(165px, 1fr)); gap: 29px 19px; }
-.movie-card { overflow: visible; }
+.movie-card {
+  overflow: visible;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
+}
 .poster-frame { position: relative; }
 .poster {
   display: block;
@@ -188,7 +167,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .card-actions { flex-direction: column; gap: 8px; opacity: 1; }
 .poster-frame .card-actions { z-index: 3; }
 .card-action {
-  position: relative;
   width: 38px;
   height: 38px;
   border-color: #ffffff48;
@@ -200,25 +178,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .card-action.delete { color: #f0b9ad; }
 .card-action:hover { background: #122a3ae8; color: #f0c878; }
 .card-action.delete:hover { color: #ffc2b5; }
-.card-action::after {
-  position: absolute;
-  right: calc(100% + 8px);
-  top: 50%;
-  padding: 6px 9px;
-  border-radius: 4px;
-  background: #102b3bef;
-  color: #fff;
-  content: attr(data-tooltip);
-  font-size: 11px;
-  font-weight: 550;
-  line-height: 1.2;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(3px, -50%);
-  transition: opacity 130ms ease, transform 130ms ease;
-}
-.card-action:hover::after, .card-action:focus-visible::after { opacity: 1; transform: translate(0, -50%); }
 .card-content { padding: 11px 2px 0; }
 .card-title {
   color: #142a3b;
@@ -441,8 +400,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 }
 
 .mobile-appbar, .mobile-collection-heading { display: none; }
-.filter-count { font-variant-numeric: tabular-nums; }
-.filter:not(.active) .filter-count { display: none; }
 
 @media (max-width: 650px) {
   .app { width: calc(100% - 32px); }
@@ -500,12 +457,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .mobile-collection-heading span { color: #657580; font-size: 13px; font-variant-numeric: tabular-nums; }
   .collection { padding-top: 0; }
   .toolbar { align-items: stretch; flex-direction: column; gap: 12px; margin-bottom: 20px; }
-  .search-box { width: 100%; height: 46px; }
-  .filters { width: 100%; justify-content: stretch; }
-  .filter { display: flex; flex: 1; align-items: center; justify-content: center; gap: 6px; min-height: 42px; }
-  .filter:not(.active) .filter-count { display: inline; color: #657580; }
-  .filter.active .filter-count { color: #d3b276; }
-  .collection-controls { display: grid; grid-template-columns: .8fr 1.2fr; gap: 8px; }
+  .collection-controls { display: none; }
   .select-control { min-width: 0; align-items: center; flex-direction: row; gap: 6px; }
   .select-control select { width: 100%; max-width: none; min-height: 44px; font-size: 13px; }
   .movie-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
@@ -514,7 +466,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 @media (max-width: 380px) {
   .app { width: calc(100% - 24px); }
   .mobile-appbar { margin-inline: -12px; padding-right: 12px; padding-left: 12px; }
-  .filter { padding-inline: 5px; font-size: 12px; }
   .collection-controls { grid-template-columns: 1fr; }
   .select-control { justify-content: space-between; }
 }
@@ -591,6 +542,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .discover-results-label { margin: 26px 0 14px; color: #536772; font-size: 13px; font-weight: 650; }
 .discover-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: start; gap: 28px 18px; }
 .discover-card { min-width: 0; }
+.discover-all-grid .discover-card { content-visibility: auto; contain-intrinsic-size: auto 340px; }
 .discover-poster {
   position: relative;
   display: block;
@@ -833,6 +785,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
 .app { margin-right: auto; margin-left: auto; }
 .discover-page { margin: 0 auto; }
 .mobile-bottom-actions { display: none; }
+.mobile-filter-button, .mobile-filter-backdrop, .mobile-filter-sheet { display: none; }
 .sr-only {
   position: absolute;
   width: 1px;
@@ -896,6 +849,83 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
     pointer-events: auto;
   }
   .mobile-add-button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+  .mobile-filter-button {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: none;
+    place-items: center;
+    border: 1px solid #cbd4d9;
+    border-radius: 50%;
+    background: #f8f9f8;
+    color: #17364a;
+    box-shadow: 0 8px 28px #142a3b1c;
+    cursor: pointer;
+    pointer-events: auto;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mobile-filter-button svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-filter-button.has-active { border-color: #176b73; background: #dce8e7; color: #145a61; }
+  .mobile-filter-backdrop {
+    position: fixed;
+    z-index: 29;
+    inset: 0;
+    display: block;
+    background: #102b3b1f;
+  }
+  .mobile-filter-sheet {
+    position: fixed;
+    z-index: 31;
+    right: 16px;
+    bottom: calc(84px + env(safe-area-inset-bottom));
+    left: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    padding: 18px;
+    border: 1px solid #cbd4d9;
+    border-radius: 18px;
+    background: #f8f9f8;
+    box-shadow: 0 18px 44px #142a3b2e;
+  }
+  .mobile-filter-heading { display: flex; align-items: center; justify-content: space-between; }
+  .mobile-filter-heading h2 { margin: 0; color: #142a3b; font-size: 19px; font-weight: 700; letter-spacing: -.035em; }
+  .mobile-filter-heading button {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: #e7ecec;
+    color: #17364a;
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .mobile-filter-field { display: flex; flex-direction: column; gap: 6px; color: #536772; font-size: 12px; }
+  .mobile-filter-field select {
+    width: 100%;
+    min-height: 46px;
+    padding: 0 12px;
+    border: 1px solid #c6d0d5;
+    border-radius: 8px;
+    background: #fff;
+    color: #17364a;
+    font-size: 14px;
+  }
+  .mobile-filter-reset {
+    min-height: 44px;
+    border: 0;
+    border-radius: 8px;
+    background: transparent;
+    color: #a5413a;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .collection-controls { display: none; }
   .floating-add-button { display: none; }
   .app, .discover-page { padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 }
@@ -1027,7 +1057,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .discover-rail .discover-card-copy h2 { font-size: 11px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .discover-poster-add, .poster-image, .poster-details-hint, .card-action::after { transition: none; }
+  .discover-poster-add, .poster-image, .poster-details-hint { transition: none; }
 }
 @media (max-width: 650px) {
   .card-actions { gap: 7px; }
@@ -1046,3 +1076,7 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   cursor: pointer;
 }
 .details-add-to-watchlist:hover { background: #e3c98f; }
+
+@media (min-width: 651px) {
+  .discover-header:not(.has-section) { display: none; }
+}

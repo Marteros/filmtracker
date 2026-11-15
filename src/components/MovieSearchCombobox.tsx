@@ -83,7 +83,7 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
                 onClick={() => choose(movie)}
                 onMouseEnter={() => setActiveIndex(index)}
               >
-                {poster ? <img className="suggestion-poster" src={poster} alt="" loading="lazy" /> : <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">▧</span>}
+                {poster ? <img className="suggestion-poster" src={poster} alt="" loading="lazy" decoding="async" /> : <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">▧</span>}
                 <span className="suggestion-info"><span className="suggestion-title">{movie.title}</span><span className="suggestion-meta">{year ? `Film · ${year}` : 'Film'}</span></span>
               </button>
             );
