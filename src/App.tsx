@@ -342,6 +342,17 @@ export default function App() {
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
               </button>
+              {(activeTab === 'history' || activeTab === 'watchlist') && <button
+                className={`mobile-filter-button${yearFilter !== 'all' || sortOrder !== 'newest' ? ' has-active' : ''}`}
+                type="button"
+                aria-label="Filters"
+                aria-expanded={mobileFiltersOpen}
+                aria-controls="mobile-filters"
+                title="Filters"
+                onClick={() => { setMobileFiltersOpen((open) => !open); setMobileSearchOpen(false); }}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
+              </button>}
               <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
@@ -366,7 +377,7 @@ export default function App() {
       /> : <main className="app">
         <section className="collection" aria-label={isWatchlist ? 'Watchlist' : 'Filmcollectie'}>
           <div className="mobile-collection-heading">
-            <h1>{isWatchlist ? 'Watchlist' : 'Mijn films'}</h1>
+            <h1>{isWatchlist ? 'Watchlist' : 'Watch history'}</h1>
             <span>{collectionCount}</span>
           </div>
           <div className="toolbar">
@@ -445,17 +456,6 @@ export default function App() {
           <span className="sr-only">Ontdekken</span>
         </button>
       </nav>
-      {(activeTab === 'history' || activeTab === 'watchlist') && <button
-        className={`mobile-filter-button${yearFilter !== 'all' || sortOrder !== 'newest' ? ' has-active' : ''}`}
-        type="button"
-        aria-label="Filters"
-        aria-expanded={mobileFiltersOpen}
-        aria-controls="mobile-filters"
-        title="Filters"
-        onClick={() => { setMobileFiltersOpen((open) => !open); setMobileSearchOpen(false); }}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
-      </button>}
       <button className="mobile-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
       </button>
