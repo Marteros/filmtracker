@@ -25,7 +25,7 @@ Zoeksuggesties en posterafbeeldingen vragen internet. Handmatig films toevoegen 
 
 ## Trakt-kijkgeschiedenis synchroniseren
 
-Open **TMDb-instellingen**, vul onder **Trakt-synchronisatie** de Client ID van je Trakt API-app in en kies **Trakt-account koppelen**. Meld je aan op Trakt en geef Frame toestemming; Trakt stuurt je daarna terug naar Frame. Daarna kun je **Synchroniseer kijkgeschiedenis** gebruiken. Dit is eenrichtingsverkeer: Trakt-films worden in Frame als gezien toegevoegd of gemarkeerd; lokale beoordelingen en notities blijven behouden. Er worden geen gegevens vanuit Frame naar Trakt gestuurd.
+Open **Instellingen**, vul onder **Trakt-synchronisatie** de Client ID van je Trakt API-app in en kies **Trakt-account koppelen**. Meld je aan op Trakt en geef Frame toestemming; Trakt stuurt je daarna terug naar Frame. Daarna kun je **Synchroniseer kijkgeschiedenis** gebruiken. Dit is eenrichtingsverkeer: Trakt-films worden in Frame als gezien toegevoegd of gemarkeerd; lokale beoordelingen en notities blijven behouden. Er worden geen gegevens vanuit Frame naar Trakt gestuurd.
 
 Frame gebruikt Trakts PKCE-aanmeldmethode: er is geen Client Secret nodig. De Client ID en persoonlijke toegangstokens worden lokaal in de browser opgeslagen. Synchroniseren vereist internet; de geïmporteerde collectie blijft daarna lokaal beschikbaar.
 

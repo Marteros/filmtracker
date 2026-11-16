@@ -13,10 +13,19 @@ const PALETTES = [
   'linear-gradient(145deg,#556d61,#31413b 58%,#151d1c)',
 ];
 
+function releaseLabel(value?: string) {
+  if (!value) return '';
+  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
+  if (Number.isNaN(date.getTime())) return '';
+  if (date.getTime() <= Date.now()) return 'Beschikbaar';
+  return `Vanaf ${date.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short' })}`;
+}
+
 interface Props { movie: Movie; onEdit(movie: Movie): void; onDelete(id: string): void; onOpen(movie: Movie): void }
 
 export function MovieCard({ movie, onEdit, onDelete, onOpen }: Props) {
   const poster = tmdbPoster(movie.posterPath);
+  const release = movie.status === 'watchlist' ? releaseLabel(movie.releaseDate) : '';
   return (
     <article className="movie-card">
       <div className="poster-frame">
@@ -25,17 +34,27 @@ export function MovieCard({ movie, onEdit, onDelete, onOpen }: Props) {
           <span className="poster-details-hint">Bekijk details</span>
         </button>
         <div className="card-actions">
-          <button className="card-action delete" type="button" aria-label={`Verwijder ${movie.title}`} title="Verwijderen" onClick={() => onDelete(movie.id)}>×</button>
-          <button className="card-action" type="button" aria-label={`Bewerk ${movie.title}`} title="Bewerken" onClick={() => onEdit(movie)}>✎</button>
+          <button className="card-action delete" type="button" aria-label={`Verwijder ${movie.title}`} title="Verwijderen" onClick={() => onDelete(movie.id)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>
+          </button>
+          <button className="card-action" type="button" aria-label={`Bewerk ${movie.title}`} title="Bewerken" onClick={() => onEdit(movie)}>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" /><path d="m13.5 7.5 3 3" /></svg>
+          </button>
         </div>
       </div>
       <div className="card-content">
-        <h2 className="card-title">{movie.title}</h2>
-        {movie.rating ? (
+        <div className="card-heading">
+          <h2 className="card-title">{movie.title}</h2>
+          {movie.year && <span className="card-year">{movie.year}</span>}
+        </div>
+        {(movie.rating || release) && (
           <div className="card-meta">
-            <span className="card-stars" aria-label={`${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)}</span>
+            {movie.rating ? (
+              <span className="card-stars" aria-label={`${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)}</span>
+            ) : null}
+            {release && <span className="card-release">{release}</span>}
           </div>
-        ) : null}
+        )}
         {movie.note && <p className="card-note">{movie.note}</p>}
       </div>
     </article>

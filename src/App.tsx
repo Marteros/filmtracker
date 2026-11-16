@@ -199,6 +199,7 @@ export default function App() {
     };
     const next = old ? movies.map((movie) => movie.id === old.id ? nextMovie : movie) : [...movies, nextMovie];
     if (!persist(next)) return 'Opslaan lukte niet. Controleer de vrije opslagruimte op dit toestel.';
+    if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
     setMovieDialogOpen(false);
     setEditingMovie(undefined);
     return null;
@@ -349,10 +350,10 @@ export default function App() {
     setEditingMovie(undefined);
   }
 
-  function removeMovie(id: string) {
+  function removeMovie(id: string): boolean {
     const movie = movies.find((item) => item.id === id);
-    if (!movie || !window.confirm(`“${movie.title}” verwijderen uit je collectie?`)) return;
-    persist(movies.filter((item) => item.id !== id));
+    if (!movie || !window.confirm(`“${movie.title}” verwijderen uit je collectie?`)) return false;
+    return persist(movies.filter((item) => item.id !== id));
   }
 
   const enrichMovie = useCallback((id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>) => {
@@ -468,7 +469,7 @@ export default function App() {
     <>
       <header className="desktop-appbar">
         <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
-        <button className="desktop-settings" type="button" aria-label="TMDb-instellingen" title="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+        <button className="desktop-settings" type="button" aria-label="Instellingen" title="Instellingen" onClick={() => setSettingsOpen(true)}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </header>
@@ -524,7 +525,7 @@ export default function App() {
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
               </button>}
-              <button className="mobile-settings" type="button" aria-label="TMDb-instellingen" onClick={() => setSettingsOpen(true)}>
+              <button className="mobile-settings" type="button" aria-label="Instellingen" title="Instellingen" onClick={() => setSettingsOpen(true)}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
@@ -532,10 +533,10 @@ export default function App() {
         )}
       </header>
       <main className="app" hidden={!(activeTab === 'history' || activeTab === 'watchlist')}>
-        <section className="collection" aria-label={isWatchlist ? 'Watchlist' : 'Filmcollectie'}>
+        <section className="collection" aria-label={isWatchlist ? 'Kijklijst' : 'Gezien'}>
           <div className="mobile-collection-heading">
-            <h1>{isWatchlist ? 'Watchlist' : 'Watch history'}</h1>
-            <span>{collectionCount}</span>
+            <h1>{isWatchlist ? 'Kijklijst' : 'Gezien'}</h1>
+            <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'film' : 'films'}`}>{collectionCount}</span>
           </div>
           <div className="toolbar">
             <SearchField value={query} onChange={setQuery} label="Zoek films" placeholder="Zoek op filmtitel…" />
@@ -565,7 +566,8 @@ export default function App() {
             movies={visibleMovies}
             hasMovies={collectionCount > 0}
             searching={false}
-            emptyMessage={query && !visibleMovies.length ? 'Geen zoekresultaten' : !collectionCount ? (isWatchlist ? 'Nog geen films op je watchlist' : 'Nog geen gezien films') : undefined}
+            emptyMessage={query && !visibleMovies.length ? 'Geen zoekresultaten' : !collectionCount ? (isWatchlist ? 'Nog geen films op je kijklijst' : 'Nog geen gezien films') : undefined}
+            onAdd={openAddDialog}
             onEdit={openEditDialog}
             onDelete={removeMovie}
             onOpen={openMovie}
@@ -588,6 +590,8 @@ export default function App() {
         token={token}
         discoveryPreview={Boolean(selectedDiscoveryMovie)}
         onAddToWatchlist={addDiscoveredFromDetails}
+        onEdit={selectedDiscoveryMovie ? undefined : openEditDialog}
+        onDelete={selectedDiscoveryMovie ? undefined : removeMovie}
         onClose={closeDetails}
         onEnrich={enrichMovie}
       />}
@@ -632,19 +636,19 @@ export default function App() {
         </button>
       </div>
       <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
-        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
+        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-label="Gezien" aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
-          <span className="tab-label">Home</span>
+          <span className="tab-label">Gezien</span>
         </button>
-        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
+        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-label="Kijklijst" aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
-          <span className="tab-label">Watchlist</span>
+          <span className="tab-label">Kijklijst</span>
         </button>
-        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
+        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-label="Ontdekken" aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
           <span className="tab-label">Ontdekken</span>
         </button>
-        <button type="button" className={activeTab === 'insights' ? 'active' : ''} aria-current={activeTab === 'insights' ? 'page' : undefined} onClick={() => switchTab('insights')}>
+        <button type="button" className={activeTab === 'insights' ? 'active' : ''} aria-label="Inzichten" aria-current={activeTab === 'insights' ? 'page' : undefined} onClick={() => switchTab('insights')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5" /><path d="M8 19v-6" /><path d="M12 19V9" /><path d="M16 19V7" /><path d="M20 19v-9" /></svg>
           <span className="tab-label">Inzichten</span>
         </button>

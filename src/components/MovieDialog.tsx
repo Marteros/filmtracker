@@ -96,7 +96,7 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
               if (next === 'seen' && !watchedAt) setWatchedAt(todayInput());
               if (next === 'watchlist') { setRating(undefined); setWatchedAt(''); }
             }}>
-              <option value="watchlist">Wil ik zien</option><option value="seen">Gezien</option>
+              <option value="watchlist">Kijklijst</option><option value="seen">Gezien</option>
             </select>
           </label>
         </div>

@@ -91,46 +91,51 @@ export function SettingsDialog({ open, token, onClose, onSave, onRemove, trakt, 
 
   return (
     <dialog ref={dialogRef} className="movie-dialog settings-dialog" aria-labelledby="settings-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClose={onClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
-      <form onSubmit={submit}>
-        <div className="dialog-head"><h2 id="settings-title">TMDb</h2><button type="button" className="close-button" aria-label="Venster sluiten" onClick={onClose}>×</button></div>
-        <label className="form-field" htmlFor="tmdb-token">TMDb-token
-          <input id="tmdb-token" type="password" autoComplete="off" value={value} onChange={(event) => setValue(event.target.value)} />
-        </label>
-        <p className="settings-help"><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer">TMDb-token ophalen</a></p>
-        <p className="form-error" role="alert">{error}</p>
-        <button className="save-button" type="submit">Bewaar token</button>
-        {token && <button className="remove-token" type="button" onClick={onRemove}>Token verwijderen</button>}
-        <section className="trakt-settings" aria-labelledby="trakt-settings-title">
-          <h3 id="trakt-settings-title">Trakt-synchronisatie</h3>
-          <label className="form-field" htmlFor="trakt-client-id">Client ID
-            <input id="trakt-client-id" autoComplete="off" value={traktClientId} onChange={(event) => setTraktClientId(event.target.value)} />
-          </label>
-          <p className="settings-help"><a href="https://trakt.tv/oauth/applications" target="_blank" rel="noreferrer">Trakt API-appgegevens</a></p>
-          {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Trakt-account koppelen'}</button>}
-          {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
-          {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
-          {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
-          <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Posters worden via TMDb opgehaald als je daar een token voor hebt ingesteld. Je notities en beoordelingen blijven behouden. Er is geen Trakt Client Secret nodig.</p>
-        </section>
-        <section className="backup-settings" aria-labelledby="backup-settings-title">
-          <h3 id="backup-settings-title">Gegevens &amp; back-up</h3>
-          <p className="settings-help">Exporteer je collectie als JSON-bestand. TMDb- en Trakt-tokens worden niet meegenomen.</p>
-          <button className="save-button trakt-action" type="button" onClick={exportBackup}>Exporteer collectie</button>
-          <form className="backup-import" onSubmit={importBackup}>
-            <label className="form-field" htmlFor="backup-file">Back-upbestand
-              <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" />
+      <div className="settings-shell">
+        <div className="dialog-head"><h2 id="settings-title">Instellingen</h2><button type="button" className="close-button" aria-label="Venster sluiten" onClick={onClose}>×</button></div>
+        <div className="settings-scroll">
+          <form className="tmdb-settings" onSubmit={submit}>
+            <label className="form-field" htmlFor="tmdb-token">TMDb-token
+              <input id="tmdb-token" type="password" autoComplete="off" value={value} onChange={(event) => setValue(event.target.value)} />
             </label>
-            <label className="form-field" htmlFor="backup-mode">Importeren als
-              <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
-                <option value="merge">Samenvoegen (duplicaten overslaan)</option>
-                <option value="replace">Alles vervangen</option>
-              </select>
-            </label>
-            <button className="save-button trakt-action" type="submit" disabled={backupBusy}>{backupBusy ? 'Importeren…' : 'Importeer collectie'}</button>
+            <p className="settings-help"><a href="https://www.themoviedb.org/settings/api" target="_blank" rel="noreferrer">TMDb-token ophalen</a></p>
+            <p className="form-error" role="alert">{error}</p>
+            <button className="save-button" type="submit">Bewaar token</button>
+            {token && <button className="remove-token" type="button" onClick={onRemove}>Token verwijderen</button>}
           </form>
-          {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
-        </section>
-      </form>
+          <section className="trakt-settings" aria-labelledby="trakt-settings-title">
+            <h3 id="trakt-settings-title">Trakt-synchronisatie</h3>
+            <label className="form-field" htmlFor="trakt-client-id">Client ID
+              <input id="trakt-client-id" autoComplete="off" value={traktClientId} onChange={(event) => setTraktClientId(event.target.value)} />
+            </label>
+            <p className="settings-help"><a href="https://trakt.tv/oauth/applications" target="_blank" rel="noreferrer">Trakt API-appgegevens</a></p>
+            {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Trakt-account koppelen'}</button>}
+            {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
+            {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
+            {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
+            <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Posters worden via TMDb opgehaald als je daar een token voor hebt ingesteld. Je notities en beoordelingen blijven behouden. Er is geen Trakt Client Secret nodig.</p>
+          </section>
+          <section className="backup-settings" aria-labelledby="backup-settings-title">
+            <h3 id="backup-settings-title">Gegevens &amp; back-up</h3>
+            <p className="settings-help">Exporteer je collectie als JSON-bestand. TMDb- en Trakt-tokens worden niet meegenomen.</p>
+            <button className="save-button trakt-action" type="button" onClick={exportBackup}>Exporteer collectie</button>
+            <form className="backup-import" onSubmit={importBackup}>
+              <label className="form-field" htmlFor="backup-file">Back-upbestand
+                <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" />
+              </label>
+              <label className="form-field" htmlFor="backup-mode">Importeren als
+                <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
+                  <option value="merge">Samenvoegen (duplicaten overslaan)</option>
+                  <option value="replace">Alles vervangen</option>
+                </select>
+              </label>
+              <button className="save-button trakt-action" type="submit" disabled={backupBusy}>{backupBusy ? 'Importeren…' : 'Importeer collectie'}</button>
+            </form>
+            {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
+          </section>
+        </div>
+        <div className="settings-footer"><button className="save-button" type="button" onClick={onClose}>Sluiten</button></div>
+      </div>
     </dialog>
   );
 }

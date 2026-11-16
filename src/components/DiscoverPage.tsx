@@ -147,10 +147,12 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
   function renderCard(movie: TmdbMovie) {
     const saved = matchingMovie(movie, collection);
     const poster = tmdbPoster(movie.poster_path, 'w342');
+    const vote = movie.vote_average?.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     return (
       <article className="discover-card" key={movie.id}>
         <div className="discover-poster">
-          {poster ? <img src={poster} alt="" loading="lazy" decoding="async" /> : <span className="discover-poster-fallback">{movie.title.slice(0, 1)}</span>}
+          <span className="discover-poster-fallback" aria-hidden="true">{movie.title.slice(0, 1)}</span>
+          {poster && <img src={poster} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
           <button className="discover-poster-open" type="button" onClick={() => onOpen(movie)} aria-label={`Bekijk details van ${movie.title}`}>
             <span className="discover-poster-hint">Bekijk details</span>
           </button>
@@ -172,7 +174,7 @@ export function DiscoverPage({ token, collection, query, onQueryChange, onAdd, o
           <div className="discover-card-meta">
             <span>{movie.release_date?.slice(0, 4) || 'Film'}</span>
             {typeof movie.vote_average === 'number' && movie.vote_average > 0 && (
-              <span className="discover-rating" aria-label={`TMDb-score ${movie.vote_average.toFixed(1)} op 10`}>★ {movie.vote_average.toFixed(1)}</span>
+              <span className="discover-rating" aria-label={`TMDb-score ${vote} op 10`}>★ {vote}</span>
             )}
           </div>
         </div>

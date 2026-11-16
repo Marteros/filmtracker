@@ -8,10 +8,12 @@ interface Props {
   onClose(): void;
   discoveryPreview?: boolean;
   onAddToWatchlist?(): void;
+  onEdit?(movie: Movie): void;
+  onDelete?(id: string): boolean;
   onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
 }
 
-export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onAddToWatchlist, onEnrich }: Props) {
+export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onAddToWatchlist, onEdit, onDelete, onEnrich }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [details, setDetails] = useState<TmdbMovieDetails>();
   const [error, setError] = useState('');
@@ -77,6 +79,12 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
   const poster = tmdbPoster(movie.posterPath, 'w500');
   const year = details?.release_date?.slice(0, 4) || movie.year;
   const watchedLabel = movie.watchedAt ? new Date(movie.watchedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const runtimeLabel = details?.runtime
+    ? (details.runtime >= 60 ? `${Math.floor(details.runtime / 60)} uur ${details.runtime % 60} min` : `${details.runtime} min`)
+    : '';
+  const voteLabel = details?.vote_average
+    ? details.vote_average.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    : '';
 
   return (
     <dialog
@@ -92,20 +100,25 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
         {backdrop && <div className="details-backdrop" style={{ backgroundImage: `linear-gradient(90deg,#122a3a 5%,#122a3ae6 50%,#122a3a60),url("${backdrop}")` }} />}
         <section className="details-hero">
           <div className="details-poster-wrap">
-            {poster ? <img className="details-poster" src={poster} alt={`Poster van ${movie.title}`} /> : <div className="details-poster-placeholder">{movie.title}</div>}
+            <div className="details-poster-placeholder" aria-hidden="true"><span>{movie.title}</span></div>
+            {poster && <img className="details-poster" src={poster} alt={`Poster van ${movie.title}`} onError={(event) => event.currentTarget.remove()} />}
           </div>
           <div className="details-copy">
             <p className="details-kicker">{discoveryPreview ? 'Ontdekt' : movie.status === 'seen' ? 'Gezien' : 'Op je kijklijst'}{year ? ` · ${year}` : ''}</p>
             <h1 id="details-title">{movie.title}</h1>
             {details?.tagline && <p className="details-tagline">{details.tagline}</p>}
             <div className="details-facts">
-              {details?.runtime ? <span>{Math.floor(details.runtime / 60)} uur {details.runtime % 60} min</span> : null}
+              {runtimeLabel ? <span>{runtimeLabel}</span> : null}
               {details?.genres?.map((genre) => <span key={genre.id}>{genre.name}</span>)}
-              {details?.vote_average ? <span className="details-vote">★ {details.vote_average.toFixed(1)} / 10</span> : null}
+              {voteLabel ? <span className="details-vote">★ {voteLabel} / 10</span> : null}
             </div>
             {movie.rating && <p className="details-rating" aria-label={`Jouw beoordeling: ${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)} <small>Jouw beoordeling</small></p>}
             {watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
             {discoveryPreview && <button className="details-add-to-watchlist" type="button" onClick={onAddToWatchlist}>Zet op kijklijst</button>}
+            {(onEdit || onDelete) && <div className="details-actions">
+              {onEdit && <button className="details-action" type="button" onClick={() => onEdit(movie)}>Bewerken</button>}
+              {onDelete && <button className="details-action danger" type="button" onClick={() => { if (onDelete(movie.id)) onClose(); }}>Verwijderen</button>}
+            </div>}
           </div>
         </section>
         <section className="details-description">

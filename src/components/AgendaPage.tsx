@@ -95,12 +95,12 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
         <header className="agenda-header">
           <p className="details-kicker">Agenda</p>
           <h1 id="agenda-title">Binnenkort</h1>
-          <p className="agenda-intro">Films op je watchlist op releasedatum.</p>
+          <p className="agenda-intro">Films op je kijklijst op releasedatum.</p>
         </header>
         {!hasAny ? (
-          <p className="agenda-empty">Nog geen films op je watchlist.</p>
+          <p className="agenda-empty">Nog geen films op je kijklijst.</p>
         ) : !groups.length ? (
-          <p className="agenda-empty">Geen geplande releases op je watchlist. Voeg films toe via Ontdekken om releasedata te bewaren.</p>
+          <p className="agenda-empty">Geen geplande releases op je kijklijst. Voeg films toe via Ontdekken om releasedata te bewaren.</p>
         ) : (
           <div className="agenda-groups">
             {groups.map((group) => (
@@ -112,7 +112,10 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
                     return (
                       <li key={movie.id}>
                         <button type="button" className="agenda-item" onClick={() => onOpen(movie)}>
-                          {poster ? <img src={poster} alt="" loading="lazy" decoding="async" /> : <span className="agenda-poster-fallback">{movie.title.slice(0, 1)}</span>}
+                          <span className="agenda-poster">
+                            <span className="agenda-poster-fallback" aria-hidden="true">{movie.title.slice(0, 1)}</span>
+                            {poster && <img src={poster} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
+                          </span>
                           <span className="agenda-item-copy">
                             <span className="agenda-item-title">{movie.title}</span>
                             <span className="agenda-item-meta">{date ? <time dateTime={movie.releaseDate}>{formatDate(date)}</time> : 'Releasedatum onbekend'}</span>

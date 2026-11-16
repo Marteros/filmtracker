@@ -40,7 +40,8 @@ export function InsightsPage({ movies, onOpen }: Props) {
     for (const movie of seen) {
       const y = Number(movie.year);
       if (!y) continue;
-      const decade = `${Math.floor(y / 10) * 10}s`;
+      const start = Math.floor(y / 10) * 10;
+      const decade = `${start}–${start + 9}`;
       decades.set(decade, (decades.get(decade) || 0) + 1);
     }
     const topDecades = [...decades.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
@@ -73,11 +74,11 @@ export function InsightsPage({ movies, onOpen }: Props) {
       <div className="mobile-collection-heading"><h1>Inzichten</h1><span>{stats.seen.length}</span></div>
       <section className="insights-grid" aria-label="Statistieken">
         <article className="insight-card highlight"><h2>Gezien</h2><p className="insight-value">{stats.seen.length}</p><p className="insight-sub">films in totaal</p></article>
-        <article className="insight-card"><h2>Watchlist</h2><p className="insight-value">{stats.watchlist.length}</p><p className="insight-sub">nog te zien</p></article>
+        <article className="insight-card"><h2>Kijklijst</h2><p className="insight-value">{stats.watchlist.length}</p><p className="insight-sub">nog te zien</p></article>
         <article className="insight-card"><h2>Dit jaar</h2><p className="insight-value">{stats.seenThisYear}</p><p className="insight-sub">gezien in {new Date().getFullYear()}</p></article>
         <article className="insight-card"><h2>Deze maand</h2><p className="insight-value">{stats.seenThisMonth}</p><p className="insight-sub">gezien</p></article>
-        <article className="insight-card"><h2>Gemiddelde</h2><p className="insight-value">{stats.ratingsCount ? stats.avgRating.toFixed(1) : '–'}</p><p className="insight-sub">{stats.ratingsCount ? `op ${stats.ratingsCount} beoordelingen` : 'nog geen beoordelingen'}</p></article>
-        <article className="insight-card"><h2>Kijktijd</h2><p className="insight-value">{stats.runtimeCount ? `${Math.round(stats.totalRuntime / 60)}u` : '–'}</p><p className="insight-sub">{stats.runtimeCount ? `op basis van ${stats.runtimeCount} films` : 'nog geen speelduurdata'}</p></article>
+        <article className="insight-card"><h2>Gemiddelde</h2><p className="insight-value">{stats.ratingsCount ? stats.avgRating.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) : '–'}</p><p className="insight-sub">{stats.ratingsCount ? `op ${stats.ratingsCount} beoordelingen` : 'nog geen beoordelingen'}</p></article>
+        <article className="insight-card"><h2>Kijktijd</h2><p className="insight-value">{stats.runtimeCount ? `${Math.round(stats.totalRuntime / 60)} uur` : '–'}</p><p className="insight-sub">{stats.runtimeCount ? `op basis van ${stats.runtimeCount} films` : 'nog geen speelduurdata'}</p></article>
       </section>
 
       <section className="insight-section" aria-labelledby="rating-dist-title">
