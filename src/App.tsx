@@ -289,7 +289,7 @@ export default function App() {
       || (saved.title.toLocaleLowerCase('nl') === movie.title.toLocaleLowerCase('nl') && saved.year === year));
   }
 
-  function saveDiscoveredMovie(movie: TmdbMovie): Movie | undefined {
+  function saveDiscoveredMovie(movie: TmdbMovie, status: 'seen' | 'watchlist' = 'watchlist'): Movie | undefined {
     const existing = findSavedMovie(movie);
     if (existing) return existing;
     const saved: Movie = {
@@ -298,10 +298,11 @@ export default function App() {
       title: movie.title,
       year: movie.release_date?.slice(0, 4),
       releaseDate: movie.release_date || undefined,
-      status: 'watchlist',
+      status,
       posterPath: movie.poster_path || undefined,
       palette: Math.floor(Math.random() * 8),
       addedAt: Date.now(),
+      watchedAt: status === 'seen' ? Date.now() : undefined,
     };
     return persist([...movies, saved]) ? saved : undefined;
   }
@@ -331,13 +332,42 @@ export default function App() {
     }
   }
 
-  function addDiscoveredFromDetails() {
-    if (!selectedDiscoveryMovie) return;
-    const saved = saveDiscoveredMovie(selectedDiscoveryMovie);
-    if (saved) {
-      setSelectedMovie(saved);
-      setSelectedDiscoveryMovie(undefined);
+  function setMovieStatusFromDetails(movie: Movie, status: 'seen' | 'watchlist'): boolean {
+    if (selectedDiscoveryMovie) {
+      const saved = saveDiscoveredMovie(selectedDiscoveryMovie, status);
+      if (saved) {
+        setSelectedMovie(saved);
+        setSelectedDiscoveryMovie(undefined);
+      }
+      return Boolean(saved);
     }
+    const nextMovie: Movie = {
+      ...movie,
+      status,
+      watchedAt: status === 'seen' ? (movie.watchedAt ?? Date.now()) : undefined,
+      rating: status === 'seen' ? movie.rating : undefined,
+    };
+    const next = movies.map((item) => item.id === movie.id ? nextMovie : item);
+    if (!persist(next)) return false;
+    setSelectedMovie(nextMovie);
+    return true;
+  }
+
+  function setMovieRatingFromDetails(movie: Movie, rating?: Movie['rating']) {
+    if (movie.status !== 'seen') return;
+    const nextMovie: Movie = { ...movie, rating };
+    const next = movies.map((item) => item.id === movie.id ? nextMovie : item);
+    if (persist(next)) setSelectedMovie(nextMovie);
+  }
+
+  function removeMovieFromDetails(id: string): boolean {
+    const movie = movies.find((item) => item.id === id);
+    if (!movie) return false;
+    if (!persist(movies.filter((item) => item.id !== id))) {
+      setStorageError('Opslaan lukt niet. Controleer de vrije opslagruimte op dit toestel.');
+      return false;
+    }
+    return true;
   }
 
   function openEditDialog(movie: Movie) {
@@ -589,9 +619,10 @@ export default function App() {
         movie={selectedMovie}
         token={token}
         discoveryPreview={Boolean(selectedDiscoveryMovie)}
-        onAddToWatchlist={addDiscoveredFromDetails}
+        onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
+        onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
+        onRemove={() => removeMovieFromDetails(selectedMovie.id)}
         onEdit={selectedDiscoveryMovie ? undefined : openEditDialog}
-        onDelete={selectedDiscoveryMovie ? undefined : removeMovie}
         onClose={closeDetails}
         onEnrich={enrichMovie}
       />}

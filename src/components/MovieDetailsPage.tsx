@@ -1,19 +1,22 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Movie, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
+import type { Movie, MovieRating, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
 import { getActorMovieCredits, getMovieCast, getMovieDetails, tmdbPoster } from '../services/tmdb';
+import { RatingInput } from './RatingInput';
 
 interface Props {
   movie: Movie;
   token: string;
   onClose(): void;
   discoveryPreview?: boolean;
-  onAddToWatchlist?(): void;
+  onSetStatus(status: 'seen' | 'watchlist'): boolean;
+  onSetRating(rating?: MovieRating): void;
+  onRemove(): boolean;
   onEdit?(movie: Movie): void;
-  onDelete?(id: string): boolean;
   onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
 }
 
-export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onAddToWatchlist, onEdit, onDelete, onEnrich }: Props) {
+export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onSetStatus, onSetRating, onRemove, onEdit, onEnrich }: Props) {
+  const [statusMessage, setStatusMessage] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [details, setDetails] = useState<TmdbMovieDetails>();
   const [error, setError] = useState('');
@@ -86,6 +89,24 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
     ? details.vote_average.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     : '';
 
+  function toggleStatus(status: 'seen' | 'watchlist') {
+    if (discoveryPreview) {
+      if (onSetStatus(status)) setStatusMessage('');
+      return;
+    }
+    const active = movie.status === status;
+    if (active) {
+      if (!window.confirm(`“${movie.title}” verwijderen uit je collectie?`)) return;
+      if (onRemove()) onClose();
+      return;
+    }
+    if (onSetStatus(status)) setStatusMessage('');
+    else setStatusMessage('Opslaan lukte niet. Controleer de vrije opslagruimte op dit toestel.');
+  }
+
+  const checkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>;
+  const plusIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
+
   return (
     <dialog
       ref={dialogRef}
@@ -112,13 +133,36 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
               {details?.genres?.map((genre) => <span key={genre.id}>{genre.name}</span>)}
               {voteLabel ? <span className="details-vote">★ {voteLabel} / 10</span> : null}
             </div>
-            {movie.rating && <p className="details-rating" aria-label={`Jouw beoordeling: ${movie.rating} van 5 sterren`}>{'★'.repeat(movie.rating)}{'☆'.repeat(5 - movie.rating)} <small>Jouw beoordeling</small></p>}
-            {watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
-            {discoveryPreview && <button className="details-add-to-watchlist" type="button" onClick={onAddToWatchlist}>Zet op kijklijst</button>}
-            {(onEdit || onDelete) && <div className="details-actions">
-              {onEdit && <button className="details-action" type="button" onClick={() => onEdit(movie)}>Bewerken</button>}
-              {onDelete && <button className="details-action danger" type="button" onClick={() => { if (onDelete(movie.id)) onClose(); }}>Verwijderen</button>}
-            </div>}
+            {movie.status === 'seen' && watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
+            <div className="details-status-actions" aria-label="Lijststatus">
+              <button
+                type="button"
+                className={`details-status-button seen${!discoveryPreview && movie.status === 'seen' ? ' active' : ''}`}
+                aria-pressed={!discoveryPreview && movie.status === 'seen'}
+                title={!discoveryPreview && movie.status === 'seen' ? 'Verwijder uit collectie' : 'Markeer als gezien'}
+                onClick={() => toggleStatus('seen')}
+              >
+                {!discoveryPreview && movie.status === 'seen' ? checkIcon : plusIcon}
+                <span>Gezien</span>
+              </button>
+              <button
+                type="button"
+                className={`details-status-button watchlist${!discoveryPreview && movie.status === 'watchlist' ? ' active' : ''}`}
+                aria-pressed={!discoveryPreview && movie.status === 'watchlist'}
+                title={!discoveryPreview && movie.status === 'watchlist' ? 'Verwijder uit collectie' : 'Zet op kijklijst'}
+                onClick={() => toggleStatus('watchlist')}
+              >
+                {!discoveryPreview && movie.status === 'watchlist' ? checkIcon : plusIcon}
+                <span>Kijklijst</span>
+              </button>
+            </div>
+            {!discoveryPreview && movie.status === 'seen' && (
+              <div className="details-inline-rating">
+                <RatingInput value={movie.rating} onChange={onSetRating} idPrefix={`details-${movie.id}`} />
+              </div>
+            )}
+            {statusMessage && <p className="details-status-error" role="alert">{statusMessage}</p>}
+            {!discoveryPreview && onEdit && <button className="details-edit-link" type="button" onClick={() => onEdit(movie)}>Bewerken</button>}
           </div>
         </section>
         <section className="details-description">

@@ -1,15 +1,18 @@
-import type { KeyboardEvent } from 'react';
+import { useId, type KeyboardEvent } from 'react';
 import type { MovieRating } from '../types';
 
-interface Props { value?: MovieRating; onChange(value?: MovieRating): void }
+interface Props { value?: MovieRating; onChange(value?: MovieRating): void; idPrefix?: string }
 
-export function RatingInput({ value, onChange }: Props) {
+export function RatingInput({ value, onChange, idPrefix }: Props) {
+  const uid = useId();
+  const prefix = idPrefix ?? `rating-${uid.replace(/:/g, '')}`;
+
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, rating: number) {
     if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault();
     const next = Math.max(1, Math.min(5, rating + (event.key === 'ArrowRight' ? 1 : -1))) as MovieRating;
     onChange(next);
-    document.getElementById(`rating-${next}`)?.focus();
+    document.getElementById(`${prefix}-${next}`)?.focus();
   }
 
   return (
@@ -18,7 +21,7 @@ export function RatingInput({ value, onChange }: Props) {
       <div className="star-picker" role="radiogroup" aria-label="Beoordeling van 1 tot 5 sterren">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
-            id={`rating-${rating}`}
+            id={`${prefix}-${rating}`}
             key={rating}
             type="button"
             className={`star-choice${value && rating <= value ? ' selected' : ''}`}
