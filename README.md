@@ -47,6 +47,8 @@ The app does not ask users for a TMDb key. All TMDb requests go through the Clou
 
 Open **Settings** and choose **Sign in with Trakt** to connect your account. Sign in on Trakt and grant Frame access; Trakt will redirect you back to Frame. Then you can use **Sync with Trakt**. This is one-way: your Trakt watch history is imported as **Seen** and your Trakt watchlist as **Watchlist**; local ratings and notes are kept, and a movie that is already seen is not moved back to the watchlist. No data is sent from Frame to Trakt.
 
+Frame uses Trakt but is not endorsed or certified by Trakt.
+
 To enable this, set a valid `TRAKT_CLIENT_ID` in `src/services/trakt.ts` and configure matching Redirect URIs in your Trakt API app for the app URLs you use.
 
 ## Important

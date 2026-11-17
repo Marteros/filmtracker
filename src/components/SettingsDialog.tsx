@@ -98,6 +98,7 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
           <section className="trakt-settings" aria-labelledby="trakt-settings-title">
             <h3 id="trakt-settings-title">Trakt sync</h3>
             <p className="settings-help">Connect Trakt to import your watch history and watchlist. One-way sync: watched movies are marked as Seen and watchlist movies as Watchlist; notes and ratings are kept.</p>
+            <p className="settings-help trakt-notice">Frame uses Trakt but is not endorsed or certified by Trakt.</p>
             {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Working…' : 'Sign in with Trakt'}</button>}
             {trakt.accessToken && <p className="trakt-message" role="status">Trakt is connected.</p>}
             {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Syncing…' : 'Sync with Trakt'}</button>}
