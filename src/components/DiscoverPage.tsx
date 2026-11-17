@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { getDiscoveryMovies, getRandomDiscoveryMovie, searchMovies, tmdbPoster, type DiscoveryCategory, type RandomMovieCriteria } from '../services/tmdb';
 import { SearchField } from './SearchField';
 import { MOVIE_GENRES } from '../constants/genres';
+import { LANGUAGE_OPTIONS } from '../constants/languages';
 import type { Movie, TmdbMovie } from '../types';
 
 interface Props {
@@ -53,9 +54,11 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [randomGenre, setRandomGenre] = useState<number | 'all'>('all');
   const [randomRating, setRandomRating] = useState<number | 'all'>('all');
   const [randomPeriod, setRandomPeriod] = useState<PeriodPreset>('all');
+  const [randomLanguage, setRandomLanguage] = useState<string>('all');
   const [randomLoading, setRandomLoading] = useState(false);
   const [randomError, setRandomError] = useState('');
   const [randomMovie, setRandomMovie] = useState<TmdbMovie | null>(null);
+  const [recentRandomIds, setRecentRandomIds] = useState<number[]>([]);
   const overviewScrollRef = useRef(0);
   const restoreOverviewScrollRef = useRef<number | null>(null);
   const sectionHistoryRef = useRef(false);
@@ -186,14 +189,29 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         ...periodToYears(randomPeriod),
         ...(randomGenre === 'all' ? {} : { genreId: randomGenre }),
         ...(randomRating === 'all' ? {} : { minRating: randomRating }),
+        ...(randomLanguage === 'all' ? {} : { originalLanguage: randomLanguage }),
       };
-      const movie = await getRandomDiscoveryMovie(
+      const avoidIds = new Set(recentRandomIds);
+      let movie = await getRandomDiscoveryMovie(
         criteria,
         (candidate) => Boolean(matchingMovie(candidate, collection)),
         new AbortController().signal,
+        avoidIds,
       );
+      if (!movie && avoidIds.size) {
+        movie = await getRandomDiscoveryMovie(
+          criteria,
+          (candidate) => Boolean(matchingMovie(candidate, collection)),
+          new AbortController().signal,
+          new Set(),
+        );
+      }
       setRandomMovie(movie);
-      if (!movie) setRandomError('Geen film gevonden met deze criteria die nog niet in je collectie staat. Probeer ruimere filters.');
+      if (movie) {
+        setRecentRandomIds((current) => [movie.id, ...current.filter((id) => id !== movie.id)].slice(0, 20));
+      } else {
+        setRandomError('Geen film gevonden met deze criteria die nog niet in je collectie staat. Probeer ruimere filters.');
+      }
     } catch (reason) {
       setRandomMovie(null);
       setRandomError(reason instanceof Error ? reason.message : 'Een willekeurige film ophalen is mislukt.');
@@ -314,6 +332,12 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
                 <option value="2000s">2000–2009</option>
                 <option value="2010s">2010–2019</option>
                 <option value="recent">2020–nu</option>
+              </select>
+            </label>
+            <label className="select-control" htmlFor="random-language"><span className="select-label-text">Taal</span>
+              <select id="random-language" value={randomLanguage} onChange={(event) => setRandomLanguage(event.target.value)}>
+                <option value="all">Alle talen</option>
+                {LANGUAGE_OPTIONS.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
               </select>
             </label>
             <button className="discover-primary discover-random-submit" type="button" onClick={pickRandomMovie} disabled={randomLoading}>{randomLoading ? 'Zoeken…' : randomMovie ? 'Nog een' : 'Geef suggestie'}</button>

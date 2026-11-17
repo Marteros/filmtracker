@@ -723,15 +723,21 @@ html.details-open, html.details-open body { overflow: hidden; }
 .discover-skeleton > i + i { width: 48%; height: 9px; margin-top: 8px; }
 @keyframes discover-shimmer { to { background-position-x: -200%; } }
 
+@media (max-width: 360px) {
+  .discover-header { flex-wrap: wrap; }
+  .discover-header-actions { width: 100%; margin-left: 0; justify-content: flex-start; }
+}
+
 
 @media (max-width: 900px) {
   .discover-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px 14px; }
 }
 @media (max-width: 650px) {
   .discover-page { width: calc(100% - 32px); }
-  .discover-header { margin: 24px 0 18px; flex-wrap: wrap; align-items: flex-start; gap: 12px; }
-  .discover-header-actions { width: 100%; justify-content: flex-start; }
-  .discover-header h1 { font-size: 31px; }
+  .discover-header { margin: 24px 0 18px; flex-wrap: nowrap; align-items: center; gap: 10px; }
+  .discover-header h1 { flex: 1 1 auto; min-width: 0; font-size: 31px; }
+  .discover-header-actions { width: auto; flex: 0 0 auto; margin-left: auto; justify-content: flex-end; }
+  .discover-random-button { min-height: 36px; padding: 0 12px; font-size: 12px; }
   .discover-header p { margin-top: 5px; font-size: 13px; }
   .discover-search { min-height: 46px; }
   .discover-page .discover-toolbar { display: none; }
@@ -961,13 +967,14 @@ html.details-open, html.details-open body { overflow: hidden; }
   .discover-all-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 650px) {
-  .discover-header { min-height: 0; margin: 24px 0 18px; padding: 0; flex-wrap: wrap; }
+  .discover-header { min-height: 0; margin: 24px 0 18px; padding: 0; flex-wrap: nowrap; align-items: center; gap: 10px; }
+  .discover-header h1 { flex: 1 1 auto; min-width: 0; font-size: 31px; }
+  .discover-header-actions { width: auto; flex: 0 0 auto; margin-left: auto; justify-content: flex-end; }
   .randomizer-dialog { width: calc(100% - 20px); }
   .randomizer-shell { padding: 18px; gap: 12px; }
   .discover-random-controls { grid-template-columns: 1fr; }
   .discover-random-submit { width: 100%; justify-content: center; }
   .discover-random-result { width: min(100%, 220px); }
-  .discover-header h1 { font-size: 31px; }
   .discover-sections { gap: 24px; margin-top: 22px; }
   .discover-section-heading { margin-bottom: 10px; }
   .discover-section-heading h2 { font-size: 19px; }

@@ -89,6 +89,7 @@ export interface RandomMovieCriteria {
   minRating?: number;
   fromYear?: number;
   toYear?: number;
+  originalLanguage?: string;
 }
 
 function randomInt(max: number) {
@@ -99,6 +100,7 @@ export async function getRandomDiscoveryMovie(
   criteria: RandomMovieCriteria,
   isExcluded: (movie: TmdbMovie) => boolean,
   signal: AbortSignal,
+  avoidIds: ReadonlySet<number> = new Set(),
 ): Promise<TmdbMovie | null> {
   const base = new URL(`${API_ROOT}/discover/movie`);
   base.searchParams.set('include_adult', 'false');
@@ -110,6 +112,7 @@ export async function getRandomDiscoveryMovie(
   if (criteria.minRating) base.searchParams.set('vote_average.gte', String(criteria.minRating));
   if (criteria.fromYear) base.searchParams.set('primary_release_date.gte', `${criteria.fromYear}-01-01`);
   if (criteria.toYear) base.searchParams.set('primary_release_date.lte', `${criteria.toYear}-12-31`);
+  if (criteria.originalLanguage) base.searchParams.set('with_original_language', criteria.originalLanguage);
 
   const fetchPage = async (page: number) => {
     const url = new URL(base);
@@ -122,21 +125,36 @@ export async function getRandomDiscoveryMovie(
     );
   };
 
+  const isUsable = (movie: TmdbMovie) => movie.id && movie.title && !isExcluded(movie);
+
   const first = await fetchPage(1);
   const totalPages = Math.max(1, Math.min(first.total_pages || 1, 500));
-  const firstCandidates = (first.results || []).filter((movie) => movie.id && movie.title && !isExcluded(movie));
+  const pickFrom = (movies: TmdbMovie[], avoidRecent: boolean) => {
+    const usable = movies.filter(isUsable);
+    const preferred = avoidRecent ? usable.filter((movie) => !avoidIds.has(movie.id)) : usable;
+    const pool = preferred.length ? preferred : usable;
+    return pool.length ? pool[randomInt(pool.length)] : null;
+  };
+
   if (totalPages === 1) {
-    if (firstCandidates.length) return firstCandidates[randomInt(firstCandidates.length)];
-    return null;
+    return pickFrom(first.results || [], true);
   }
 
-  for (let attempt = 0; attempt < 6; attempt += 1) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
     const page = attempt === 0 ? 1 : 1 + randomInt(totalPages);
     const payload = page === 1 ? first : await fetchPage(page);
-    const candidates = (payload.results || []).filter((movie) => movie.id && movie.title && !isExcluded(movie));
-    if (candidates.length) return candidates[randomInt(candidates.length)];
+    const pick = pickFrom(payload.results || [], true);
+    if (pick) return pick;
   }
-  return firstCandidates.length ? firstCandidates[randomInt(firstCandidates.length)] : null;
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const page = attempt === 0 ? 1 : 1 + randomInt(totalPages);
+    const payload = page === 1 ? first : await fetchPage(page);
+    const pick = pickFrom(payload.results || [], false);
+    if (pick) return pick;
+  }
+
+  return pickFrom(first.results || [], false);
 }
 
 export async function getMovieDetails(id: number, signal: AbortSignal): Promise<TmdbMovieDetails> {
