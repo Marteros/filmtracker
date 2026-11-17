@@ -42,34 +42,26 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
     const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
     const monthEnd = new Date(today); monthEnd.setMonth(today.getMonth() + 1);
     const watchlist = movies.filter((m) => m.status === 'watchlist');
-    const withDate = watchlist
+    const upcoming = watchlist
       .map((m) => ({ movie: m, date: parseDate(m.releaseDate) }))
-      .filter((item): item is { movie: Movie; date: Date } => Boolean(item.date))
+      .filter((item): item is { movie: Movie; date: Date } => Boolean(item.date) && startOfDay(item.date as Date) >= today)
       .sort((a, b) => a.date.getTime() - b.date.getTime() || a.movie.title.localeCompare(b.movie.title, 'nl'));
-    const unknown = watchlist
-      .filter((m) => !parseDate(m.releaseDate))
-      .sort((a, b) => a.title.localeCompare(b.title, 'nl'))
-      .map((movie) => ({ movie, date: undefined as Date | undefined }));
 
     const buckets = {
-      available: [] as Array<{ movie: Movie; date: Date }>,
       week: [] as Array<{ movie: Movie; date: Date }>,
       month: [] as Array<{ movie: Movie; date: Date }>,
       later: [] as Array<{ movie: Movie; date: Date }>,
     };
-    for (const item of withDate) {
+    for (const item of upcoming) {
       const day = startOfDay(item.date);
-      if (day < today) buckets.available.push(item);
-      else if (day < weekEnd) buckets.week.push(item);
+      if (day < weekEnd) buckets.week.push(item);
       else if (day < monthEnd) buckets.month.push(item);
       else buckets.later.push(item);
     }
     return [
-      { id: 'available', title: 'Nu beschikbaar', items: buckets.available },
       { id: 'week', title: 'Deze week', items: buckets.week },
       { id: 'month', title: 'Deze maand', items: buckets.month },
       { id: 'later', title: 'Later', items: buckets.later },
-      { id: 'unknown', title: 'Releasedatum onbekend', items: unknown },
     ].filter((g) => g.items.length);
   }, [movies]);
 
@@ -95,12 +87,12 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
         <header className="agenda-header">
           <p className="details-kicker">Agenda</p>
           <h1 id="agenda-title">Binnenkort</h1>
-          <p className="agenda-intro">Films op je kijklijst op releasedatum.</p>
+          <p className="agenda-intro">Aankomende releases op je kijklijst.</p>
         </header>
         {!hasAny ? (
           <p className="agenda-empty">Nog geen films op je kijklijst.</p>
         ) : !groups.length ? (
-          <p className="agenda-empty">Geen geplande releases op je kijklijst. Voeg films toe via Ontdekken om releasedata te bewaren.</p>
+          <p className="agenda-empty">Geen toekomstige releases op je kijklijst.</p>
         ) : (
           <div className="agenda-groups">
             {groups.map((group) => (
@@ -118,7 +110,7 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
                           </span>
                           <span className="agenda-item-copy">
                             <span className="agenda-item-title">{movie.title}</span>
-                            <span className="agenda-item-meta">{date ? <time dateTime={movie.releaseDate}>{formatDate(date)}</time> : 'Releasedatum onbekend'}</span>
+                            <span className="agenda-item-meta"><time dateTime={movie.releaseDate}>{formatDate(date)}</time></span>
                           </span>
                         </button>
                       </li>

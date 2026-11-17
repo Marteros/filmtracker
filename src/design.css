@@ -969,21 +969,20 @@ html.details-open, html.details-open body { overflow: hidden; }
   place-items: center;
   padding: 0;
   margin: 0;
-  border: 1px solid #ffffffa8;
+  border: 1px solid #ffffff48;
   border-radius: 50%;
-  background: #102b3be8;
-  color: #fff;
+  background: #122a3ab8;
+  color: #f3f5f2;
   line-height: 0;
-  box-shadow: 0 2px 8px #0004;
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
-  transition: background 140ms ease, transform 140ms ease;
+  transition: background 140ms ease, color 140ms ease;
 }
-.discover-poster-action:hover:not(:disabled) { background: #176b73; transform: scale(1.06); }
+.discover-poster-action:hover:not(:disabled) { background: #122a3ae8; color: #f0c878; }
 .discover-poster-action:disabled { border-color: #ffffff66; background: #102b3ba8; color: #ffffff99; cursor: default; }
 .discover-poster-action.saved { border-color: #d7e6e2; background: #d7e6e2ed; color: #145a61; }
-.discover-poster-action svg { display: block; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.discover-poster-action svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .discover-card-copy h2 {
   min-height: 2.65em;
   font-size: 13px;

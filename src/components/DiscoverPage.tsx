@@ -152,7 +152,6 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       : onWatchlist
         ? `Markeer ${movie.title} als gezien`
         : `Markeer ${movie.title} als gezien`;
-    const checkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>;
     const bookmarkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>;
     const eyeIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" /><circle cx="12" cy="12" r="3" /></svg>;
     return (
@@ -164,16 +163,18 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
             <span className="discover-poster-hint">Bekijk details</span>
           </button>
           <div className="discover-poster-actions">
-            <button
-              className={`discover-poster-action${onWatchlist ? ' saved' : ''}`}
-              type="button"
-              aria-label={watchlistLabel}
-              title={onWatchlist ? 'Op kijklijst' : isSeen ? 'Gezien' : 'Toevoegen aan kijklijst'}
-              disabled={Boolean(saved)}
-              onClick={() => handleAdd(movie, 'watchlist')}
-            >
-              {onWatchlist ? checkIcon : bookmarkIcon}
-            </button>
+            {!isSeen && (
+              <button
+                className={`discover-poster-action${onWatchlist ? ' saved' : ''}`}
+                type="button"
+                aria-label={watchlistLabel}
+                title={onWatchlist ? 'Op kijklijst' : isSeen ? 'Gezien' : 'Toevoegen aan kijklijst'}
+                disabled={Boolean(saved)}
+                onClick={() => handleAdd(movie, 'watchlist')}
+              >
+                {bookmarkIcon}
+              </button>
+            )}
             <button
               className={`discover-poster-action${isSeen ? ' saved' : ''}`}
               type="button"
@@ -182,7 +183,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
               disabled={isSeen}
               onClick={() => handleAdd(movie, 'seen')}
             >
-              {isSeen ? checkIcon : eyeIcon}
+              {eyeIcon}
             </button>
           </div>
         </div>
