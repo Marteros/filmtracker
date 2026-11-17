@@ -1,45 +1,63 @@
-# Frame — filmjournaal
+# Frame
 
-Een offline-first PWA met React + TypeScript. De filmcollectie staat lokaal in `localStorage`; TMDb wordt via een kleine Cloudflare-proxy gebruikt voor online zoeksuggesties, Ontdekken, details en posters.
+Personal movie journal built with React, TypeScript, and Vite. It stores your collection locally in the browser and can fetch movie info, posters, and recommendations via a tokenless TMDb proxy.
 
-## Lokaal starten
+## Features
 
-```sh
+- Add, edit, and remove movies
+- Rate movies and save a personal note
+- Movie details with poster, description, cast, and filmography
+- Search and filter by title, year, and status
+- Discover via TMDb (trending, popular, top rated) and a randomizer
+- Agenda for upcoming releases on your watchlist
+- Insights into your viewing habits
+- Import/export backup (JSON)
+- Optional Trakt sync (watch history and watchlist)
+
+## Requirements
+
+- Node.js 18+ (or newer)
+- npm
+
+## Local development
+
+```bash
 npm install
 npm run dev
 ```
 
-Maak een productiebuild met `npm run build`. De statische site staat daarna in `dist/`.
+Vite will print the local URL (usually `http://localhost:5173`).
 
-## Offline gebruiken op iPhone
+## Production build
 
-Een PWA moet eerst vanaf een HTTPS-adres worden geopend (of lokaal via `localhost`) zodat Safari de app-shell kan downloaden en cachen. Publiceer de inhoud van `dist/` op een HTTPS-host, open die URL op je iPhone terwijl je online bent en wacht tot de pagina geladen is. Kies daarna in Safari **Deel → Zet op beginscherm**. Open de app minstens één keer online na een nieuwe release; daarna kan de interface zonder server of internet worden gestart. Filmgegevens blijven lokaal op het toestel opgeslagen. TMDb zoeken en posters ophalen werken alleen online.
+```bash
+npm run build
+npm run preview
+```
 
-Een bladwijzer naar een ontwikkelserver (`npm run dev`) is niet voldoende: die URL is alleen bereikbaar zolang die server actief is. De productie-PWA werkt offline dankzij de service worker nadat de bestanden voor het eerst zijn geladen.
+## Deploy (GitHub Pages)
 
-## TMDb via de proxy
+The project is configured for deployment at `https://marteros.github.io/filmtracker/` (see `base` in `vite.config.ts`). With GitHub Actions enabled for Pages, a push to `main` can trigger a deploy.
 
-Frame gebruikt geen TMDb-sleutel in de browser. Alle TMDb-aanvragen gaan via een Cloudflare Worker die de Bearer-token server-side toevoegt. Daardoor hoeven gebruikers niets in te stellen.
+## TMDb
 
-De worker staat op `https://filmtracker-proxy.levonmarteros.workers.dev/`. De code staat in `worker/index.js`; de TMDb-token staat als `TMDB_TOKEN` in de Cloudflare-omgeving. De worker laat alleen de endpoints door die Frame gebruikt en accepteert browserverzoeken vanaf `https://marteros.github.io` en lokale ontwikkeladressen.
+The app does not ask users for a TMDb key. All TMDb requests go through the Cloudflare Worker proxy at `https://filmtracker-proxy.levonmarteros.workers.dev/3` (source in `worker/index.js`). The worker injects the API token server-side; the browser does not send credentials.
 
-De proxy verbergt de sleutel, maar is geen authenticatielaag: de worker-URL is openbaar. Houd het gebruik in de gaten en voeg rate limiting toe als dat nodig is.
+## Trakt sync
 
-Zoeksuggesties, Ontdekken, filmdetails, acteurs en posters vragen internet. De opgeslagen collectie blijft offline beschikbaar.
+Open **Settings** and choose **Sign in with Trakt** to connect your account. Sign in on Trakt and grant Frame access; Trakt will redirect you back to Frame. Then you can use **Sync with Trakt**. This is one-way: your Trakt watch history is imported as **Seen** and your Trakt watchlist as **Watchlist**; local ratings and notes are kept, and a movie that is already seen is not moved back to the watchlist. No data is sent from Frame to Trakt.
 
-## Trakt-synchronisatie
+To enable this, set a valid `TRAKT_CLIENT_ID` in `src/services/trakt.ts` and configure matching Redirect URIs in your Trakt API app for the app URLs you use.
 
-Open **Instellingen** en kies **Inloggen met Trakt** om je account te koppelen. Meld je aan op Trakt en geef Frame toestemming; Trakt stuurt je daarna terug naar Frame. Daarna kun je **Synchroniseer met Trakt** gebruiken. Dit is eenrichtingsverkeer: je Trakt-kijkgeschiedenis wordt als **Gezien** geïmporteerd en je Trakt-kijklijst als **Kijklijst**; lokale beoordelingen en notities blijven behouden en een film die al gezien is wordt niet teruggezet naar de kijklijst. Er worden geen gegevens vanuit Frame naar Trakt gestuurd.
+## Important
 
-Frame gebruikt Trakts PKCE-aanmeldmethode: er is geen Client Secret nodig. De Client ID en persoonlijke toegangstokens worden lokaal in de browser opgeslagen. Synchroniseren vereist internet; de geïmporteerde collectie blijft daarna lokaal beschikbaar.
+- All data is stored locally in the browser (localStorage). Clearing browser data removes your collection unless you have a backup.
+- The repository may not have git history/remote configured in every environment; `dist/` is generated by the build.
 
-## Componenten
+## Project structure
 
-- `MovieDialog` beheert het formulier en validatie voor toevoegen/bewerken.
-- `MovieSearchCombobox` biedt toegankelijke TMDb-autocomplete en toetsenbordbediening.
-- `RatingInput`, `MovieCard` en `MovieGrid` zijn herbruikbare presentatielaag-componenten.
-- `SettingsDialog` beheert Trakt-synchronisatie en back-up.
-- `useMovieSearch` regelt debounce, annuleren van verouderde verzoeken en laad-/fout-/offline-status.
-- `movieRepository` en `tmdb` houden opslag en netwerkverzoeken buiten de componenten.
-
-TMDb attribution: “This product uses the TMDB API but is not endorsed or certified by TMDB.”
+- `src/App.tsx`: app state and page orchestration
+- `src/components/`: UI components (including `DiscoverPage`, `SettingsDialog`, `MovieGrid`, dialogs)
+- `src/services/`: data, TMDb, Trakt, and backup logic
+- `src/types.ts`: shared types
+- `worker/index.js`: Cloudflare Worker TMDb proxy source

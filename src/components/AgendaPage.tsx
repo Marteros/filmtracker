@@ -45,7 +45,7 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
     const upcoming = watchlist
       .map((m) => ({ movie: m, date: parseDate(m.releaseDate) }))
       .filter((item): item is { movie: Movie; date: Date } => Boolean(item.date) && startOfDay(item.date as Date) >= today)
-      .sort((a, b) => a.date.getTime() - b.date.getTime() || a.movie.title.localeCompare(b.movie.title, 'nl'));
+      .sort((a, b) => a.date.getTime() - b.date.getTime() || a.movie.title.localeCompare(b.movie.title));
 
     const buckets = {
       week: [] as Array<{ movie: Movie; date: Date }>,
@@ -59,8 +59,8 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
       else buckets.later.push(item);
     }
     return [
-      { id: 'week', title: 'Deze week', items: buckets.week },
-      { id: 'month', title: 'Deze maand', items: buckets.month },
+      { id: 'week', title: 'This week', items: buckets.week },
+      { id: 'month', title: 'This month', items: buckets.month },
       { id: 'later', title: 'Later', items: buckets.later },
     ].filter((g) => g.items.length);
   }, [movies]);
@@ -69,7 +69,7 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
 
   function formatDate(date?: Date) {
     if (!date) return '';
-    return date.toLocaleDateString('nl-NL', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+    return date.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
   }
 
   return (
@@ -80,19 +80,19 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
       onCancel={(event) => { event.preventDefault(); onClose(); }}
       onClose={onClose}
     >
-      <button className="details-close" type="button" aria-label="Agenda sluiten" onClick={onClose}>
+      <button className="details-close" type="button" aria-label="Close agenda" onClick={onClose}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
       <div className="details-page agenda-page">
         <header className="agenda-header">
           <p className="details-kicker">Agenda</p>
-          <h1 id="agenda-title">Binnenkort</h1>
-          <p className="agenda-intro">Aankomende releases op je kijklijst.</p>
+          <h1 id="agenda-title">Coming soon</h1>
+          <p className="agenda-intro">Upcoming releases on your watchlist.</p>
         </header>
         {!hasAny ? (
-          <p className="agenda-empty">Nog geen films op je kijklijst.</p>
+          <p className="agenda-empty">No movies on your watchlist yet.</p>
         ) : !groups.length ? (
-          <p className="agenda-empty">Geen toekomstige releases op je kijklijst.</p>
+          <p className="agenda-empty">No upcoming releases on your watchlist.</p>
         ) : (
           <div className="agenda-groups">
             {groups.map((group) => (

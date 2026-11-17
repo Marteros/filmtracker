@@ -1,9 +1,9 @@
 {
   "id": "./",
-  "name": "Frame — jouw filmjournaal",
+  "name": "Frame — your movie journal",
   "short_name": "Frame",
-  "description": "Jouw persoonlijke filmjournaal. Bewaar wat je zag en wat je nog wilt zien.",
-  "lang": "nl",
+  "description": "Your personal movie journal. Keep track of what you've watched and what you want to see.",
+  "lang": "en",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

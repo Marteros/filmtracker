@@ -16,7 +16,7 @@ interface Props {
 }
 
 export function MovieGrid({ movies, hasMovies, searching, emptyMessage, view = 'grid', onAdd, onDiscover, onOpenSettings, onEdit, onDelete, onOpen }: Props) {
-  if (searching) return <div className="empty-state" role="status"><span className="spinner" aria-hidden="true" /><h3>Je collectie laden…</h3></div>;
+  if (searching) return <div className="empty-state" role="status"><span className="spinner" aria-hidden="true" /><h3>Loading your collection…</h3></div>;
   if (!movies.length) {
     if (!hasMovies) {
       const compassIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>;
@@ -26,41 +26,41 @@ export function MovieGrid({ movies, hasMovies, searching, emptyMessage, view = '
       const settingsIcon = <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>;
       return (
         <div className="empty-state onboarding-empty">
-          <h3>Nog geen films toegevoegd</h3>
-          <p className="onboarding-intro">Zo kun je je collectie vullen:</p>
+          <h3>No movies added yet</h3>
+          <p className="onboarding-intro">Here’s how you can fill your collection:</p>
           <ul className="onboarding-options">
             <li>
               <span className="onboarding-icon">{compassIcon}</span>
               <div className="onboarding-copy">
-                <strong>Via Ontdekken</strong>
-                <p>Zoek of blader door films en voeg ze direct toe vanaf een poster: <span className="inline-icon">{bookmarkIcon}</span> voor je kijklijst of <span className="inline-icon">{eyeIcon}</span> als gezien.</p>
+                <strong>Via Discover</strong>
+                <p>Search or browse movies and add them directly from a poster: <span className="inline-icon">{bookmarkIcon}</span> for your watchlist or <span className="inline-icon">{eyeIcon}</span> as seen.</p>
               </div>
             </li>
             <li>
               <span className="onboarding-icon">{plusIcon}</span>
               <div className="onboarding-copy">
-                <strong>Handmatig toevoegen</strong>
-                <p>Gebruik <span className="inline-icon">{plusIcon}</span> om zelf een filmtitel te zoeken en op te slaan.</p>
+                <strong>Add manually</strong>
+                <p>Use <span className="inline-icon">{plusIcon}</span> to search for a movie title yourself and save it.</p>
               </div>
             </li>
             <li>
               <span className="onboarding-icon">{settingsIcon}</span>
               <div className="onboarding-copy">
-                <strong>Via Trakt synchroniseren</strong>
-                <p>Open <span className="inline-icon">{settingsIcon}</span> Instellingen om je Trakt-account te koppelen en je kijkgeschiedenis en kijklijst te importeren.</p>
+                <strong>Sync with Trakt</strong>
+                <p>Open <span className="inline-icon">{settingsIcon}</span> Settings to connect your Trakt account and import your watch history and watchlist.</p>
               </div>
             </li>
           </ul>
           <div className="onboarding-actions">
-            {onDiscover && <button className="onboarding-secondary" type="button" onClick={onDiscover}>Naar Ontdekken</button>}
-            {onAdd && <button className="onboarding-secondary" type="button" onClick={onAdd}>Film toevoegen</button>}
-            {onOpenSettings && <button className="onboarding-secondary" type="button" onClick={onOpenSettings}>Instellingen</button>}
+            {onDiscover && <button className="onboarding-secondary" type="button" onClick={onDiscover}>Go to Discover</button>}
+            {onAdd && <button className="onboarding-secondary" type="button" onClick={onAdd}>Add movie</button>}
+            {onOpenSettings && <button className="onboarding-secondary" type="button" onClick={onOpenSettings}>Settings</button>}
           </div>
         </div>
       );
     }
     return <div className="empty-state">
-      <p>{emptyMessage || 'Geen films'}</p>
+      <p>{emptyMessage || 'No movies'}</p>
     </div>;
   }
   return <div className={view === 'list' ? 'movie-list' : 'movie-grid'} aria-live="polite">{movies.map((movie) => <MovieCard key={movie.id} movie={movie} view={view} onEdit={onEdit} onDelete={onDelete} onOpen={onOpen} />)}</div>;

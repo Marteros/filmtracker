@@ -17,8 +17,8 @@ export function RatingInput({ value, onChange, idPrefix }: Props) {
 
   return (
     <fieldset className="rating-field">
-      <legend>Beoordeling</legend>
-      <div className="star-picker" role="radiogroup" aria-label="Beoordeling van 1 tot 5 sterren">
+      <legend>Rating</legend>
+      <div className="star-picker" role="radiogroup" aria-label="Rating from 1 to 5 stars">
         {[1, 2, 3, 4, 5].map((rating) => (
           <button
             id={`${prefix}-${rating}`}
@@ -27,13 +27,13 @@ export function RatingInput({ value, onChange, idPrefix }: Props) {
             className={`star-choice${value && rating <= value ? ' selected' : ''}`}
             role="radio"
             aria-checked={value === rating}
-            aria-label={`${rating} ${rating === 1 ? 'ster' : 'sterren'}`}
+            aria-label={`${rating} ${rating === 1 ? 'star' : 'stars'}`}
             tabIndex={value === rating || (!value && rating === 1) ? 0 : -1}
             onClick={() => onChange(rating as MovieRating)}
             onKeyDown={(event) => handleKeyDown(event, rating)}
           >★</button>
         ))}
-        {value && <button className="clear-rating" type="button" onClick={() => onChange(undefined)}>Wis</button>}
+        {value && <button className="clear-rating" type="button" onClick={() => onChange(undefined)}>Clear</button>}
       </div>
     </fieldset>
   );

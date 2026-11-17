@@ -3,8 +3,8 @@ const AUTH_ROOT = 'https://auth.trakt.tv';
 const VERIFIER_KEY = 'frame-trakt-pkce-verifier';
 const STATE_KEY = 'frame-trakt-pkce-state';
 
-// Vul hier de Client ID van je Trakt API-app in (public client, geen secret nodig).
-// Redirect URI in Trakt moet overeenkomen met de app-URL (bijv. https://marteros.github.io/filmtracker/ en http://localhost:5173/ voor ontwikkeling).
+// Enter the Client ID of your Trakt API app here (public client, no secret required).
+// The Redirect URI in Trakt must match the app URL (e.g. https://marteros.github.io/filmtracker/ and http://localhost:5173/ for development).
 export const TRAKT_CLIENT_ID = 'JTLuuORctIbh-DNquvocGM-mALQ72HnGTLevZZuGkcE';
 
 export interface TraktCredentials {
@@ -70,7 +70,7 @@ export async function finishTraktAuthorization(clientId: string, code: string, r
   localStorage.removeItem(VERIFIER_KEY);
   localStorage.removeItem(STATE_KEY);
   if (!verifier || !expectedState || returnedState !== expectedState) {
-    throw new Error('De Trakt-aanmelding is verlopen of ongeldig. Start het koppelen opnieuw.');
+    throw new Error('The Trakt sign-in has expired or is invalid. Start connecting again.');
   }
 
   const response = await fetch(`${API_ROOT}/oauth/token`, {
@@ -81,7 +81,7 @@ export async function finishTraktAuthorization(clientId: string, code: string, r
       grant_type: 'authorization_code', code_verifier: verifier,
     }),
   });
-  if (!response.ok) throw new Error('Trakt heeft Frame niet kunnen koppelen. Controleer de Redirect URI en probeer opnieuw.');
+  if (!response.ok) throw new Error('Trakt could not connect Frame. Check the Redirect URI and try again.');
   const payload = await response.json() as { access_token: string; refresh_token?: string; expires_in?: number };
   return {
     clientId,
@@ -92,7 +92,7 @@ export async function finishTraktAuthorization(clientId: string, code: string, r
 }
 
 async function refreshTraktToken(credentials: TraktCredentials): Promise<TraktCredentials> {
-  if (!credentials.refreshToken) throw new Error('De Trakt-toegang is verlopen. Koppel je account opnieuw.');
+  if (!credentials.refreshToken) throw new Error('Trakt access has expired. Connect your account again.');
   const response = await fetch(`${API_ROOT}/oauth/token`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'trakt-api-version': '2' },
@@ -101,7 +101,7 @@ async function refreshTraktToken(credentials: TraktCredentials): Promise<TraktCr
       redirect_uri: traktRedirectUri(), grant_type: 'refresh_token',
     }),
   });
-  if (!response.ok) throw new Error('De Trakt-toegang is verlopen. Koppel je account opnieuw.');
+  if (!response.ok) throw new Error('Trakt access has expired. Connect your account again.');
   const payload = await response.json() as { access_token: string; refresh_token?: string; expires_in?: number };
   return {
     ...credentials, accessToken: payload.access_token,
@@ -132,8 +132,8 @@ export async function getWatchedMovies(initial: TraktCredentials, onCredentials:
         'trakt-api-key': credentials.clientId, Authorization: `Bearer ${credentials.accessToken}`,
       },
     });
-    if (response.status === 401) throw new Error('De Trakt-toegang is verlopen. Koppel je account opnieuw.');
-    if (!response.ok) throw new Error('Je Trakt-kijkgeschiedenis kon niet worden opgehaald.');
+    if (response.status === 401) throw new Error('Trakt access has expired. Connect your account again.');
+    if (!response.ok) throw new Error('Your Trakt watch history could not be fetched.');
     results.push(...await response.json() as TraktWatchedMovie[]);
     pageCount = Number(response.headers.get('x-pagination-page-count')) || 1;
     page += 1;
@@ -154,8 +154,8 @@ export async function getWatchlistMovies(initial: TraktCredentials, onCredential
         'trakt-api-key': credentials.clientId, Authorization: `Bearer ${credentials.accessToken}`,
       },
     });
-    if (response.status === 401) throw new Error('De Trakt-toegang is verlopen. Koppel je account opnieuw.');
-    if (!response.ok) throw new Error('Je Trakt-kijklijst kon niet worden opgehaald.');
+    if (response.status === 401) throw new Error('Trakt access has expired. Connect your account again.');
+    if (!response.ok) throw new Error('Your Trakt watchlist could not be fetched.');
     results.push(...await response.json() as TraktWatchlistMovie[]);
     pageCount = Number(response.headers.get('x-pagination-page-count')) || 1;
     page += 1;

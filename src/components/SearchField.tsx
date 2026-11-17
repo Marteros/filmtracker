@@ -27,7 +27,7 @@ export function SearchField({ value, onChange, label, placeholder, autoFocus = f
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      {value && <button type="button" aria-label="Zoekopdracht wissen" onClick={() => onChange('')}>×</button>}
+      {value && <button type="button" aria-label="Clear search" onClick={() => onChange('')}>×</button>}
     </label>
   );
 }

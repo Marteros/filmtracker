@@ -55,7 +55,7 @@ export function MovieDialog({ open, movie, onClose, onSave }: Props) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const cleanTitle = title.trim();
-    if (!cleanTitle) { setError('Vul een filmtitel in.'); titleRef.current?.focus(); return; }
+    if (!cleanTitle) { setError('Enter a movie title.'); titleRef.current?.focus(); return; }
     const result = onSave({
       title: cleanTitle, year, releaseDate: releaseDate || selected?.release_date || undefined, status, rating: status === 'seen' ? rating : undefined,
       watchedAt: status === 'seen' ? (watchedAt || todayInput()) : undefined,
@@ -74,8 +74,8 @@ export function MovieDialog({ open, movie, onClose, onSave }: Props) {
     <dialog ref={dialogRef} className="movie-dialog" aria-labelledby="movie-dialog-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClose={onClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
       <form onSubmit={handleSubmit} noValidate>
         <div className="dialog-head">
-          <div><h2 id="movie-dialog-title">{movie ? 'Film bewerken' : 'Film toevoegen'}</h2></div>
-          <button type="button" className="close-button" aria-label="Venster sluiten" onClick={onClose}>×</button>
+          <div><h2 id="movie-dialog-title">{movie ? 'Edit movie' : 'Add movie'}</h2></div>
+          <button type="button" className="close-button" aria-label="Close dialog" onClick={onClose}>×</button>
         </div>
         <MovieSearchCombobox
           key={`${open ? 'open' : 'closed'}-${movie?.id ?? 'new'}`}
@@ -85,7 +85,7 @@ export function MovieDialog({ open, movie, onClose, onSave }: Props) {
           onSelect={chooseMovie}
         />
         <div className="form-row">
-          <label className="form-field" htmlFor="movie-year">Jaar
+          <label className="form-field" htmlFor="movie-year">Year
           <input id="movie-year" type="number" min="1888" max="2100" inputMode="numeric" value={year} onChange={(event) => setYear(event.target.value)} />
           </label>
           <label className="form-field" htmlFor="movie-status">Status
@@ -95,19 +95,19 @@ export function MovieDialog({ open, movie, onClose, onSave }: Props) {
               if (next === 'seen' && !watchedAt) setWatchedAt(todayInput());
               if (next === 'watchlist') { setRating(undefined); setWatchedAt(''); }
             }}>
-              <option value="watchlist">Kijklijst</option><option value="seen">Gezien</option>
+              <option value="watchlist">Watchlist</option><option value="seen">Seen</option>
             </select>
           </label>
         </div>
         {status === 'seen' && <RatingInput value={rating} onChange={setRating} />}
-        {status === 'seen' && <label className="form-field" htmlFor="movie-watched-at">Gezien op
+        {status === 'seen' && <label className="form-field" htmlFor="movie-watched-at">Watched on
           <input id="movie-watched-at" type="date" value={watchedAt} onChange={(event) => setWatchedAt(event.target.value)} />
         </label>}
-        <label className="form-field" htmlFor="movie-note">Notitie
+        <label className="form-field" htmlFor="movie-note">Note
           <textarea id="movie-note" rows={3} maxLength={240} value={note} onChange={(event) => setNote(event.target.value)} />
         </label>
         <p className="form-error" role="alert">{error}</p>
-        <button className="save-button" type="submit">{movie ? 'Bewaar wijzigingen' : 'Bewaar film'}</button>
+        <button className="save-button" type="submit">{movie ? 'Save changes' : 'Save movie'}</button>
       </form>
     </dialog>
   );

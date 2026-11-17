@@ -23,7 +23,7 @@ async function requestJson<T>(url: URL, signal: AbortSignal, networkMessage: str
   }
 
   if (!response.ok) {
-    if (response.status === 429) throw new TmdbError('Even te veel aanvragen. Probeer het zo meteen opnieuw.', 'request');
+    if (response.status === 429) throw new TmdbError('Too many requests. Please try again in a moment.', 'request');
     throw new TmdbError(requestMessage, 'request');
   }
 
@@ -38,14 +38,14 @@ export async function searchMovies(query: string, signal: AbortSignal): Promise<
   const url = new URL(`${API_ROOT}/search/movie`);
   url.searchParams.set('query', query);
   url.searchParams.set('include_adult', 'false');
-  url.searchParams.set('language', 'nl-NL');
+  url.searchParams.set('language', 'en-US');
   url.searchParams.set('page', '1');
 
   const payload = await requestJson<{ results?: TmdbMovie[] }>(
     url,
     signal,
-    'Controleer je internetverbinding en probeer opnieuw.',
-    'Filmsuggesties zijn tijdelijk niet beschikbaar.',
+    'Check your internet connection and try again.',
+    'Movie suggestions are temporarily unavailable.',
   );
   return (payload.results || []).filter((movie) => movie.id && movie.title);
 }
@@ -65,21 +65,19 @@ export async function getDiscoveryMovies(
     url.searchParams.set('sort_by', category === 'top_rated' ? 'vote_average.desc' : 'popularity.desc');
     if (category === 'top_rated') url.searchParams.set('vote_count.gte', '200');
     url.searchParams.set('include_adult', 'false');
-    url.searchParams.set('region', 'NL');
   } else if (category === 'trending') {
     url = new URL(`${API_ROOT}/trending/movie/week`);
   } else {
     url = new URL(`${API_ROOT}/movie/${category}`);
-    if (category === 'top_rated') url.searchParams.set('region', 'NL');
   }
-  url.searchParams.set('language', 'nl-NL');
+  url.searchParams.set('language', 'en-US');
   url.searchParams.set('page', String(page));
 
   const payload = await requestJson<{ results?: TmdbMovie[] }>(
     url,
     signal,
-    'Ontdekken lukt niet zonder internetverbinding.',
-    'Filmaanbevelingen zijn tijdelijk niet beschikbaar.',
+    'Discover is unavailable without an internet connection.',
+    'Movie recommendations are temporarily unavailable.',
   );
   return (payload.results || []).filter((movie) => movie.id && movie.title);
 }
@@ -105,7 +103,7 @@ export async function getRandomDiscoveryMovie(
   const base = new URL(`${API_ROOT}/discover/movie`);
   base.searchParams.set('include_adult', 'false');
   base.searchParams.set('include_video', 'false');
-  base.searchParams.set('language', 'nl-NL');
+  base.searchParams.set('language', 'en-US');
   base.searchParams.set('sort_by', 'vote_average.desc');
   base.searchParams.set('vote_count.gte', String(criteria.minRating ? 100 : 50));
   if (criteria.genreId) base.searchParams.set('with_genres', String(criteria.genreId));
@@ -120,8 +118,8 @@ export async function getRandomDiscoveryMovie(
     return await requestJson<{ results?: TmdbMovie[]; total_pages?: number }>(
       url,
       signal,
-      'Controleer je internetverbinding en probeer opnieuw.',
-      'Een willekeurige film ophalen is mislukt.',
+      'Check your internet connection and try again.',
+      'Could not fetch a random movie.',
     );
   };
 
@@ -159,35 +157,35 @@ export async function getRandomDiscoveryMovie(
 
 export async function getMovieDetails(id: number, signal: AbortSignal): Promise<TmdbMovieDetails> {
   const url = new URL(`${API_ROOT}/movie/${id}`);
-  url.searchParams.set('language', 'nl-NL');
+  url.searchParams.set('language', 'en-US');
   return await requestJson<TmdbMovieDetails>(
     url,
     signal,
-    'Filmgegevens kunnen nu niet worden opgehaald. Controleer je internetverbinding.',
-    'Filmgegevens zijn tijdelijk niet beschikbaar.',
+    'Movie details could not be fetched right now. Check your internet connection.',
+    'Movie details are temporarily unavailable.',
   );
 }
 
 export async function getMovieCast(id: number, signal: AbortSignal): Promise<TmdbCastMember[]> {
   const url = new URL(`${API_ROOT}/movie/${id}/credits`);
-  url.searchParams.set('language', 'nl-NL');
+  url.searchParams.set('language', 'en-US');
   const payload = await requestJson<{ cast?: TmdbCastMember[] }>(
     url,
     signal,
-    'De acteurs konden niet worden opgehaald. Controleer je internetverbinding.',
-    'De acteurs konden niet worden opgehaald.',
+    'Cast could not be fetched. Check your internet connection.',
+    'Cast could not be fetched.',
   );
   return (payload.cast || []).sort((a, b) => a.order - b.order);
 }
 
 export async function getActorMovieCredits(id: number, signal: AbortSignal): Promise<TmdbMovie[]> {
   const url = new URL(`${API_ROOT}/person/${id}/movie_credits`);
-  url.searchParams.set('language', 'nl-NL');
+  url.searchParams.set('language', 'en-US');
   const payload = await requestJson<{ cast?: TmdbMovie[] }>(
     url,
     signal,
-    'De films van deze acteur konden niet worden opgehaald. Controleer je internetverbinding.',
-    'De films van deze acteur konden niet worden opgehaald.',
+    'This actor’s movies could not be fetched. Check your internet connection.',
+    'This actor’s movies could not be fetched.',
   );
   return (payload.cast || []).sort((a, b) => (b.release_date || '').localeCompare(a.release_date || ''));
 }

@@ -78,19 +78,19 @@ export interface ImportResult {
 
 function movieKey(movie: Movie): string {
   if (typeof movie.tmdbId === 'number') return `tmdb:${movie.tmdbId}`;
-  return `title:${movie.title.toLocaleLowerCase('nl')}::${movie.year || ''}`;
+  return `title:${movie.title.toLocaleLowerCase()}::${movie.year || ''}`;
 }
 
 export async function importBackup(file: File, existing: Movie[], mode: ImportMode): Promise<ImportResult> {
   const text = await file.text();
   let parsed: unknown;
-  try { parsed = JSON.parse(text); } catch { throw new Error('Dit is geen geldig JSON-bestand.'); }
+  try { parsed = JSON.parse(text); } catch { throw new Error('This is not a valid JSON file.'); }
   const rawMovies = Array.isArray(parsed)
     ? parsed
     : (parsed && typeof parsed === 'object' && Array.isArray((parsed as { movies?: unknown }).movies))
       ? (parsed as { movies: unknown[] }).movies
       : null;
-  if (!rawMovies) throw new Error('Geen films gevonden in dit back-upbestand.');
+  if (!rawMovies) throw new Error('No movies found in this backup file.');
 
   const incoming: Movie[] = [];
   let invalid = 0;
@@ -98,7 +98,7 @@ export async function importBackup(file: File, existing: Movie[], mode: ImportMo
     const movie = toMovie(item);
     if (movie) incoming.push(movie); else invalid += 1;
   }
-  if (!incoming.length) throw new Error('Geen geldige films gevonden in dit back-upbestand.');
+  if (!incoming.length) throw new Error('No valid movies found in this backup file.');
 
   if (mode === 'replace') {
     return { movies: incoming, added: incoming.length, replaced: existing.length, skipped: 0, invalid };

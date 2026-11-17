@@ -616,17 +616,17 @@ html.details-open, html.details-open body { overflow: hidden; }
   cursor: pointer;
 }
 .discover-random-button:hover { background: #145a61; border-color: #145a61; }
-.randomizer-dialog { width: min(100% - 32px, 720px); max-height: min(90vh, 900px); overflow: auto; }
+.randomizer-dialog { width: min(100% - 32px, 520px); max-height: min(90vh, 900px); overflow: auto; }
 .randomizer-shell { display: flex; flex-direction: column; gap: 14px; padding: 22px; }
 .randomizer-help { margin: 0; }
 .discover-random-controls {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: 1fr;
   gap: 12px;
-  align-items: end;
+  align-items: stretch;
 }
 .discover-random-controls .select-control { width: 100%; min-width: 0; }
-.discover-random-submit { min-height: 40px; justify-self: start; }
+.discover-random-submit { width: 100%; min-height: 40px; justify-self: stretch; justify-content: center; }
 .discover-random-submit:disabled { opacity: 0.65; cursor: wait; }
 .discover-random-result { margin: 4px auto 0; width: min(100%, 240px); }
 .discover-random-result .discover-card { width: 100%; }
@@ -972,8 +972,6 @@ html.details-open, html.details-open body { overflow: hidden; }
   .discover-header-actions { width: auto; flex: 0 0 auto; margin-left: auto; justify-content: flex-end; }
   .randomizer-dialog { width: calc(100% - 20px); }
   .randomizer-shell { padding: 18px; gap: 12px; }
-  .discover-random-controls { grid-template-columns: 1fr; }
-  .discover-random-submit { width: 100%; justify-content: center; }
   .discover-random-result { width: min(100%, 220px); }
   .discover-sections { gap: 24px; margin-top: 22px; }
   .discover-section-heading { margin-bottom: 10px; }

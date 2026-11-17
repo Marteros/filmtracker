@@ -60,22 +60,22 @@ export default function App() {
     window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
 
     if (authError) {
-      setTraktNotice('Trakt-aanmelding is geannuleerd. Je kunt het inloggen opnieuw starten via Instellingen.');
+      setTraktNotice('Trakt sign-in was cancelled. You can start connecting again via Settings.');
       return;
     }
     const clientId = trakt.clientId || TRAKT_CLIENT_ID;
     if (!code || !returnedState || !clientId) {
-      setTraktNotice('De Trakt-terugkoppeling is onvolledig. Controleer de Trakt Client ID in de app en probeer opnieuw.');
+      setTraktNotice('The Trakt callback is incomplete. Check the Trakt Client ID in the app and try again.');
       return;
     }
     finishTraktAuthorization(clientId, code, returnedState)
       .then((credentials) => {
         settingsRepository.saveTrakt(credentials);
         setTrakt(credentials);
-        setTraktNotice('Trakt is gekoppeld. Je kunt nu je kijkgeschiedenis en kijklijst synchroniseren.');
+        setTraktNotice('Trakt is connected. You can now sync your watch history and watchlist.');
       })
       .catch((reason: unknown) => {
-        setTraktNotice(reason instanceof Error ? reason.message : 'Trakt koppelen is mislukt.');
+        setTraktNotice(reason instanceof Error ? reason.message : 'Could not connect Trakt.');
       });
   }, [trakt.clientId]);
 
@@ -141,15 +141,15 @@ export default function App() {
   );
 
   const visibleMovies = useMemo(() => {
-    const search = query.trim().toLocaleLowerCase('nl');
+    const search = query.trim().toLocaleLowerCase();
     return statusMovies.filter((movie) => {
-      const matchesQuery = !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase('nl').includes(search);
+      const matchesQuery = !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase().includes(search);
       const matchesYear = yearFilter === 'all' || movie.year === yearFilter;
       return matchesQuery && matchesYear;
     }).sort((a, b) => {
       if (sortOrder === 'oldest') return a.addedAt - b.addedAt;
-      if (sortOrder === 'title') return a.title.localeCompare(b.title, 'nl');
-      if (sortOrder === 'year') return (Number(b.year) || 0) - (Number(a.year) || 0) || a.title.localeCompare(b.title, 'nl');
+      if (sortOrder === 'title') return a.title.localeCompare(b.title);
+      if (sortOrder === 'year') return (Number(b.year) || 0) - (Number(a.year) || 0) || a.title.localeCompare(b.title);
       if (sortOrder === 'rating') return (b.rating || 0) - (a.rating || 0) || b.addedAt - a.addedAt;
       return b.addedAt - a.addedAt;
     });
@@ -165,7 +165,7 @@ export default function App() {
       setStorageError('');
       return true;
     } catch {
-      setStorageError('Opslaan lukt niet. Controleer de vrije opslagruimte op dit toestel.');
+      setStorageError('Could not save. Check the available storage on this device.');
       return false;
     }
   }
@@ -181,9 +181,9 @@ export default function App() {
     const duplicate = movies.find((movie) => {
       if (movie.id === editingMovie?.id) return false;
       return (draft.tmdbId && movie.tmdbId === draft.tmdbId)
-        || movie.title.toLocaleLowerCase('nl') === draft.title.toLocaleLowerCase('nl');
+        || movie.title.toLocaleLowerCase() === draft.title.toLocaleLowerCase();
     });
-    if (duplicate) return `“${duplicate.title}” staat al in je collectie. Je kunt die film bewerken.`;
+    if (duplicate) return `“${duplicate.title}” is already in your collection. You can edit that movie.`;
 
     const old = editingMovie;
     const watchedAt = draft.status === 'seen' ? (parseWatchedAt(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
@@ -204,7 +204,7 @@ export default function App() {
       genres: draft.genres ?? old?.genres,
     };
     const next = old ? movies.map((movie) => movie.id === old.id ? nextMovie : movie) : [...movies, nextMovie];
-    if (!persist(next)) return 'Opslaan lukte niet. Controleer de vrije opslagruimte op dit toestel.';
+    if (!persist(next)) return 'Could not save. Check the available storage on this device.';
     if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
     setMovieDialogOpen(false);
     setEditingMovie(undefined);
@@ -296,11 +296,11 @@ export default function App() {
 
   function ViewToggle({ className = '' }: { className?: string }) {
     return (
-      <div className={`view-toggle ${className}`.trim()} role="group" aria-label="Weergave">
-        <button type="button" className={collectionView === 'grid' ? 'active' : ''} aria-pressed={collectionView === 'grid'} aria-label="Rasterweergave" title="Rasterweergave" onClick={() => changeCollectionView('grid')}>
+      <div className={`view-toggle ${className}`.trim()} role="group" aria-label="View">
+        <button type="button" className={collectionView === 'grid' ? 'active' : ''} aria-pressed={collectionView === 'grid'} aria-label="Grid view" title="Grid view" onClick={() => changeCollectionView('grid')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>
         </button>
-        <button type="button" className={collectionView === 'list' ? 'active' : ''} aria-pressed={collectionView === 'list'} aria-label="Lijstweergave" title="Lijstweergave" onClick={() => changeCollectionView('list')}>
+        <button type="button" className={collectionView === 'list' ? 'active' : ''} aria-pressed={collectionView === 'list'} aria-label="List view" title="List view" onClick={() => changeCollectionView('list')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
         </button>
       </div>
@@ -310,7 +310,7 @@ export default function App() {
   function findSavedMovie(movie: TmdbMovie) {
     const year = movie.release_date?.slice(0, 4);
     return movies.find((saved) => saved.tmdbId === movie.id
-      || (saved.title.toLocaleLowerCase('nl') === movie.title.toLocaleLowerCase('nl') && saved.year === year));
+      || (saved.title.toLocaleLowerCase() === movie.title.toLocaleLowerCase() && saved.year === year));
   }
 
   function saveDiscoveredMovie(movie: TmdbMovie, status: 'seen' | 'watchlist' = 'watchlist'): Movie | undefined {
@@ -394,7 +394,7 @@ export default function App() {
     const movie = movies.find((item) => item.id === id);
     if (!movie) return false;
     if (!persist(movies.filter((item) => item.id !== id))) {
-      setStorageError('Opslaan lukt niet. Controleer de vrije opslagruimte op dit toestel.');
+      setStorageError('Could not save. Check the available storage on this device.');
       return false;
     }
     return true;
@@ -412,7 +412,7 @@ export default function App() {
 
   function removeMovie(id: string): boolean {
     const movie = movies.find((item) => item.id === id);
-    if (!movie || !window.confirm(`“${movie.title}” verwijderen uit je collectie?`)) return false;
+    if (!movie || !window.confirm(`Remove “${movie.title}” from your collection?`)) return false;
     return persist(movies.filter((item) => item.id !== id));
   }
 
@@ -426,7 +426,7 @@ export default function App() {
   }, []);
 
   async function connectTrakt() {
-    if (!TRAKT_CLIENT_ID) throw new Error('Trakt is nog niet geconfigureerd. Voeg een Trakt Client ID toe in de appcode.');
+    if (!TRAKT_CLIENT_ID) throw new Error('Trakt is not configured yet. Add a Trakt Client ID in the app code.');
     const next = { clientId: TRAKT_CLIENT_ID, accessToken: '', refreshToken: '', expiresAt: 0 };
     settingsRepository.saveTrakt(next);
     setTrakt(next);
@@ -445,19 +445,19 @@ export default function App() {
 
   async function importCollection(file: File, mode: ImportMode): Promise<string> {
     const result = await importBackup(file, movies, mode);
-    if (!persist(result.movies)) throw new Error('Importeren lukte niet. Controleer de vrije opslagruimte op dit toestel.');
+    if (!persist(result.movies)) throw new Error('Import failed. Check the available storage on this device.');
     if (mode === 'replace') {
-      return `${result.added} ${result.added === 1 ? 'film' : 'films'} geïmporteerd (collectie vervangen).`;
+      return `${result.added} ${result.added === 1 ? 'movie' : 'movies'} imported (collection replaced).`;
     }
-    const parts = [`${result.added} ${result.added === 1 ? 'film' : 'films'} toegevoegd`];
-    if (result.skipped) parts.push(`${result.skipped} overgeslagen`);
-    if (result.invalid) parts.push(`${result.invalid} ongeldig`);
+    const parts = [`${result.added} ${result.added === 1 ? 'movie' : 'movies'} added`];
+    if (result.skipped) parts.push(`${result.skipped} skipped`);
+    if (result.invalid) parts.push(`${result.invalid} invalid`);
     return `${parts.join(', ')}.`;
   }
 
   async function syncTraktMovies(): Promise<number> {
     const clientId = trakt.clientId || TRAKT_CLIENT_ID;
-    if (!clientId || !trakt.accessToken) throw new Error('Log eerst in met Trakt.');
+    if (!clientId || !trakt.accessToken) throw new Error('Sign in with Trakt first.');
     const effective = { ...trakt, clientId };
     let refreshed: TraktCredentials | null = null;
     const onCredentials = (updated: TraktCredentials) => {
@@ -474,7 +474,7 @@ export default function App() {
     const findMatchIndex = (entry: TraktMovieRef) => {
       const tmdbId = entry.ids?.tmdb;
       return next.findIndex((movie) => (tmdbId && movie.tmdbId === tmdbId)
-        || (movie.title.toLocaleLowerCase('nl') === entry.title.toLocaleLowerCase('nl') && movie.year === (entry.year ? String(entry.year) : undefined)));
+        || (movie.title.toLocaleLowerCase() === entry.title.toLocaleLowerCase() && movie.year === (entry.year ? String(entry.year) : undefined)));
     };
 
     const enrichFromTmdb = async (movie: Movie, tmdbId?: number): Promise<Movie> => {
@@ -492,7 +492,7 @@ export default function App() {
       }
     };
 
-    // 1) Kijkgeschiedenis: altijd als gezien importeren/bijwerken (gezien wint).
+    // 1) Watch history: always import/update as seen (seen wins).
     for (const item of watched) {
       const entry = item.movie;
       if (!entry?.title) continue;
@@ -528,7 +528,7 @@ export default function App() {
       changed += 1;
     }
 
-    // 2) Kijklijst: importeren als watchlist, maar nooit een gezien film terugzetten.
+    // 2) Watchlist: import as watchlist, but never downgrade a seen movie.
     for (const item of watchlist) {
       const entry = item.movie;
       if (!entry?.title) continue;
@@ -561,7 +561,7 @@ export default function App() {
       changed += 1;
     }
 
-    if (changed && !persist(next)) throw new Error('Synchroniseren lukte niet. Controleer de vrije opslagruimte op dit toestel.');
+    if (changed && !persist(next)) throw new Error('Sync failed. Check the available storage on this device.');
     return changed;
   }
 
@@ -569,7 +569,7 @@ export default function App() {
     <>
       <header className="desktop-appbar">
         <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
-        <button className="desktop-settings" type="button" aria-label="Instellingen" title="Instellingen" onClick={() => setSettingsOpen(true)}>
+        <button className="desktop-settings" type="button" aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </header>
@@ -579,21 +579,21 @@ export default function App() {
             className="mobile-search-inline"
             id="mobile-search"
             role="search"
-            aria-label="Zoeken"
+            aria-label="Search"
             onKeyDown={(event) => { if (event.key === 'Escape') setMobileSearchOpen(false); }}
           >
             <SearchField
               value={activeTab === 'discover' ? discoverQuery : query}
               onChange={activeTab === 'discover' ? setDiscoverQuery : setQuery}
-              label="Zoek films"
-              placeholder="Zoek op filmtitel…"
+              label="Search movies"
+              placeholder="Search by movie title…"
               autoFocus
             />
             <button
               className="mobile-search-close"
               type="button"
-              aria-label="Zoeken sluiten"
-              title="Zoeken sluiten"
+              aria-label="Close search"
+              title="Close search"
               onClick={() => setMobileSearchOpen(false)}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
@@ -601,15 +601,15 @@ export default function App() {
           </div>
         ) : (
           <>
-            <a className="mobile-brand" href="./" aria-label="Frame — filmcollectie">frame<span aria-hidden="true">.</span></a>
+            <a className="mobile-brand" href="./" aria-label="Frame — movie collection">frame<span aria-hidden="true">.</span></a>
             <div className="mobile-appbar-actions">
               <button
                 className="mobile-search-toggle"
                 type="button"
-                aria-label="Zoeken"
+                aria-label="Search"
                 aria-expanded={false}
                 aria-controls="mobile-search"
-                title="Zoeken"
+                title="Search"
                 onClick={() => { setMobileSearchOpen(true); setMobileFiltersOpen(false); }}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
@@ -625,7 +625,7 @@ export default function App() {
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
               </button>}
-              <button className="mobile-settings" type="button" aria-label="Instellingen" title="Instellingen" onClick={() => setSettingsOpen(true)}>
+              <button className="mobile-settings" type="button" aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
@@ -633,33 +633,33 @@ export default function App() {
         )}
       </header>
       <main className="app" hidden={!(activeTab === 'history' || activeTab === 'watchlist')}>
-        <section className="collection" aria-label={isWatchlist ? 'Kijklijst' : 'Gezien'}>
+        <section className="collection" aria-label={isWatchlist ? 'Watchlist' : 'Seen'}>
           <div className="mobile-collection-heading">
             <div className="mobile-collection-title">
-              <h1>{isWatchlist ? 'Kijklijst' : 'Gezien'}</h1>
-              <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'film' : 'films'}`}>{collectionCount}</span>
+              <h1>{isWatchlist ? 'Watchlist' : 'Seen'}</h1>
+              <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'movie' : 'movies'}`}>{collectionCount}</span>
             </div>
             <ViewToggle className="mobile-view-toggle" />
           </div>
           <div className="toolbar">
-            <SearchField value={query} onChange={setQuery} label="Zoek films" placeholder="Zoek op filmtitel…" />
+            <SearchField value={query} onChange={setQuery} label="Search movies" placeholder="Search by movie title…" />
             <div className="collection-controls">
               <ViewToggle />
               <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>
-                <span className="select-label-text">Jaar</span>
-                <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
-                  <option value="all">Alle jaren</option>
+                <span className="select-label-text">Year</span>
+                <select aria-label="Filter by year" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
+                  <option value="all">All years</option>
                   {years.map((year) => <option key={year} value={year}>{year}</option>)}
                 </select>
               </label>
               <label className={`select-control${sortOrder !== 'newest' ? ' active' : ''}`}>
-                <span className="select-label-text">Sorteren</span>
-                <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
-                  <option value="newest">Nieuw toegevoegd</option>
-                  <option value="oldest">Oudst toegevoegd</option>
-                  <option value="title">Titel A–Z</option>
-                  <option value="year">Jaar: nieuw naar oud</option>
-                  <option value="rating">Hoogste beoordeling</option>
+                <span className="select-label-text">Sort</span>
+                <select aria-label="Sort movies" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
+                  <option value="newest">Newest added</option>
+                  <option value="oldest">Oldest added</option>
+                  <option value="title">Title A–Z</option>
+                  <option value="year">Year: new to old</option>
+                  <option value="rating">Highest rated</option>
                 </select>
               </label>
             </div>
@@ -671,7 +671,7 @@ export default function App() {
             movies={visibleMovies}
             hasMovies={collectionCount > 0}
             searching={false}
-            emptyMessage={query && !visibleMovies.length ? 'Geen zoekresultaten' : !collectionCount ? (isWatchlist ? 'Nog geen films op je kijklijst' : 'Nog geen gezien films') : undefined}
+            emptyMessage={query && !visibleMovies.length ? 'No search results' : !collectionCount ? (isWatchlist ? 'No movies on your watchlist yet' : 'No seen movies yet') : undefined}
             onAdd={openAddDialog}
             onDiscover={() => switchTab('discover')}
             onOpenSettings={() => setSettingsOpen(true)}
@@ -713,25 +713,25 @@ export default function App() {
         <form onSubmit={(event) => { event.preventDefault(); setMobileFiltersOpen(false); }}>
           <div className="dialog-head">
             <h2 id="mobile-filters-title">Filters</h2>
-            <button type="button" className="close-button" aria-label="Filters sluiten" onClick={() => setMobileFiltersOpen(false)}>×</button>
+            <button type="button" className="close-button" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)}>×</button>
           </div>
-          <label className="form-field">Jaar
-            <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
-              <option value="all">Alle jaren</option>
+          <label className="form-field">Year
+            <select aria-label="Filter by year" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
+              <option value="all">All years</option>
               {years.map((year) => <option key={year} value={year}>{year}</option>)}
             </select>
           </label>
-          <label className="form-field">Sorteren
-            <select aria-label="Sorteer films" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
-              <option value="newest">Nieuw toegevoegd</option>
-              <option value="oldest">Oudst toegevoegd</option>
-              <option value="title">Titel A–Z</option>
-              <option value="year">Jaar: nieuw naar oud</option>
-              <option value="rating">Hoogste beoordeling</option>
+          <label className="form-field">Sort
+            <select aria-label="Sort movies" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
+              <option value="newest">Newest added</option>
+              <option value="oldest">Oldest added</option>
+              <option value="title">Title A–Z</option>
+              <option value="year">Year: new to old</option>
+              <option value="rating">Highest rated</option>
             </select>
           </label>
-          <button className="save-button" type="submit">Klaar</button>
-          <button className="remove-token" type="button" onClick={resetFilters}>Filters wissen</button>
+          <button className="save-button" type="submit">Done</button>
+          <button className="remove-token" type="button" onClick={resetFilters}>Clear filters</button>
         </form>
       </dialog>
       <div className="mobile-bottom-actions">
@@ -741,25 +741,25 @@ export default function App() {
         </button>
       </div>
       <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
-        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-label="Gezien" aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
+        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-label="Seen" aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
-          <span className="tab-label">Gezien</span>
+          <span className="tab-label">Seen</span>
         </button>
-        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-label="Kijklijst" aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
+        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-label="Watchlist" aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
-          <span className="tab-label">Kijklijst</span>
+          <span className="tab-label">Watchlist</span>
         </button>
-        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-label="Ontdekken" aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
+        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-label="Discover" aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
-          <span className="tab-label">Ontdekken</span>
+          <span className="tab-label">Discover</span>
         </button>
-        <button type="button" className={activeTab === 'insights' ? 'active' : ''} aria-label="Inzichten" aria-current={activeTab === 'insights' ? 'page' : undefined} onClick={() => switchTab('insights')}>
+        <button type="button" className={activeTab === 'insights' ? 'active' : ''} aria-label="Insights" aria-current={activeTab === 'insights' ? 'page' : undefined} onClick={() => switchTab('insights')}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5" /><path d="M8 19v-6" /><path d="M12 19V9" /><path d="M16 19V7" /><path d="M20 19v-9" /></svg>
-          <span className="tab-label">Inzichten</span>
+          <span className="tab-label">Insights</span>
         </button>
       </nav>
       <div className="bottom-bar-side">
-        <button className="mobile-add-button" type="button" aria-label="Film toevoegen" title="Film toevoegen" onClick={openAddDialog}>
+        <button className="mobile-add-button" type="button" aria-label="Add movie" title="Add movie" onClick={openAddDialog}>
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
         </button>
       </div>

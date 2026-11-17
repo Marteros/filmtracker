@@ -80,12 +80,12 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
   const backdrop = details?.backdrop_path ? tmdbPoster(details.backdrop_path, 'w780') : undefined;
   const poster = tmdbPoster(movie.posterPath, 'w500');
   const year = details?.release_date?.slice(0, 4) || movie.year;
-  const watchedLabel = movie.watchedAt ? new Date(movie.watchedAt).toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
+  const watchedLabel = movie.watchedAt ? new Date(movie.watchedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '';
   const runtimeLabel = details?.runtime
-    ? (details.runtime >= 60 ? `${Math.floor(details.runtime / 60)} uur ${details.runtime % 60} min` : `${details.runtime} min`)
+    ? (details.runtime >= 60 ? `${Math.floor(details.runtime / 60)}h ${details.runtime % 60}m` : `${details.runtime} min`)
     : '';
   const voteLabel = details?.vote_average
-    ? details.vote_average.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
+    ? details.vote_average.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
     : '';
 
   function toggleStatus(status: 'seen' | 'watchlist') {
@@ -95,12 +95,12 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
     }
     const active = movie.status === status;
     if (active) {
-      if (!window.confirm(`“${movie.title}” verwijderen uit je collectie?`)) return;
+      if (!window.confirm(`Remove “${movie.title}” from your collection?`)) return;
       if (onRemove()) onClose();
       return;
     }
     if (onSetStatus(status)) setStatusMessage('');
-    else setStatusMessage('Opslaan lukte niet. Controleer de vrije opslagruimte op dit toestel.');
+    else setStatusMessage('Could not save. Check the available storage on this device.');
   }
 
   const checkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>;
@@ -113,7 +113,7 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
       aria-labelledby="details-title"
       onCancel={(event) => { event.preventDefault(); onClose(); }}
     >
-      <button className="details-close" type="button" aria-label="Details sluiten" onClick={onClose}>
+      <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
       <div className="details-page">
@@ -121,11 +121,11 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
         <section className="details-hero">
           <div className="details-poster-wrap">
             <div className="details-poster-placeholder" aria-hidden="true"><span>{movie.title}</span></div>
-            {poster && <img className="details-poster" src={poster} alt={`Poster van ${movie.title}`} onError={(event) => event.currentTarget.remove()} />}
+            {poster && <img className="details-poster" src={poster} alt={`Poster for ${movie.title}`} onError={(event) => event.currentTarget.remove()} />}
           </div>
           <div className="details-info">
             <div className="details-copy">
-              {(discoveryPreview || year) && <p className="details-kicker">{discoveryPreview ? (year ? `Ontdekt · ${year}` : 'Ontdekt') : year}</p>}
+              {(discoveryPreview || year) && <p className="details-kicker">{discoveryPreview ? (year ? `Discovered · ${year}` : 'Discovered') : year}</p>}
               <h1 id="details-title">{movie.title}</h1>
               {details?.tagline && <p className="details-tagline">{details.tagline}</p>}
               <div className="details-facts">
@@ -135,27 +135,27 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
               </div>
             </div>
             <div className="details-controls">
-              {movie.status === 'seen' && watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
-              <div className="details-status-actions" role="group" aria-label="Lijststatus">
+              {movie.status === 'seen' && watchedLabel && <p className="details-watched">Seen on {watchedLabel}</p>}
+              <div className="details-status-actions" role="group" aria-label="List status">
                 <button
                   type="button"
                   className={`details-status-button seen${!discoveryPreview && movie.status === 'seen' ? ' active' : ''}`}
                   aria-pressed={!discoveryPreview && movie.status === 'seen'}
-                  title={!discoveryPreview && movie.status === 'seen' ? 'Verwijder uit collectie' : 'Markeer als gezien'}
+                  title={!discoveryPreview && movie.status === 'seen' ? 'Remove from collection' : 'Mark as seen'}
                   onClick={() => toggleStatus('seen')}
                 >
                   {!discoveryPreview && movie.status === 'seen' ? checkIcon : plusIcon}
-                  <span>Gezien</span>
+                  <span>Seen</span>
                 </button>
                 <button
                   type="button"
                   className={`details-status-button watchlist${!discoveryPreview && movie.status === 'watchlist' ? ' active' : ''}`}
                   aria-pressed={!discoveryPreview && movie.status === 'watchlist'}
-                  title={!discoveryPreview && movie.status === 'watchlist' ? 'Verwijder uit collectie' : 'Zet op kijklijst'}
+                  title={!discoveryPreview && movie.status === 'watchlist' ? 'Remove from collection' : 'Add to watchlist'}
                   onClick={() => toggleStatus('watchlist')}
                 >
                   {!discoveryPreview && movie.status === 'watchlist' ? checkIcon : plusIcon}
-                  <span>Kijklijst</span>
+                  <span>Watchlist</span>
                 </button>
               </div>
               {!discoveryPreview && movie.status === 'seen' && (
@@ -164,22 +164,22 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
                 </div>
               )}
               {statusMessage && <p className="details-status-error" role="alert">{statusMessage}</p>}
-              {!discoveryPreview && onEdit && <button className="details-edit-link" type="button" onClick={() => onEdit(movie)}>Bewerken</button>}
+              {!discoveryPreview && onEdit && <button className="details-edit-link" type="button" onClick={() => onEdit(movie)}>Edit</button>}
             </div>
           </div>
         </section>
         <section className="details-description">
-          <h2>Over de film</h2>
-          <p>{details?.overview || (error ? 'Beschrijving niet beschikbaar.' : movie.tmdbId ? 'Filmgegevens laden…' : 'Geen beschrijving beschikbaar voor deze film.')}</p>
+          <h2>About this movie</h2>
+          <p>{details?.overview || (error ? 'Description unavailable.' : movie.tmdbId ? 'Loading movie details…' : 'No description available for this movie.')}</p>
           {error && <p className="details-error" role="status">{error}</p>}
-          {movie.note && <div className="details-note"><h2>Mijn notitie</h2><p>{movie.note}</p></div>}
+          {movie.note && <div className="details-note"><h2>My note</h2><p>{movie.note}</p></div>}
         </section>
         <section className="cast-section" aria-labelledby="cast-heading">
-          <h2 id="cast-heading">Acteurs</h2>
+          <h2 id="cast-heading">Cast</h2>
           {castError && <p className="cast-help" role="status">{castError}</p>}
-          {castLoading && <p className="cast-help">Acteurs laden…</p>}
-          {!castLoading && !cast.length && !castError && <p className="cast-help">{movie.tmdbId ? 'Geen acteurs gevonden.' : 'Geen acteursinformatie beschikbaar.'}</p>}
-          {!!cast.length && <div className="cast-list" aria-label="Acteurs in deze film">
+          {castLoading && <p className="cast-help">Loading cast…</p>}
+          {!castLoading && !cast.length && !castError && <p className="cast-help">{movie.tmdbId ? 'No cast found.' : 'No cast information available.'}</p>}
+          {!!cast.length && <div className="cast-list" aria-label="Cast of this movie">
             {cast.slice(0, 24).map((actor) => {
               const portrait = tmdbPoster(actor.profile_path, 'w185');
               return <button key={actor.id} className={`cast-person${selectedActor?.id === actor.id ? ' selected' : ''}`} type="button" aria-pressed={selectedActor?.id === actor.id} onClick={() => setSelectedActor(actor)}>
@@ -190,18 +190,18 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
             })}
           </div>}
           {selectedActor && <div className="actor-filmography" aria-live="polite">
-            <div className="actor-filmography-heading"><h3>Films met {selectedActor.name}</h3><button type="button" onClick={() => setSelectedActor(undefined)}>Sluiten</button></div>
-            {actorMoviesLoading && <p className="cast-help">Films laden…</p>}
+            <div className="actor-filmography-heading"><h3>Movies with {selectedActor.name}</h3><button type="button" onClick={() => setSelectedActor(undefined)}>Close</button></div>
+            {actorMoviesLoading && <p className="cast-help">Loading movies…</p>}
             {actorMoviesError && <p className="cast-help" role="status">{actorMoviesError}</p>}
             {!actorMoviesLoading && !actorMoviesError && <div className="actor-movie-list">
               {actorMovies.slice(0, 20).map((film) => {
                 const filmPoster = tmdbPoster(film.poster_path, 'w185');
                 return <article className="actor-movie" key={film.id}>
-                  {filmPoster ? <img src={filmPoster} alt={`Poster van ${film.title}`} loading="lazy" decoding="async" /> : <div className="actor-movie-placeholder" aria-hidden="true">{film.title.slice(0, 1)}</div>}
+                  {filmPoster ? <img src={filmPoster} alt={`Poster for ${film.title}`} loading="lazy" decoding="async" /> : <div className="actor-movie-placeholder" aria-hidden="true">{film.title.slice(0, 1)}</div>}
                   {film.release_date && <span>{film.release_date.slice(0, 4)}</span>}
                 </article>;
               })}
-              {!actorMovies.length && <p className="cast-help">Geen andere films gevonden.</p>}
+              {!actorMovies.length && <p className="cast-help">No other movies found.</p>}
             </div>}
           </div>}
         </section>

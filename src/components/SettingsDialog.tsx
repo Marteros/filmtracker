@@ -39,7 +39,7 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
     setBusy(true); setTraktMessage('');
     try {
       await onConnectTrakt();
-    } catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Trakt kon niet worden gekoppeld.'); }
+    } catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Could not connect Trakt.'); }
     finally { setBusy(false); }
   }
 
@@ -48,22 +48,22 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
     try {
       const count = await onSyncTrakt();
       setTraktMessage(count > 0
-        ? `${count} ${count === 1 ? 'film' : 'films'} bijgewerkt vanuit Trakt (kijkgeschiedenis en kijklijst).`
-        : 'Alles is al gesynchroniseerd (kijkgeschiedenis en kijklijst).');
+        ? `${count} ${count === 1 ? 'movie' : 'movies'} updated from Trakt (watch history and watchlist).`
+        : 'Everything is already in sync (watch history and watchlist).');
     }
-    catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Synchroniseren mislukt.'); }
+    catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Sync failed.'); }
     finally { setBusy(false); }
   }
 
   function disconnectTrakt() {
-    if (!window.confirm('Trakt-verbinding verbreken op dit toestel?')) return;
+    if (!window.confirm('Disconnect Trakt on this device?')) return;
     onDisconnectTrakt();
-    setTraktMessage('Trakt-verbinding verbroken.');
+    setTraktMessage('Trakt disconnected.');
   }
 
   function exportBackup() {
     onExport();
-    setBackupMessage('Back-up gedownload.');
+    setBackupMessage('Backup downloaded.');
   }
 
   function pickImportFile() {
@@ -74,7 +74,7 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
   async function handleImportFile() {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
-    if (backupMode === 'replace' && !window.confirm('Dit vervangt je huidige collectie. Wil je doorgaan?')) {
+    if (backupMode === 'replace' && !window.confirm('This will replace your current collection. Do you want to continue?')) {
       if (fileRef.current) fileRef.current.value = '';
       return;
     }
@@ -83,7 +83,7 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
       const message = await onImport(file, backupMode);
       setBackupMessage(message);
     } catch (reason) {
-      setBackupMessage(reason instanceof Error ? reason.message : 'Importeren mislukt.');
+      setBackupMessage(reason instanceof Error ? reason.message : 'Import failed.');
     } finally {
       setBackupBusy(false);
       if (fileRef.current) fileRef.current.value = '';
@@ -93,34 +93,34 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
   return (
     <dialog ref={dialogRef} className="movie-dialog settings-dialog" aria-labelledby="settings-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClose={onClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
       <div className="settings-shell">
-        <div className="dialog-head"><h2 id="settings-title">Instellingen</h2><button type="button" className="close-button" aria-label="Venster sluiten" onClick={onClose}>×</button></div>
+        <div className="dialog-head"><h2 id="settings-title">Settings</h2><button type="button" className="close-button" aria-label="Close dialog" onClick={onClose}>×</button></div>
         <div className="settings-scroll">
           <section className="trakt-settings" aria-labelledby="trakt-settings-title">
-            <h3 id="trakt-settings-title">Trakt-synchronisatie</h3>
-            <p className="settings-help">Koppel Trakt om je kijkgeschiedenis en kijklijst te importeren. Eenrichtingssync: bekeken films worden als Gezien gemarkeerd en watchlist-films als Kijklijst; notities en beoordelingen blijven behouden.</p>
-            {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Inloggen met Trakt'}</button>}
-            {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
-            {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer met Trakt'}</button>}
-            {trakt.accessToken && <button className="remove-token trakt-disconnect" type="button" disabled={busy} onClick={disconnectTrakt}>Ontkoppelen</button>}
+            <h3 id="trakt-settings-title">Trakt sync</h3>
+            <p className="settings-help">Connect Trakt to import your watch history and watchlist. One-way sync: watched movies are marked as Seen and watchlist movies as Watchlist; notes and ratings are kept.</p>
+            {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Working…' : 'Sign in with Trakt'}</button>}
+            {trakt.accessToken && <p className="trakt-message" role="status">Trakt is connected.</p>}
+            {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Syncing…' : 'Sync with Trakt'}</button>}
+            {trakt.accessToken && <button className="remove-token trakt-disconnect" type="button" disabled={busy} onClick={disconnectTrakt}>Disconnect</button>}
             {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
           </section>
           <section className="backup-settings" aria-labelledby="backup-settings-title">
-            <h3 id="backup-settings-title">Gegevens &amp; back-up</h3>
+            <h3 id="backup-settings-title">Data &amp; backup</h3>
             <div className="backup-actions">
-              <button className="save-button" type="button" onClick={exportBackup}>Exporteer</button>
-              <button className="save-button" type="button" disabled={backupBusy} onClick={pickImportFile}>{backupBusy ? 'Importeren…' : 'Importeer'}</button>
+              <button className="save-button" type="button" onClick={exportBackup}>Export</button>
+              <button className="save-button" type="button" disabled={backupBusy} onClick={pickImportFile}>{backupBusy ? 'Importing…' : 'Import'}</button>
             </div>
-            <label className="backup-mode-control" htmlFor="backup-mode">Bij import
+            <label className="backup-mode-control" htmlFor="backup-mode">On import
               <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
-                <option value="merge">Samenvoegen</option>
-                <option value="replace">Alles vervangen</option>
+                <option value="merge">Merge</option>
+                <option value="replace">Replace all</option>
               </select>
             </label>
             <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
             {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
           </section>
         </div>
-        <div className="settings-footer"><button className="save-button" type="button" onClick={onClose}>Sluiten</button></div>
+        <div className="settings-footer"><button className="save-button" type="button" onClick={onClose}>Close</button></div>
       </div>
     </dialog>
   );

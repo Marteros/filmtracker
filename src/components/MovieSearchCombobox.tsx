@@ -39,7 +39,7 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
 
   return (
     <div className="form-field title-field">
-      <label htmlFor={`${id}-input`}>Filmtitel <span className="required">*</span></label>
+      <label htmlFor={`${id}-input`}>Movie title <span className="required">*</span></label>
       <input
         ref={inputRef}
         id={`${id}-input`}
@@ -65,9 +65,9 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
         onKeyDown={onKeyDown}
       />
       {expanded && (
-        <div id={`${id}-listbox`} className="suggestions" role="listbox" aria-label="Filmsuggesties">
-          {state === 'loading' && <div className="suggestion-status"><span className="spinner" aria-hidden="true" /> Films zoeken…</div>}
-          {state === 'empty' && <div className="suggestion-status">Geen resultaten</div>}
+        <div id={`${id}-listbox`} className="suggestions" role="listbox" aria-label="Movie suggestions">
+          {state === 'loading' && <div className="suggestion-status"><span className="spinner" aria-hidden="true" /> Searching movies…</div>}
+          {state === 'empty' && <div className="suggestion-status">No results</div>}
           {results.map((movie, index) => {
             const year = movie.release_date?.slice(0, 4);
             const poster = tmdbPoster(movie.poster_path, 'w92');
@@ -85,7 +85,7 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
                 onMouseEnter={() => setActiveIndex(index)}
               >
                 {poster ? <img className="suggestion-poster" src={poster} alt="" loading="lazy" decoding="async" /> : <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">▧</span>}
-                <span className="suggestion-info"><span className="suggestion-title">{movie.title}</span><span className="suggestion-meta">{year ? `Film · ${year}` : 'Film'}</span></span>
+                <span className="suggestion-info"><span className="suggestion-title">{movie.title}</span><span className="suggestion-meta">{year ? `Movie · ${year}` : 'Movie'}</span></span>
               </button>
             );
           })}
