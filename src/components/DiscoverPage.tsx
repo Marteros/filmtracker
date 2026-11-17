@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { getDiscoveryMovies, searchMovies, tmdbPoster, type DiscoveryCategory } from '../services/tmdb';
+import { getDiscoveryMovies, getRandomDiscoveryMovie, searchMovies, tmdbPoster, type DiscoveryCategory, type RandomMovieCriteria } from '../services/tmdb';
 import { SearchField } from './SearchField';
+import { MOVIE_GENRES } from '../constants/genres';
 import type { Movie, TmdbMovie } from '../types';
 
 interface Props {
@@ -17,6 +18,18 @@ const SECTIONS: Array<{ id: DiscoveryCategory; title: string }> = [
   { id: 'popular', title: 'Populair' },
   { id: 'top_rated', title: 'Hoog gewaardeerd' },
 ];
+
+type PeriodPreset = 'all' | 'classic' | '80s' | '90s' | '2000s' | '2010s' | 'recent';
+
+function periodToYears(preset: PeriodPreset): Pick<RandomMovieCriteria, 'fromYear' | 'toYear'> {
+  if (preset === 'classic') return { toYear: 1979 };
+  if (preset === '80s') return { fromYear: 1980, toYear: 1989 };
+  if (preset === '90s') return { fromYear: 1990, toYear: 1999 };
+  if (preset === '2000s') return { fromYear: 2000, toYear: 2009 };
+  if (preset === '2010s') return { fromYear: 2010, toYear: 2019 };
+  if (preset === 'recent') return { fromYear: 2020 };
+  return {};
+}
 
 function matchingMovie(movie: TmdbMovie, collection: Movie[]) {
   const year = movie.release_date?.slice(0, 4);
@@ -35,9 +48,24 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [retry, setRetry] = useState(0);
+  const randomDialogRef = useRef<HTMLDialogElement>(null);
+  const [randomDialogOpen, setRandomDialogOpen] = useState(false);
+  const [randomGenre, setRandomGenre] = useState<number | 'all'>('all');
+  const [randomRating, setRandomRating] = useState<number | 'all'>('all');
+  const [randomPeriod, setRandomPeriod] = useState<PeriodPreset>('all');
+  const [randomLoading, setRandomLoading] = useState(false);
+  const [randomError, setRandomError] = useState('');
+  const [randomMovie, setRandomMovie] = useState<TmdbMovie | null>(null);
   const overviewScrollRef = useRef(0);
   const restoreOverviewScrollRef = useRef<number | null>(null);
   const sectionHistoryRef = useRef(false);
+
+  useEffect(() => {
+    const dialog = randomDialogRef.current;
+    if (!dialog) return;
+    if (randomDialogOpen && !dialog.open) dialog.showModal();
+    if (!randomDialogOpen && dialog.open) dialog.close();
+  }, [randomDialogOpen]);
 
   useLayoutEffect(() => {
     if (selectedSection) {
@@ -136,6 +164,44 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     if (!onAdd(movie, status)) setActionError('Opslaan lukte niet. Controleer de beschikbare opslagruimte op dit toestel.');
   }
 
+  function openRandomDialog() {
+    setRandomError('');
+    setRandomDialogOpen(true);
+  }
+
+  function closeRandomDialog() {
+    setRandomDialogOpen(false);
+  }
+
+  function handleOpenMovie(movie: TmdbMovie) {
+    closeRandomDialog();
+    onOpen(movie);
+  }
+
+  async function pickRandomMovie() {
+    setRandomLoading(true);
+    setRandomError('');
+    try {
+      const criteria: RandomMovieCriteria = {
+        ...periodToYears(randomPeriod),
+        ...(randomGenre === 'all' ? {} : { genreId: randomGenre }),
+        ...(randomRating === 'all' ? {} : { minRating: randomRating }),
+      };
+      const movie = await getRandomDiscoveryMovie(
+        criteria,
+        (candidate) => Boolean(matchingMovie(candidate, collection)),
+        new AbortController().signal,
+      );
+      setRandomMovie(movie);
+      if (!movie) setRandomError('Geen film gevonden met deze criteria die nog niet in je collectie staat. Probeer ruimere filters.');
+    } catch (reason) {
+      setRandomMovie(null);
+      setRandomError(reason instanceof Error ? reason.message : 'Een willekeurige film ophalen is mislukt.');
+    } finally {
+      setRandomLoading(false);
+    }
+  }
+
   function renderCard(movie: TmdbMovie) {
     const saved = matchingMovie(movie, collection);
     const poster = tmdbPoster(movie.poster_path, 'w342');
@@ -159,7 +225,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         <div className="discover-poster">
           <span className="discover-poster-fallback" aria-hidden="true">{movie.title.slice(0, 1)}</span>
           {poster && <img src={poster} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
-          <button className="discover-poster-open" type="button" onClick={() => onOpen(movie)} aria-label={`Bekijk details van ${movie.title}`}>
+          <button className="discover-poster-open" type="button" onClick={() => handleOpenMovie(movie)} aria-label={`Bekijk details van ${movie.title}`}>
             <span className="discover-poster-hint">Bekijk details</span>
           </button>
           <div className="discover-poster-actions">
@@ -203,8 +269,59 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   return (
     <main className="app discover-page" hidden={hidden}>
       <header className={`discover-header${selectedSection ? ' has-section' : ''}`}><h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Ontdekken'}</h1>
-        {selectedSection && <button className="discover-back" type="button" onClick={closeSection}>← Terug</button>}
+        <div className="discover-header-actions">
+          {!selectedSection && !debouncedQuery && <button className="discover-random-button" type="button" onClick={openRandomDialog}>Verras me</button>}
+          {selectedSection && <button className="discover-back" type="button" onClick={closeSection}>← Terug</button>}
+        </div>
       </header>
+
+      <dialog
+        ref={randomDialogRef}
+        className="movie-dialog randomizer-dialog"
+        aria-labelledby="randomizer-title"
+        onCancel={(event) => { event.preventDefault(); closeRandomDialog(); }}
+        onClose={closeRandomDialog}
+        onClick={(event) => { if (event.target === randomDialogRef.current) closeRandomDialog(); }}
+      >
+        <div className="randomizer-shell">
+          <div className="dialog-head">
+            <h2 id="randomizer-title">Verras me</h2>
+            <button type="button" className="close-button" aria-label="Venster sluiten" onClick={closeRandomDialog}>×</button>
+          </div>
+          <p className="settings-help randomizer-help">Kies criteria en krijg een willekeurige filmsuggestie die nog niet in je collectie staat.</p>
+          <div className="discover-random-controls">
+            <label className="select-control" htmlFor="random-genre"><span className="select-label-text">Genre</span>
+              <select id="random-genre" value={String(randomGenre)} onChange={(event) => setRandomGenre(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
+                <option value="all">Alle genres</option>
+                {MOVIE_GENRES.map((genre) => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
+              </select>
+            </label>
+            <label className="select-control" htmlFor="random-rating"><span className="select-label-text">Beoordeling</span>
+              <select id="random-rating" value={String(randomRating)} onChange={(event) => setRandomRating(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
+                <option value="all">Elke beoordeling</option>
+                <option value="6">6+ sterren</option>
+                <option value="7">7+ sterren</option>
+                <option value="7.5">7.5+ sterren</option>
+                <option value="8">8+ sterren</option>
+              </select>
+            </label>
+            <label className="select-control" htmlFor="random-period"><span className="select-label-text">Periode</span>
+              <select id="random-period" value={randomPeriod} onChange={(event) => setRandomPeriod(event.target.value as PeriodPreset)}>
+                <option value="all">Alle jaren</option>
+                <option value="classic">Voor 1980</option>
+                <option value="80s">Jaren ’80</option>
+                <option value="90s">Jaren ’90</option>
+                <option value="2000s">2000–2009</option>
+                <option value="2010s">2010–2019</option>
+                <option value="recent">2020–nu</option>
+              </select>
+            </label>
+            <button className="discover-primary discover-random-submit" type="button" onClick={pickRandomMovie} disabled={randomLoading}>{randomLoading ? 'Zoeken…' : randomMovie ? 'Nog een' : 'Geef suggestie'}</button>
+          </div>
+          {randomError && <p className="discover-inline-error" role="alert">{randomError}</p>}
+          {randomMovie && <div className="discover-random-result" aria-live="polite">{renderCard(randomMovie)}</div>}
+        </div>
+      </dialog>
 
       <div className="toolbar discover-toolbar">
         <SearchField value={query} onChange={onQueryChange} label="Zoek films om te ontdekken" placeholder="Zoek op filmtitel…" />

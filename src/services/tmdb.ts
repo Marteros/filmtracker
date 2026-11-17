@@ -84,6 +84,61 @@ export async function getDiscoveryMovies(
   return (payload.results || []).filter((movie) => movie.id && movie.title);
 }
 
+export interface RandomMovieCriteria {
+  genreId?: number;
+  minRating?: number;
+  fromYear?: number;
+  toYear?: number;
+}
+
+function randomInt(max: number) {
+  return Math.floor(Math.random() * max);
+}
+
+export async function getRandomDiscoveryMovie(
+  criteria: RandomMovieCriteria,
+  isExcluded: (movie: TmdbMovie) => boolean,
+  signal: AbortSignal,
+): Promise<TmdbMovie | null> {
+  const base = new URL(`${API_ROOT}/discover/movie`);
+  base.searchParams.set('include_adult', 'false');
+  base.searchParams.set('include_video', 'false');
+  base.searchParams.set('language', 'nl-NL');
+  base.searchParams.set('sort_by', 'vote_average.desc');
+  base.searchParams.set('vote_count.gte', String(criteria.minRating ? 100 : 50));
+  if (criteria.genreId) base.searchParams.set('with_genres', String(criteria.genreId));
+  if (criteria.minRating) base.searchParams.set('vote_average.gte', String(criteria.minRating));
+  if (criteria.fromYear) base.searchParams.set('primary_release_date.gte', `${criteria.fromYear}-01-01`);
+  if (criteria.toYear) base.searchParams.set('primary_release_date.lte', `${criteria.toYear}-12-31`);
+
+  const fetchPage = async (page: number) => {
+    const url = new URL(base);
+    url.searchParams.set('page', String(page));
+    return await requestJson<{ results?: TmdbMovie[]; total_pages?: number }>(
+      url,
+      signal,
+      'Controleer je internetverbinding en probeer opnieuw.',
+      'Een willekeurige film ophalen is mislukt.',
+    );
+  };
+
+  const first = await fetchPage(1);
+  const totalPages = Math.max(1, Math.min(first.total_pages || 1, 500));
+  const firstCandidates = (first.results || []).filter((movie) => movie.id && movie.title && !isExcluded(movie));
+  if (totalPages === 1) {
+    if (firstCandidates.length) return firstCandidates[randomInt(firstCandidates.length)];
+    return null;
+  }
+
+  for (let attempt = 0; attempt < 6; attempt += 1) {
+    const page = attempt === 0 ? 1 : 1 + randomInt(totalPages);
+    const payload = page === 1 ? first : await fetchPage(page);
+    const candidates = (payload.results || []).filter((movie) => movie.id && movie.title && !isExcluded(movie));
+    if (candidates.length) return candidates[randomInt(candidates.length)];
+  }
+  return firstCandidates.length ? firstCandidates[randomInt(firstCandidates.length)] : null;
+}
+
 export async function getMovieDetails(id: number, signal: AbortSignal): Promise<TmdbMovieDetails> {
   const url = new URL(`${API_ROOT}/movie/${id}`);
   url.searchParams.set('language', 'nl-NL');
