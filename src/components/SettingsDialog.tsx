@@ -45,7 +45,12 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
 
   async function syncTrakt() {
     setBusy(true); setTraktMessage('');
-    try { const count = await onSyncTrakt(); setTraktMessage(`${count} ${count === 1 ? 'film' : 'films'} nieuw bijgewerkt vanuit Trakt.`); }
+    try {
+      const count = await onSyncTrakt();
+      setTraktMessage(count > 0
+        ? `${count} ${count === 1 ? 'film' : 'films'} bijgewerkt vanuit Trakt (kijkgeschiedenis en kijklijst).`
+        : 'Alles is al gesynchroniseerd (kijkgeschiedenis en kijklijst).');
+    }
     catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Synchroniseren mislukt.'); }
     finally { setBusy(false); }
   }
@@ -92,10 +97,10 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
         <div className="settings-scroll">
           <section className="trakt-settings" aria-labelledby="trakt-settings-title">
             <h3 id="trakt-settings-title">Trakt-synchronisatie</h3>
-            <p className="settings-help">Koppel Trakt om je kijkgeschiedenis te importeren. Eenrichtingssync: bekeken films worden als Gezien gemarkeerd; notities en beoordelingen blijven behouden.</p>
+            <p className="settings-help">Koppel Trakt om je kijkgeschiedenis en kijklijst te importeren. Eenrichtingssync: bekeken films worden als Gezien gemarkeerd en watchlist-films als Kijklijst; notities en beoordelingen blijven behouden.</p>
             {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Inloggen met Trakt'}</button>}
             {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
-            {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
+            {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer met Trakt'}</button>}
             {trakt.accessToken && <button className="remove-token trakt-disconnect" type="button" disabled={busy} onClick={disconnectTrakt}>Ontkoppelen</button>}
             {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
           </section>

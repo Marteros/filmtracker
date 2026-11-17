@@ -8,7 +8,7 @@ import { SearchField } from './components/SearchField';
 import { InsightsPage } from './components/InsightsPage';
 import { AgendaPage } from './components/AgendaPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
-import { beginTraktAuthorization, finishTraktAuthorization, getWatchedMovies, TRAKT_CLIENT_ID, type TraktCredentials } from './services/trakt';
+import { beginTraktAuthorization, finishTraktAuthorization, getWatchedMovies, getWatchlistMovies, TRAKT_CLIENT_ID, type TraktCredentials, type TraktMovieRef } from './services/trakt';
 import { getMovieDetails } from './services/tmdb';
 import { downloadBackup, importBackup, type ImportMode } from './services/backup';
 import type { Movie, MovieDraft, TmdbMovie } from './types';
@@ -72,7 +72,7 @@ export default function App() {
       .then((credentials) => {
         settingsRepository.saveTrakt(credentials);
         setTrakt(credentials);
-        setTraktNotice('Trakt is gekoppeld. Je kunt nu je kijkgeschiedenis synchroniseren.');
+        setTraktNotice('Trakt is gekoppeld. Je kunt nu je kijkgeschiedenis en kijklijst synchroniseren.');
       })
       .catch((reason: unknown) => {
         setTraktNotice(reason instanceof Error ? reason.message : 'Trakt koppelen is mislukt.');
@@ -459,18 +459,45 @@ export default function App() {
     const clientId = trakt.clientId || TRAKT_CLIENT_ID;
     if (!clientId || !trakt.accessToken) throw new Error('Log eerst in met Trakt.');
     const effective = { ...trakt, clientId };
-    const watched = await getWatchedMovies(effective, (updated) => {
+    let refreshed: TraktCredentials | null = null;
+    const onCredentials = (updated: TraktCredentials) => {
+      refreshed = updated;
       settingsRepository.saveTrakt(updated);
       setTrakt(updated);
-    });
+    };
+    const watched = await getWatchedMovies(effective, onCredentials);
+    const watchlist = await getWatchlistMovies(refreshed || effective, onCredentials);
+
     const next = [...movies];
     let changed = 0;
+
+    const findMatchIndex = (entry: TraktMovieRef) => {
+      const tmdbId = entry.ids?.tmdb;
+      return next.findIndex((movie) => (tmdbId && movie.tmdbId === tmdbId)
+        || (movie.title.toLocaleLowerCase('nl') === entry.title.toLocaleLowerCase('nl') && movie.year === (entry.year ? String(entry.year) : undefined)));
+    };
+
+    const enrichFromTmdb = async (movie: Movie, tmdbId?: number): Promise<Movie> => {
+      if (!tmdbId || (movie.posterPath && movie.releaseDate && movie.runtime && movie.genres?.length)) return movie;
+      try {
+        const details = await getMovieDetails(tmdbId, new AbortController().signal);
+        let updated = movie;
+        if (!updated.posterPath && details.poster_path) updated = { ...updated, posterPath: details.poster_path };
+        if (!updated.runtime && details.runtime) updated = { ...updated, runtime: details.runtime };
+        if (!updated.genres?.length && details.genres?.length) updated = { ...updated, genres: details.genres.map((g) => g.name) };
+        if (!updated.releaseDate && details.release_date) updated = { ...updated, releaseDate: details.release_date };
+        return updated;
+      } catch {
+        return movie;
+      }
+    };
+
+    // 1) Kijkgeschiedenis: altijd als gezien importeren/bijwerken (gezien wint).
     for (const item of watched) {
       const entry = item.movie;
       if (!entry?.title) continue;
       const tmdbId = entry.ids?.tmdb;
-      const matchIndex = next.findIndex((movie) => (tmdbId && movie.tmdbId === tmdbId)
-        || (movie.title.toLocaleLowerCase('nl') === entry.title.toLocaleLowerCase('nl') && movie.year === (entry.year ? String(entry.year) : undefined)));
+      const matchIndex = findMatchIndex(entry);
       const watchedAt = item.last_watched_at ? Date.parse(item.last_watched_at) || undefined : undefined;
       if (matchIndex >= 0) {
         const old = next[matchIndex];
@@ -479,45 +506,61 @@ export default function App() {
           if (!updated.watchedAt) updated = { ...updated, watchedAt };
           if (updated.addedAt !== watchedAt) updated = { ...updated, addedAt: watchedAt };
         }
-        if ((!updated.posterPath || !updated.releaseDate) && tmdbId) {
-          try {
-            const details = await getMovieDetails(tmdbId, new AbortController().signal);
-            if (!updated.posterPath && details.poster_path) updated = { ...updated, posterPath: details.poster_path };
-            if (!updated.runtime && details.runtime) updated = { ...updated, runtime: details.runtime };
-            if (!updated.genres?.length && details.genres?.length) updated = { ...updated, genres: details.genres.map((g) => g.name) };
-            if (!updated.releaseDate && details.release_date) updated = { ...updated, releaseDate: details.release_date };
-          } catch { /* Keep the local film even if TMDb is temporarily unavailable. */ }
-        }
+        updated = await enrichFromTmdb(updated, tmdbId || updated.tmdbId);
         if (updated !== old) {
           next[matchIndex] = updated;
           changed += 1;
         }
         continue;
       }
-      let posterPath: string | undefined;
-      let runtime: number | undefined;
-      let genres: string[] | undefined;
-      let releaseDate: string | undefined;
-      if (tmdbId) {
-        try {
-          const details = await getMovieDetails(tmdbId, new AbortController().signal);
-          posterPath = details.poster_path || undefined;
-          runtime = details.runtime || undefined;
-          if (details.genres?.length) genres = details.genres.map((g) => g.name);
-          releaseDate = details.release_date || undefined;
-        } catch { /* Poster lookup is optional; the movie still imports. */ }
-      }
-      next.push({
-        id: createId(), tmdbId, title: entry.title,
+      let created: Movie = {
+        id: createId(),
+        tmdbId,
+        title: entry.title,
         year: entry.year ? String(entry.year) : undefined,
-        releaseDate,
-        posterPath, runtime, genres,
-        status: 'seen', palette: Math.floor(Math.random() * 8),
+        status: 'seen',
+        palette: Math.floor(Math.random() * 8),
         addedAt: watchedAt || Date.now(),
         watchedAt: watchedAt || Date.now(),
-      });
+      };
+      created = await enrichFromTmdb(created, tmdbId);
+      next.push(created);
       changed += 1;
     }
+
+    // 2) Kijklijst: importeren als watchlist, maar nooit een gezien film terugzetten.
+    for (const item of watchlist) {
+      const entry = item.movie;
+      if (!entry?.title) continue;
+      const tmdbId = entry.ids?.tmdb;
+      const listedAt = item.listed_at ? Date.parse(item.listed_at) || undefined : undefined;
+      const matchIndex = findMatchIndex(entry);
+      if (matchIndex >= 0) {
+        const old = next[matchIndex];
+        if (old.status === 'seen') continue;
+        let updated = old;
+        if (listedAt && updated.addedAt !== listedAt) updated = { ...updated, addedAt: listedAt };
+        updated = await enrichFromTmdb(updated, tmdbId || updated.tmdbId);
+        if (updated !== old) {
+          next[matchIndex] = updated;
+          changed += 1;
+        }
+        continue;
+      }
+      let created: Movie = {
+        id: createId(),
+        tmdbId,
+        title: entry.title,
+        year: entry.year ? String(entry.year) : undefined,
+        status: 'watchlist',
+        palette: Math.floor(Math.random() * 8),
+        addedAt: listedAt || Date.now(),
+      };
+      created = await enrichFromTmdb(created, tmdbId);
+      next.push(created);
+      changed += 1;
+    }
+
     if (changed && !persist(next)) throw new Error('Synchroniseren lukte niet. Controleer de vrije opslagruimte op dit toestel.');
     return changed;
   }

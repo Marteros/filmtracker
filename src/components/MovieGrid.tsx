@@ -47,7 +47,7 @@ export function MovieGrid({ movies, hasMovies, searching, emptyMessage, view = '
               <span className="onboarding-icon">{settingsIcon}</span>
               <div className="onboarding-copy">
                 <strong>Via Trakt synchroniseren</strong>
-                <p>Open <span className="inline-icon">{settingsIcon}</span> Instellingen om je Trakt-account te koppelen en je kijkgeschiedenis te importeren als gezien.</p>
+                <p>Open <span className="inline-icon">{settingsIcon}</span> Instellingen om je Trakt-account te koppelen en je kijkgeschiedenis en kijklijst te importeren.</p>
               </div>
             </li>
           </ul>

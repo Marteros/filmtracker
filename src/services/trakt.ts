@@ -14,14 +14,22 @@ export interface TraktCredentials {
   expiresAt: number;
 }
 
+export interface TraktMovieRef {
+  title: string;
+  year?: number;
+  ids: { tmdb?: number; trakt?: number; imdb?: string };
+}
+
 export interface TraktWatchedMovie {
   plays: number;
   last_watched_at?: string;
-  movie: {
-    title: string;
-    year?: number;
-    ids: { tmdb?: number; trakt?: number; imdb?: string };
-  };
+  movie: TraktMovieRef;
+}
+
+export interface TraktWatchlistMovie {
+  rank?: number;
+  listed_at?: string;
+  movie: TraktMovieRef;
 }
 
 function randomVerifier(): string {
@@ -102,12 +110,17 @@ async function refreshTraktToken(credentials: TraktCredentials): Promise<TraktCr
   };
 }
 
-export async function getWatchedMovies(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktWatchedMovie[]> {
+async function getFreshTraktCredentials(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktCredentials> {
   let credentials = initial;
   if (credentials.expiresAt && credentials.expiresAt < Date.now() + 60_000) {
     credentials = await refreshTraktToken(credentials);
     onCredentials(credentials);
   }
+  return credentials;
+}
+
+export async function getWatchedMovies(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktWatchedMovie[]> {
+  const credentials = await getFreshTraktCredentials(initial, onCredentials);
 
   const results: TraktWatchedMovie[] = [];
   let page = 1;
@@ -122,6 +135,28 @@ export async function getWatchedMovies(initial: TraktCredentials, onCredentials:
     if (response.status === 401) throw new Error('De Trakt-toegang is verlopen. Koppel je account opnieuw.');
     if (!response.ok) throw new Error('Je Trakt-kijkgeschiedenis kon niet worden opgehaald.');
     results.push(...await response.json() as TraktWatchedMovie[]);
+    pageCount = Number(response.headers.get('x-pagination-page-count')) || 1;
+    page += 1;
+  } while (page <= pageCount);
+  return results;
+}
+
+export async function getWatchlistMovies(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktWatchlistMovie[]> {
+  const credentials = await getFreshTraktCredentials(initial, onCredentials);
+
+  const results: TraktWatchlistMovie[] = [];
+  let page = 1;
+  let pageCount = 1;
+  do {
+    const response = await fetch(`${API_ROOT}/sync/watchlist/movies?extended=full&page=${page}&limit=100`, {
+      headers: {
+        'Content-Type': 'application/json', 'trakt-api-version': '2',
+        'trakt-api-key': credentials.clientId, Authorization: `Bearer ${credentials.accessToken}`,
+      },
+    });
+    if (response.status === 401) throw new Error('De Trakt-toegang is verlopen. Koppel je account opnieuw.');
+    if (!response.ok) throw new Error('Je Trakt-kijklijst kon niet worden opgehaald.');
+    results.push(...await response.json() as TraktWatchlistMovie[]);
     pageCount = Number(response.headers.get('x-pagination-page-count')) || 1;
     page += 1;
   } while (page <= pageCount);

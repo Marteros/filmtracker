@@ -27,9 +27,9 @@ De proxy verbergt de sleutel, maar is geen authenticatielaag: de worker-URL is o
 
 Zoeksuggesties, Ontdekken, filmdetails, acteurs en posters vragen internet. De opgeslagen collectie blijft offline beschikbaar.
 
-## Trakt-kijkgeschiedenis synchroniseren
+## Trakt-synchronisatie
 
-Open **Instellingen**, vul onder **Trakt-synchronisatie** de Client ID van je Trakt API-app in en kies **Trakt-account koppelen**. Meld je aan op Trakt en geef Frame toestemming; Trakt stuurt je daarna terug naar Frame. Daarna kun je **Synchroniseer kijkgeschiedenis** gebruiken. Dit is eenrichtingsverkeer: Trakt-films worden in Frame als gezien toegevoegd of gemarkeerd; lokale beoordelingen en notities blijven behouden. Er worden geen gegevens vanuit Frame naar Trakt gestuurd.
+Open **Instellingen** en kies **Inloggen met Trakt** om je account te koppelen. Meld je aan op Trakt en geef Frame toestemming; Trakt stuurt je daarna terug naar Frame. Daarna kun je **Synchroniseer met Trakt** gebruiken. Dit is eenrichtingsverkeer: je Trakt-kijkgeschiedenis wordt als **Gezien** geïmporteerd en je Trakt-kijklijst als **Kijklijst**; lokale beoordelingen en notities blijven behouden en een film die al gezien is wordt niet teruggezet naar de kijklijst. Er worden geen gegevens vanuit Frame naar Trakt gestuurd.
 
 Frame gebruikt Trakts PKCE-aanmeldmethode: er is geen Client Secret nodig. De Client ID en persoonlijke toegangstokens worden lokaal in de browser opgeslagen. Synchroniseren vereist internet; de geïmporteerde collectie blijft daarna lokaal beschikbaar.
 
