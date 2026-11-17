@@ -124,45 +124,49 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
             <div className="details-poster-placeholder" aria-hidden="true"><span>{movie.title}</span></div>
             {poster && <img className="details-poster" src={poster} alt={`Poster van ${movie.title}`} onError={(event) => event.currentTarget.remove()} />}
           </div>
-          <div className="details-copy">
-            <p className="details-kicker">{discoveryPreview ? 'Ontdekt' : movie.status === 'seen' ? 'Gezien' : 'Op je kijklijst'}{year ? ` · ${year}` : ''}</p>
-            <h1 id="details-title">{movie.title}</h1>
-            {details?.tagline && <p className="details-tagline">{details.tagline}</p>}
-            <div className="details-facts">
-              {runtimeLabel ? <span>{runtimeLabel}</span> : null}
-              {details?.genres?.map((genre) => <span key={genre.id}>{genre.name}</span>)}
-              {voteLabel ? <span className="details-vote">★ {voteLabel} / 10</span> : null}
-            </div>
-            {movie.status === 'seen' && watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
-            <div className="details-status-actions" aria-label="Lijststatus">
-              <button
-                type="button"
-                className={`details-status-button seen${!discoveryPreview && movie.status === 'seen' ? ' active' : ''}`}
-                aria-pressed={!discoveryPreview && movie.status === 'seen'}
-                title={!discoveryPreview && movie.status === 'seen' ? 'Verwijder uit collectie' : 'Markeer als gezien'}
-                onClick={() => toggleStatus('seen')}
-              >
-                {!discoveryPreview && movie.status === 'seen' ? checkIcon : plusIcon}
-                <span>Gezien</span>
-              </button>
-              <button
-                type="button"
-                className={`details-status-button watchlist${!discoveryPreview && movie.status === 'watchlist' ? ' active' : ''}`}
-                aria-pressed={!discoveryPreview && movie.status === 'watchlist'}
-                title={!discoveryPreview && movie.status === 'watchlist' ? 'Verwijder uit collectie' : 'Zet op kijklijst'}
-                onClick={() => toggleStatus('watchlist')}
-              >
-                {!discoveryPreview && movie.status === 'watchlist' ? checkIcon : plusIcon}
-                <span>Kijklijst</span>
-              </button>
-            </div>
-            {!discoveryPreview && movie.status === 'seen' && (
-              <div className="details-inline-rating">
-                <RatingInput value={movie.rating} onChange={onSetRating} idPrefix={`details-${movie.id}`} />
+          <div className="details-info">
+            <div className="details-copy">
+              {(discoveryPreview || year) && <p className="details-kicker">{discoveryPreview ? (year ? `Ontdekt · ${year}` : 'Ontdekt') : year}</p>}
+              <h1 id="details-title">{movie.title}</h1>
+              {details?.tagline && <p className="details-tagline">{details.tagline}</p>}
+              <div className="details-facts">
+                {runtimeLabel ? <span>{runtimeLabel}</span> : null}
+                {details?.genres?.map((genre) => <span key={genre.id}>{genre.name}</span>)}
+                {voteLabel ? <span className="details-vote">★ {voteLabel} / 10</span> : null}
               </div>
-            )}
-            {statusMessage && <p className="details-status-error" role="alert">{statusMessage}</p>}
-            {!discoveryPreview && onEdit && <button className="details-edit-link" type="button" onClick={() => onEdit(movie)}>Bewerken</button>}
+            </div>
+            <div className="details-controls">
+              {movie.status === 'seen' && watchedLabel && <p className="details-watched">Gezien op {watchedLabel}</p>}
+              <div className="details-status-actions" role="group" aria-label="Lijststatus">
+                <button
+                  type="button"
+                  className={`details-status-button seen${!discoveryPreview && movie.status === 'seen' ? ' active' : ''}`}
+                  aria-pressed={!discoveryPreview && movie.status === 'seen'}
+                  title={!discoveryPreview && movie.status === 'seen' ? 'Verwijder uit collectie' : 'Markeer als gezien'}
+                  onClick={() => toggleStatus('seen')}
+                >
+                  {!discoveryPreview && movie.status === 'seen' ? checkIcon : plusIcon}
+                  <span>Gezien</span>
+                </button>
+                <button
+                  type="button"
+                  className={`details-status-button watchlist${!discoveryPreview && movie.status === 'watchlist' ? ' active' : ''}`}
+                  aria-pressed={!discoveryPreview && movie.status === 'watchlist'}
+                  title={!discoveryPreview && movie.status === 'watchlist' ? 'Verwijder uit collectie' : 'Zet op kijklijst'}
+                  onClick={() => toggleStatus('watchlist')}
+                >
+                  {!discoveryPreview && movie.status === 'watchlist' ? checkIcon : plusIcon}
+                  <span>Kijklijst</span>
+                </button>
+              </div>
+              {!discoveryPreview && movie.status === 'seen' && (
+                <div className="details-inline-rating">
+                  <RatingInput value={movie.rating} onChange={onSetRating} idPrefix={`details-${movie.id}`} />
+                </div>
+              )}
+              {statusMessage && <p className="details-status-error" role="alert">{statusMessage}</p>}
+              {!discoveryPreview && onEdit && <button className="details-edit-link" type="button" onClick={() => onEdit(movie)}>Bewerken</button>}
+            </div>
           </div>
         </section>
         <section className="details-description">
