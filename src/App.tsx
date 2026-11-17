@@ -475,7 +475,10 @@ export default function App() {
       if (matchIndex >= 0) {
         const old = next[matchIndex];
         let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
-        if (!updated.watchedAt && watchedAt) updated = { ...updated, watchedAt };
+        if (watchedAt) {
+          if (!updated.watchedAt) updated = { ...updated, watchedAt };
+          if (updated.addedAt !== watchedAt) updated = { ...updated, addedAt: watchedAt };
+        }
         if ((!updated.posterPath || !updated.releaseDate) && tmdbId) {
           try {
             const details = await getMovieDetails(tmdbId, new AbortController().signal);
