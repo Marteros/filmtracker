@@ -222,7 +222,6 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   }
 
   function handleOpenMovie(movie: TmdbMovie) {
-    closeRandomDialog();
     onOpen(movie);
   }
 
