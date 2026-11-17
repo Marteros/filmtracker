@@ -627,6 +627,7 @@ export default function App() {
             searching={false}
             emptyMessage={query && !visibleMovies.length ? 'Geen zoekresultaten' : !collectionCount ? (isWatchlist ? 'Nog geen films op je kijklijst' : 'Nog geen gezien films') : undefined}
             onAdd={openAddDialog}
+            onDiscover={() => switchTab('discover')}
             onEdit={openEditDialog}
             onDelete={removeMovie}
             onOpen={openMovie}

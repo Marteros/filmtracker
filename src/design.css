@@ -1144,3 +1144,28 @@ html.details-open, html.details-open body { overflow: hidden; }
 @media (min-width: 651px) {
   .mobile-view-toggle { display: none; }
 }
+
+/* --- Onboarding lege collectie --- */
+.empty-state.onboarding-empty { display: flex; max-width: 720px; margin: 10px auto 0; padding: 28px 24px; flex-direction: column; align-items: stretch; gap: 14px; border: 1px solid #d7dee1; border-radius: 14px; background: #fff; color: #142a3b; text-align: left; min-height: 0; place-items: initial; }
+.onboarding-empty h3 { margin: 0; color: #142a3b; font-size: 24px; font-weight: 700; letter-spacing: -.03em; }
+.onboarding-intro { margin: 0; color: var(--muted); font-size: 14px; }
+.onboarding-options { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+.onboarding-options li { display: flex; align-items: flex-start; gap: 14px; }
+.onboarding-icon { display: grid; width: 40px; height: 40px; flex: none; place-items: center; border-radius: 10px; background: #e8f1f1; color: #176b73; }
+.onboarding-icon svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.onboarding-copy { min-width: 0; }
+.onboarding-copy strong { display: block; margin: 1px 0 3px; color: #142a3b; font-size: 15px; }
+.onboarding-copy p { margin: 0; color: #4f6470; font-size: 14px; line-height: 1.45; }
+.inline-icon { display: inline-grid; width: 22px; height: 22px; margin: 0 2px; place-items: center; vertical-align: -5px; border-radius: 6px; background: #eef3f3; color: #17364a; }
+.inline-icon svg { display: block; width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.onboarding-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.onboarding-actions .discover-primary { margin: 0; }
+.onboarding-secondary { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 18px; border: 1px solid #c6d0d5; border-radius: 999px; background: #f8f9f8; color: #17364a; font-size: 14px; font-weight: 600; cursor: pointer; }
+.onboarding-secondary:hover { background: #eef3f3; }
+
+@media (max-width: 650px) {
+  .onboarding-empty { padding: 20px 16px; }
+  .onboarding-empty h3 { font-size: 21px; }
+  .onboarding-actions { flex-direction: column; }
+  .onboarding-actions .discover-primary, .onboarding-secondary { width: 100%; justify-content: center; }
+}
