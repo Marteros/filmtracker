@@ -79,7 +79,19 @@ export async function getDiscoveryMovies(
     'Discover is unavailable without an internet connection.',
     'Movie recommendations are temporarily unavailable.',
   );
-  return (payload.results || []).filter((movie) => movie.id && movie.title);
+  const movies = (payload.results || []).filter((movie) => movie.id && movie.title);
+  if (category === 'upcoming') {
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    return movies.filter((movie) => {
+      if (!movie.release_date) return false;
+      const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(movie.release_date);
+      if (!match) return false;
+      const release = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3])).getTime();
+      return release > startOfToday;
+    });
+  }
+  return movies;
 }
 
 export interface RandomMovieCriteria {

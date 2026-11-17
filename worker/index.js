@@ -5,7 +5,7 @@ const PRODUCTION_ORIGIN = 'https://marteros.github.io';
 
 const ALLOWED_PATHS = [
   /^\/3\/search\/movie$/,
-  /^\/3\/movie\/(?:popular|top_rated|\d+)$/,
+  /^\/3\/movie\/(?:popular|top_rated|upcoming|\d+)$/,
   /^\/3\/movie\/\d+\/credits$/,
   /^\/3\/trending\/movie\/(?:day|week)$/,
   /^\/3\/discover\/movie$/,
