@@ -51,6 +51,10 @@ Frame uses Trakt but is not endorsed or certified by Trakt.
 
 To enable this, set a valid `TRAKT_CLIENT_ID` in `src/services/trakt.ts` and configure matching Redirect URIs in your Trakt API app for the app URLs you use.
 
+## Privacy
+
+See [PRIVACY.md](PRIVACY.md) (and [privacy.html](public/privacy.html) for the hosted page) for details on local storage, TMDb proxy requests, and optional Trakt sync.
+
 ## Important
 
 - All data is stored locally in the browser (localStorage). Clearing browser data removes your collection unless you have a backup.

@@ -119,6 +119,7 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
             </label>
             <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
             {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
+            <p className="settings-help"><a href="./privacy.html" target="_blank" rel="noreferrer">Privacy Policy</a></p>
           </section>
         </div>
         <div className="settings-footer"><button className="save-button" type="button" onClick={onClose}>Close</button></div>
