@@ -1,8 +1,10 @@
 import type { Movie } from '../types';
 
 const MOVIES_KEY = 'frame-film-journal-v1';
-const TOKEN_KEY = 'frame-tmdb-token-v1';
 const TRAKT_SETTINGS_KEY = 'frame-trakt-settings-v1';
+const LEGACY_TOKEN_KEY = 'frame-tmdb-token-v1';
+
+try { localStorage.removeItem(LEGACY_TOKEN_KEY); } catch { /* Oude token lokaal opruimen. */ }
 
 export interface MovieRepository {
   getAll(): Movie[];
@@ -33,12 +35,6 @@ export const movieRepository: MovieRepository = {
 };
 
 export const settingsRepository = {
-  getToken: () => {
-    try { return localStorage.getItem(TOKEN_KEY) || ''; }
-    catch { return ''; }
-  },
-  saveToken: (token: string) => localStorage.setItem(TOKEN_KEY, token),
-  clearToken: () => localStorage.removeItem(TOKEN_KEY),
   getTrakt: () => {
     try {
       const saved = JSON.parse(localStorage.getItem(TRAKT_SETTINGS_KEY) || '{}') as Partial<{ clientId: string; clientSecret: string; accessToken: string; refreshToken: string; expiresAt: number }>;

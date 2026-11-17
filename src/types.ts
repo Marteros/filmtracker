@@ -28,11 +28,6 @@ export interface TmdbMovie {
   genre_ids?: number[];
 }
 
-export interface TmdbGenre {
-  id: number;
-  name: string;
-}
-
 export interface TmdbMovieDetails extends TmdbMovie {
   overview?: string;
   tagline?: string;
@@ -64,4 +59,4 @@ export interface MovieDraft {
   genres?: string[];
 }
 
-export type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error' | 'offline' | 'unconfigured';
+export type SearchState = 'idle' | 'loading' | 'success' | 'empty' | 'error' | 'offline';

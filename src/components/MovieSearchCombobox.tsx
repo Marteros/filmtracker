@@ -5,18 +5,17 @@ import type { TmdbMovie } from '../types';
 
 interface Props {
   value: string;
-  token: string;
   inputRef?: Ref<HTMLInputElement>;
   onValueChange(value: string): void;
   onSelect(movie: TmdbMovie): void;
 }
 
-export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onSelect }: Props) {
+export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }: Props) {
   const id = useId();
   const [focused, setFocused] = useState(false);
   const [typed, setTyped] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const { results, state, message } = useMovieSearch(typed ? value : '', token);
+  const { results, state, message } = useMovieSearch(typed ? value : '');
   const expanded = focused && typed && (state === 'success' || state === 'empty' || state === 'loading');
 
   function choose(movie: TmdbMovie) {

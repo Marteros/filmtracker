@@ -5,13 +5,12 @@ import { RatingInput } from './RatingInput';
 
 interface Props {
   open: boolean;
-  token: string;
   movie?: Movie;
   onClose(): void;
   onSave(draft: MovieDraft): string | null;
 }
 
-export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
+export function MovieDialog({ open, movie, onClose, onSave }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
@@ -81,7 +80,6 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
         <MovieSearchCombobox
           key={`${open ? 'open' : 'closed'}-${movie?.id ?? 'new'}`}
           value={title}
-          token={token}
           inputRef={titleRef}
           onValueChange={(value) => { setTitle(value); setSelected(undefined); setError(''); }}
           onSelect={chooseMovie}

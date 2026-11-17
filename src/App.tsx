@@ -22,7 +22,6 @@ function createId() {
 
 export default function App() {
   const [movies, setMovies] = useState<Movie[]>(() => movieRepository.getAll());
-  const [token, setToken] = useState(() => settingsRepository.getToken());
   const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
   const [activeTab, setActiveTab] = useState<AppTab>('history');
   const [discoverMounted, setDiscoverMounted] = useState(false);
@@ -395,22 +394,6 @@ export default function App() {
     setSelectedMovie((current) => (current && current.id === id ? { ...current, ...patch } : current));
   }, []);
 
-  function saveToken(value: string) {
-    try {
-      settingsRepository.saveToken(value);
-      setToken(value);
-      setSettingsOpen(false);
-    } catch {
-      setStorageError('De token kon niet lokaal worden opgeslagen.');
-    }
-  }
-
-  function removeToken() {
-    settingsRepository.clearToken();
-    setToken('');
-    setSettingsOpen(false);
-  }
-
   function saveTraktCredentials(clientId: string) {
     const next = { clientId, accessToken: '', refreshToken: '', expiresAt: 0 };
     settingsRepository.saveTrakt(next);
@@ -452,9 +435,9 @@ export default function App() {
         const old = next[matchIndex];
         let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
         if (!updated.watchedAt && watchedAt) updated = { ...updated, watchedAt };
-        if ((!updated.posterPath || !updated.releaseDate) && tmdbId && token) {
+        if ((!updated.posterPath || !updated.releaseDate) && tmdbId) {
           try {
-            const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
+            const details = await getMovieDetails(tmdbId, new AbortController().signal);
             if (!updated.posterPath && details.poster_path) updated = { ...updated, posterPath: details.poster_path };
             if (!updated.runtime && details.runtime) updated = { ...updated, runtime: details.runtime };
             if (!updated.genres?.length && details.genres?.length) updated = { ...updated, genres: details.genres.map((g) => g.name) };
@@ -471,9 +454,9 @@ export default function App() {
       let runtime: number | undefined;
       let genres: string[] | undefined;
       let releaseDate: string | undefined;
-      if (tmdbId && token) {
+      if (tmdbId) {
         try {
-          const details = await getMovieDetails(tmdbId, token, new AbortController().signal);
+          const details = await getMovieDetails(tmdbId, new AbortController().signal);
           posterPath = details.poster_path || undefined;
           runtime = details.runtime || undefined;
           if (details.genres?.length) genres = details.genres.map((g) => g.name);
@@ -606,18 +589,15 @@ export default function App() {
       </main>
       {discoverMounted && <DiscoverPage
         hidden={activeTab !== 'discover'}
-        token={token}
         collection={movies}
         query={discoverQuery}
         onQueryChange={setDiscoverQuery}
         onAdd={(movie) => Boolean(saveDiscoveredMovie(movie))}
         onOpen={openDiscoveredDetails}
-        onSettings={() => setSettingsOpen(true)}
       />}
       {activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
       {selectedMovie && <MovieDetailsPage
         movie={selectedMovie}
-        token={token}
         discoveryPreview={Boolean(selectedDiscoveryMovie)}
         onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
         onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
@@ -691,8 +671,8 @@ export default function App() {
       </div>
       </div>
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
-      <MovieDialog open={movieDialogOpen} token={token} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
-      <SettingsDialog open={settingsOpen} token={token} onClose={() => setSettingsOpen(false)} onSave={saveToken} onRemove={removeToken}
+      <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
+      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)}
         trakt={trakt} onSaveTrakt={saveTraktCredentials} onSyncTrakt={syncTraktMovies}
         onExport={exportCollection} onImport={importCollection} />
     </>

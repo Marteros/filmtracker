@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { searchMovies, TmdbError } from '../services/tmdb';
 import type { SearchState, TmdbMovie } from '../types';
 
-export function useMovieSearch(query: string, token: string) {
+export function useMovieSearch(query: string) {
   const [results, setResults] = useState<TmdbMovie[]>([]);
   const [state, setState] = useState<SearchState>('idle');
   const [message, setMessage] = useState('');
@@ -11,13 +11,8 @@ export function useMovieSearch(query: string, token: string) {
     const normalized = query.trim();
     if (normalized.length < 2) {
       setResults([]);
-      setState(token ? 'idle' : 'unconfigured');
+      setState('idle');
       setMessage('');
-      return;
-    }
-    if (!token) {
-      setResults([]); setState('unconfigured');
-      setMessage('TMDb niet ingesteld');
       return;
     }
     if (!navigator.onLine) {
@@ -30,7 +25,7 @@ export function useMovieSearch(query: string, token: string) {
     const timeout = window.setTimeout(async () => {
       setState('loading'); setMessage('Films zoeken…');
       try {
-        const movies = await searchMovies(normalized, token, controller.signal);
+        const movies = await searchMovies(normalized, controller.signal);
         setResults(movies.slice(0, 7));
         setState(movies.length ? 'success' : 'empty');
         setMessage('');
@@ -43,7 +38,7 @@ export function useMovieSearch(query: string, token: string) {
     }, 320);
 
     return () => { window.clearTimeout(timeout); controller.abort(); };
-  }, [query, token]);
+  }, [query]);
 
   return { results, state, message };
 }

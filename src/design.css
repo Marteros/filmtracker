@@ -643,8 +643,6 @@ html.details-open, html.details-open body { overflow: hidden; }
   background: #f5f7f6;
   text-align: center;
 }
-.discover-message-mark { display: grid; width: 44px; height: 44px; place-items: center; border-radius: 50%; background: #dce8e7; color: #176b73; }
-.discover-message-mark svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
 .discover-message h2 { max-width: 25ch; margin: 17px 0 0; color: #142a3b; font-size: 23px; font-weight: 700; letter-spacing: -.04em; }
 .discover-message p { max-width: 48ch; margin: 9px 0 0; color: #536772; font-size: 14px; line-height: 1.6; }
 .discover-primary, .discover-secondary {
@@ -966,6 +964,7 @@ html.details-open, html.details-open body { overflow: hidden; }
 .backup-import { margin-top: 10px; }
 .backup-import .save-button { margin-top: 6px; }
 .trakt-action { margin-top: 8px; }
+.settings-scroll > .trakt-settings:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 
 .insights-page { display: flex; flex-direction: column; gap: 18px; }
 .insights-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }

@@ -5,7 +5,6 @@ import { RatingInput } from './RatingInput';
 
 interface Props {
   movie: Movie;
-  token: string;
   onClose(): void;
   discoveryPreview?: boolean;
   onSetStatus(status: 'seen' | 'watchlist'): boolean;
@@ -15,7 +14,7 @@ interface Props {
   onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
 }
 
-export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = false, onSetStatus, onSetRating, onRemove, onEdit, onEnrich }: Props) {
+export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onSetStatus, onSetRating, onRemove, onEdit, onEnrich }: Props) {
   const [statusMessage, setStatusMessage] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [details, setDetails] = useState<TmdbMovieDetails>();
@@ -40,10 +39,10 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
   }, []);
 
   useEffect(() => {
-    if (!movie.tmdbId || !token) return;
+    if (!movie.tmdbId) return;
     const controller = new AbortController();
     setCastLoading(true); setCastError('');
-    getMovieDetails(movie.tmdbId, token, controller.signal)
+    getMovieDetails(movie.tmdbId, controller.signal)
       .then((data) => {
         setDetails(data);
         const patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>> = {};
@@ -56,27 +55,27 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
       .catch((reason: unknown) => {
         if (reason instanceof Error && reason.name !== 'AbortError') setError(reason.message);
       });
-    getMovieCast(movie.tmdbId, token, controller.signal)
+    getMovieCast(movie.tmdbId, controller.signal)
       .then(setCast)
       .catch((reason: unknown) => {
         if (reason instanceof Error && reason.name !== 'AbortError') setCastError(reason.message);
       })
       .finally(() => { if (!controller.signal.aborted) setCastLoading(false); });
     return () => controller.abort();
-  }, [movie.tmdbId, token, movie.id, movie.runtime, movie.genres, movie.posterPath, movie.releaseDate, onEnrich]);
+  }, [movie.tmdbId, movie.id, movie.runtime, movie.genres, movie.posterPath, movie.releaseDate, onEnrich]);
 
   useEffect(() => {
-    if (!selectedActor || !token) return;
+    if (!selectedActor) return;
     const controller = new AbortController();
     setActorMovies([]); setActorMoviesLoading(true); setActorMoviesError('');
-    getActorMovieCredits(selectedActor.id, token, controller.signal)
+    getActorMovieCredits(selectedActor.id, controller.signal)
       .then(setActorMovies)
       .catch((reason: unknown) => {
         if (reason instanceof Error && reason.name !== 'AbortError') setActorMoviesError(reason.message);
       })
       .finally(() => { if (!controller.signal.aborted) setActorMoviesLoading(false); });
     return () => controller.abort();
-  }, [selectedActor, token]);
+  }, [selectedActor]);
 
   const backdrop = details?.backdrop_path ? tmdbPoster(details.backdrop_path, 'w780') : undefined;
   const poster = tmdbPoster(movie.posterPath, 'w500');
@@ -171,16 +170,15 @@ export function MovieDetailsPage({ movie, token, onClose, discoveryPreview = fal
         </section>
         <section className="details-description">
           <h2>Over de film</h2>
-          <p>{details?.overview || (error ? 'Beschrijving niet beschikbaar.' : movie.tmdbId && token ? 'Filmgegevens laden…' : 'Geen beschrijving beschikbaar voor deze film.')}</p>
+          <p>{details?.overview || (error ? 'Beschrijving niet beschikbaar.' : movie.tmdbId ? 'Filmgegevens laden…' : 'Geen beschrijving beschikbaar voor deze film.')}</p>
           {error && <p className="details-error" role="status">{error}</p>}
           {movie.note && <div className="details-note"><h2>Mijn notitie</h2><p>{movie.note}</p></div>}
         </section>
         <section className="cast-section" aria-labelledby="cast-heading">
           <h2 id="cast-heading">Acteurs</h2>
-          {!token && <p className="cast-help">Stel je TMDb-token in om acteurs en hun films te bekijken.</p>}
-          {token && castError && <p className="cast-help" role="status">{castError}</p>}
-          {token && castLoading && <p className="cast-help">Acteurs laden…</p>}
-          {token && !castLoading && !cast.length && !castError && <p className="cast-help">Geen acteurs gevonden.</p>}
+          {castError && <p className="cast-help" role="status">{castError}</p>}
+          {castLoading && <p className="cast-help">Acteurs laden…</p>}
+          {!castLoading && !cast.length && !castError && <p className="cast-help">{movie.tmdbId ? 'Geen acteurs gevonden.' : 'Geen acteursinformatie beschikbaar.'}</p>}
           {!!cast.length && <div className="cast-list" aria-label="Acteurs in deze film">
             {cast.slice(0, 24).map((actor) => {
               const portrait = tmdbPoster(actor.profile_path, 'w185');
