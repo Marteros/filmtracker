@@ -15,6 +15,8 @@ import type { Movie, MovieDraft, TmdbMovie } from './types';
 
 type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
 type AppTab = 'history' | 'watchlist' | 'discover' | 'insights';
+type CollectionView = 'grid' | 'list';
+const COLLECTION_VIEW_KEY = 'frame-collection-view-v1';
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -27,6 +29,10 @@ export default function App() {
   const [discoverMounted, setDiscoverMounted] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [yearFilter, setYearFilter] = useState('all');
+  const [collectionView, setCollectionView] = useState<CollectionView>(() => {
+    try { return localStorage.getItem(COLLECTION_VIEW_KEY) === 'list' ? 'list' : 'grid'; }
+    catch { return 'grid'; }
+  });
   const [query, setQuery] = useState('');
   const [discoverQuery, setDiscoverQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
@@ -281,6 +287,24 @@ export default function App() {
     setYearFilter('all');
     setSortOrder('newest');
     window.scrollTo(0, 0);
+  }
+
+  function changeCollectionView(view: CollectionView) {
+    setCollectionView(view);
+    try { localStorage.setItem(COLLECTION_VIEW_KEY, view); } catch { /* voorkeur lokaal bewaren */ }
+  }
+
+  function ViewToggle({ className = '' }: { className?: string }) {
+    return (
+      <div className={`view-toggle ${className}`.trim()} role="group" aria-label="Weergave">
+        <button type="button" className={collectionView === 'grid' ? 'active' : ''} aria-pressed={collectionView === 'grid'} aria-label="Rasterweergave" title="Rasterweergave" onClick={() => changeCollectionView('grid')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>
+        </button>
+        <button type="button" className={collectionView === 'list' ? 'active' : ''} aria-pressed={collectionView === 'list'} aria-label="Lijstweergave" title="Lijstweergave" onClick={() => changeCollectionView('list')}>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
+        </button>
+      </div>
+    );
   }
 
   function findSavedMovie(movie: TmdbMovie) {
@@ -565,12 +589,16 @@ export default function App() {
       <main className="app" hidden={!(activeTab === 'history' || activeTab === 'watchlist')}>
         <section className="collection" aria-label={isWatchlist ? 'Kijklijst' : 'Gezien'}>
           <div className="mobile-collection-heading">
-            <h1>{isWatchlist ? 'Kijklijst' : 'Gezien'}</h1>
-            <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'film' : 'films'}`}>{collectionCount}</span>
+            <div className="mobile-collection-title">
+              <h1>{isWatchlist ? 'Kijklijst' : 'Gezien'}</h1>
+              <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'film' : 'films'}`}>{collectionCount}</span>
+            </div>
+            <ViewToggle className="mobile-view-toggle" />
           </div>
           <div className="toolbar">
             <SearchField value={query} onChange={setQuery} label="Zoek films" placeholder="Zoek op filmtitel…" />
             <div className="collection-controls">
+              <ViewToggle />
               <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>
                 <span className="select-label-text">Jaar</span>
                 <select aria-label="Filter op jaar" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
@@ -593,6 +621,7 @@ export default function App() {
           {storageError && <p className="storage-error" role="alert">{storageError}</p>}
           {traktNotice && <p className="trakt-message" role="status">{traktNotice}</p>}
           <MovieGrid
+            view={collectionView}
             movies={visibleMovies}
             hasMovies={collectionCount > 0}
             searching={false}

@@ -468,10 +468,12 @@ html.details-open, html.details-open body { overflow: hidden; }
 .mobile-appbar { display: none; }
 .mobile-collection-heading {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin: 4px 0 18px;
 }
+.mobile-collection-title { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
 .mobile-collection-heading h1 {
   margin: 0;
   color: #142a3b;
@@ -556,10 +558,12 @@ html.details-open, html.details-open body { overflow: hidden; }
   .mobile-search-inline .discover-search { width: auto; max-width: none; min-height: 46px; flex: 1; }
   .mobile-collection-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
+    gap: 10px;
     margin: 23px 0 16px;
   }
+  .mobile-collection-title { gap: 8px; }
   .mobile-collection-heading h1 {
     margin: 0;
     color: #142a3b;
@@ -1101,4 +1105,42 @@ html.details-open, html.details-open body { overflow: hidden; }
   .actor-filmography-heading button { min-height: 44px; }
   .discover-poster-actions, .discover-rail .discover-poster-actions { top: 8px; right: 8px; gap: 8px; }
   .discover-poster-action, .discover-rail .discover-poster-action { width: 44px; height: 44px; }
+}
+
+/* --- Weergave-toggle en compacte lijst --- */
+.view-toggle { display: inline-flex; align-items: center; gap: 2px; padding: 3px; border: 1px solid #c6d0d5; border-radius: 999px; background: #f8f9f8; }
+.view-toggle button { display: grid; width: 34px; height: 34px; place-items: center; padding: 0; margin: 0; border: 0; border-radius: 999px; background: transparent; color: #536772; line-height: 0; cursor: pointer; appearance: none; -webkit-appearance: none; transition: background 120ms ease, color 120ms ease; }
+.view-toggle button:hover { color: #17364a; }
+.view-toggle button.active { background: #17364a; color: #fff; }
+.view-toggle button svg { display: block; width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.view-toggle button.active svg rect { fill: currentColor; stroke: none; }
+
+.movie-list { display: flex; flex-direction: column; gap: 10px; }
+.movie-list-item { display: flex; align-items: center; gap: 12px; padding: 8px 10px 8px 8px; border: 1px solid #d7dee1; border-radius: 10px; background: #fff; }
+.movie-list-poster { position: relative; display: block; width: 46px; height: 69px; flex: none; padding: 0; margin: 0; overflow: hidden; border: 0; border-radius: 6px; background: var(--poster, #dfe5e8); cursor: pointer; appearance: none; -webkit-appearance: none; }
+.movie-list-poster img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.movie-list-poster-fallback { display: grid; width: 100%; height: 100%; place-items: center; color: #f3f5f2; font-family: Georgia, serif; font-size: 20px; }
+.movie-list-main { display: flex; flex: 1; min-width: 0; flex-direction: column; align-items: flex-start; gap: 3px; padding: 4px 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
+.movie-list-title { overflow: hidden; color: #142a3b; font-size: 15px; font-weight: 600; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; width: 100%; }
+.movie-list-year { color: var(--muted); font-weight: 500; }
+.movie-list-meta { display: flex; align-items: center; gap: 10px; min-height: 18px; color: var(--muted); font-size: 12px; }
+.movie-list-placeholder { color: #8a9aa3; }
+.movie-list-actions { display: flex; flex: none; align-items: center; gap: 6px; }
+.movie-list-actions .card-action { width: 36px; height: 36px; border-color: #d7dee1; background: #f8f9f8; color: #536772; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.movie-list-actions .card-action:hover { background: #eef3f3; color: #17364a; }
+.movie-list-actions .card-action.delete { color: #a5413a; }
+.movie-list-actions .card-action.delete:hover { color: #8f332d; background: #f8eeec; }
+
+@media (max-width: 650px) {
+  .view-toggle button { width: 36px; height: 36px; }
+  .movie-list { gap: 8px; }
+  .movie-list-item { gap: 10px; padding: 8px; }
+  .movie-list-poster { width: 42px; height: 63px; }
+  .movie-list-title { font-size: 14px; }
+  .movie-list-actions { gap: 4px; }
+  .movie-list-actions .card-action { width: 40px; height: 40px; }
+}
+
+@media (min-width: 651px) {
+  .mobile-view-toggle { display: none; }
 }
