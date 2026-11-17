@@ -52,7 +52,7 @@ export function MovieGrid({ movies, hasMovies, searching, emptyMessage, view = '
             </li>
           </ul>
           <div className="onboarding-actions">
-            {onDiscover && <button className="discover-primary" type="button" onClick={onDiscover}>Naar Ontdekken</button>}
+            {onDiscover && <button className="onboarding-secondary" type="button" onClick={onDiscover}>Naar Ontdekken</button>}
             {onAdd && <button className="onboarding-secondary" type="button" onClick={onAdd}>Film toevoegen</button>}
             {onOpenSettings && <button className="onboarding-secondary" type="button" onClick={onOpenSettings}>Instellingen</button>}
           </div>
