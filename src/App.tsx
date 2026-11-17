@@ -49,6 +49,12 @@ export default function App() {
   const filterDialogRef = useRef<HTMLDialogElement>(null);
   const detailsHistoryRef = useRef(false);
   const agendaHistoryRef = useRef(false);
+  const settingsHistoryRef = useRef(false);
+  const movieDialogHistoryRef = useRef(false);
+  const filtersHistoryRef = useRef(false);
+  const moviesRef = useRef(movies);
+
+  useEffect(() => { moviesRef.current = movies; }, [movies]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -80,7 +86,10 @@ export default function App() {
   }, [trakt.clientId]);
 
   useEffect(() => {
-    setMobileFiltersOpen(false);
+    if (mobileFiltersOpen) {
+      if (filtersHistoryRef.current && window.history.state?.frameFilters) window.history.back();
+      else { filtersHistoryRef.current = false; setMobileFiltersOpen(false); }
+    }
     setMobileSearchOpen(false);
   }, [activeTab, selectedMovie, agendaOpen]);
 
@@ -116,23 +125,96 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    function restoreDetailsFromState(state: any) {
+      const details = state?.frameDetails;
+      if (!details) return false;
+      if (details.discovery && typeof details.discovery === 'object') {
+        const movie = details.discovery as TmdbMovie;
+        setSelectedDiscoveryMovie(movie);
+        setSelectedMovie({
+          id: `discover-${movie.id}`,
+          tmdbId: movie.id,
+          title: movie.title,
+          year: movie.release_date?.slice(0, 4),
+          releaseDate: movie.release_date || undefined,
+          status: 'watchlist',
+          posterPath: movie.poster_path || undefined,
+          palette: 0,
+          addedAt: Date.now(),
+        });
+        return true;
+      }
+      if (typeof details.movieId === 'string') {
+        const saved = moviesRef.current.find((m) => m.id === details.movieId);
+        if (saved) {
+          setSelectedDiscoveryMovie(undefined);
+          setSelectedMovie(saved);
+          return true;
+        }
+      }
+      return false;
+    }
+
     function onPopState(event: PopStateEvent) {
-      if (detailsHistoryRef.current) {
-        if (event.state?.frameDetails) return;
+      const state = event.state || {};
+
+      // Details
+      if (state.frameDetails) {
+        detailsHistoryRef.current = true;
+        agendaHistoryRef.current = false;
+        if (!restoreDetailsFromState(state)) {
+          detailsHistoryRef.current = false;
+          setSelectedMovie(undefined);
+          setSelectedDiscoveryMovie(undefined);
+        }
+      } else if (detailsHistoryRef.current || selectedMovie) {
         detailsHistoryRef.current = false;
         setSelectedMovie(undefined);
         setSelectedDiscoveryMovie(undefined);
-        return;
       }
-      if (agendaHistoryRef.current) {
-        if (event.state?.frameAgenda) return;
+
+      // Agenda (only when details not active)
+      if (state.frameAgenda && !state.frameDetails) {
+        agendaHistoryRef.current = true;
+        setAgendaOpen(true);
+      } else if (agendaHistoryRef.current || agendaOpen) {
         agendaHistoryRef.current = false;
         setAgendaOpen(false);
       }
+
+      // Settings dialog
+      if (state.frameSettings) {
+        settingsHistoryRef.current = true;
+        setSettingsOpen(true);
+      } else if (settingsHistoryRef.current || settingsOpen) {
+        settingsHistoryRef.current = false;
+        setSettingsOpen(false);
+      }
+
+      // Movie dialog
+      if (state.frameMovieDialog) {
+        movieDialogHistoryRef.current = true;
+        // Cannot reliably restore which movie was being edited; close to avoid inconsistent state.
+        if (!movieDialogOpen) setMovieDialogOpen(false);
+      } else if (movieDialogHistoryRef.current || movieDialogOpen) {
+        movieDialogHistoryRef.current = false;
+        setMovieDialogOpen(false);
+        setEditingMovie(undefined);
+      }
+
+      // Mobile filters dialog
+      if (state.frameFilters) {
+        filtersHistoryRef.current = true;
+        setMobileFiltersOpen(true);
+      } else if (filtersHistoryRef.current || mobileFiltersOpen) {
+        filtersHistoryRef.current = false;
+        setMobileFiltersOpen(false);
+      }
     }
+
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
-  }, []);
+  }, [agendaOpen, movieDialogOpen, mobileFiltersOpen, selectedMovie, settingsOpen]);
 
   const isWatchlist = activeTab === 'watchlist';
   const statusMovies = useMemo(
@@ -206,8 +288,7 @@ export default function App() {
     const next = old ? movies.map((movie) => movie.id === old.id ? nextMovie : movie) : [...movies, nextMovie];
     if (!persist(next)) return 'Could not save. Check the available storage on this device.';
     if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
-    setMovieDialogOpen(false);
-    setEditingMovie(undefined);
+    closeMovieDialog();
     return null;
   }
 
@@ -215,7 +296,12 @@ export default function App() {
     setMobileFiltersOpen(false);
     setMobileSearchOpen(false);
     setEditingMovie(undefined);
+    if (movieDialogOpen) return;
     setMovieDialogOpen(true);
+    if (!movieDialogHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frameMovieDialog: true }, '');
+      movieDialogHistoryRef.current = true;
+    }
   }
 
   function switchTab(tab: AppTab) {
@@ -234,10 +320,11 @@ export default function App() {
   }
 
   function closeAgenda() {
-    if (agendaHistoryRef.current) {
+    if (agendaHistoryRef.current && window.history.state?.frameAgenda) {
       window.history.back();
       return;
     }
+    agendaHistoryRef.current = false;
     setAgendaOpen(false);
   }
 
@@ -245,16 +332,18 @@ export default function App() {
     setSelectedDiscoveryMovie(undefined);
     setSelectedMovie(movie);
     if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameDetails: true }, '');
+      window.history.pushState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
       detailsHistoryRef.current = true;
+    } else {
+      window.history.replaceState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
     }
   }
 
   function openMovieFromAgenda(movie: Movie) {
-    if (agendaHistoryRef.current) {
+    if (agendaHistoryRef.current && window.history.state?.frameAgenda) {
       agendaHistoryRef.current = false;
       setAgendaOpen(false);
-      window.history.replaceState({ ...(window.history.state || {}), frameDetails: true }, '');
+      window.history.replaceState({ ...(window.history.state || {}), frameAgenda: false, frameDetails: { movieId: movie.id } }, '');
       detailsHistoryRef.current = true;
       setSelectedDiscoveryMovie(undefined);
       setSelectedMovie(movie);
@@ -265,10 +354,11 @@ export default function App() {
   }
 
   function closeDetails() {
-    if (detailsHistoryRef.current) {
+    if (detailsHistoryRef.current && window.history.state?.frameDetails) {
       window.history.back();
       return;
     }
+    detailsHistoryRef.current = false;
     setSelectedMovie(undefined);
     setSelectedDiscoveryMovie(undefined);
   }
@@ -339,6 +429,7 @@ export default function App() {
 
   function openDiscoveredDetails(movie: TmdbMovie) {
     const saved = findSavedMovie(movie);
+    const detailsState = saved ? { movieId: saved.id } : { discovery: movie };
     if (saved) {
       setSelectedDiscoveryMovie(undefined);
       setSelectedMovie(saved);
@@ -357,8 +448,10 @@ export default function App() {
       });
     }
     if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameDetails: true }, '');
+      window.history.pushState({ ...(window.history.state || {}), frameDetails: detailsState }, '');
       detailsHistoryRef.current = true;
+    } else {
+      window.history.replaceState({ ...(window.history.state || {}), frameDetails: detailsState }, '');
     }
   }
 
@@ -402,10 +495,20 @@ export default function App() {
 
   function openEditDialog(movie: Movie) {
     setEditingMovie(movie);
+    if (movieDialogOpen) return;
     setMovieDialogOpen(true);
+    if (!movieDialogHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frameMovieDialog: true }, '');
+      movieDialogHistoryRef.current = true;
+    }
   }
 
   function closeMovieDialog() {
+    if (movieDialogHistoryRef.current && window.history.state?.frameMovieDialog) {
+      window.history.back();
+      return;
+    }
+    movieDialogHistoryRef.current = false;
     setMovieDialogOpen(false);
     setEditingMovie(undefined);
   }
@@ -569,7 +672,7 @@ export default function App() {
     <>
       <header className="desktop-appbar">
         <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
-        <button className="desktop-settings" type="button" aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)}>
+        <button className="desktop-settings" type="button" aria-label="Settings" title="Settings" onClick={() => { if (!settingsOpen) { setSettingsOpen(true); if (!settingsHistoryRef.current) { window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, ''); settingsHistoryRef.current = true; } } }}>
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
         </button>
       </header>
@@ -621,11 +724,24 @@ export default function App() {
                 aria-expanded={mobileFiltersOpen}
                 aria-controls="mobile-filters"
                 title="Filters"
-                onClick={() => { setMobileFiltersOpen((open) => !open); setMobileSearchOpen(false); }}
+                onClick={() => {
+                  setMobileSearchOpen(false);
+                  if (mobileFiltersOpen) {
+                    if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; }
+                    filtersHistoryRef.current = false;
+                    setMobileFiltersOpen(false);
+                  } else {
+                    setMobileFiltersOpen(true);
+                    if (!filtersHistoryRef.current) {
+                      window.history.pushState({ ...(window.history.state || {}), frameFilters: true }, '');
+                      filtersHistoryRef.current = true;
+                    }
+                  }
+                }}
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
               </button>}
-              <button className="mobile-settings" type="button" aria-label="Settings" title="Settings" onClick={() => setSettingsOpen(true)}>
+              <button className="mobile-settings" type="button" aria-label="Settings" title="Settings" onClick={() => { setSettingsOpen(true); if (!settingsHistoryRef.current) { window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, ''); settingsHistoryRef.current = true; } }}>
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
               </button>
             </div>
@@ -674,7 +790,7 @@ export default function App() {
             emptyMessage={query && !visibleMovies.length ? 'No search results' : !collectionCount ? (isWatchlist ? 'No movies on your watchlist yet' : 'No seen movies yet') : undefined}
             onAdd={openAddDialog}
             onDiscover={() => switchTab('discover')}
-            onOpenSettings={() => setSettingsOpen(true)}
+            onOpenSettings={() => { if (!settingsOpen) { setSettingsOpen(true); if (!settingsHistoryRef.current) { window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, ''); settingsHistoryRef.current = true; } } }}
             onEdit={openEditDialog}
             onDelete={removeMovie}
             onOpen={openMovie}
@@ -706,14 +822,14 @@ export default function App() {
         className="movie-dialog mobile-filter-dialog"
         id="mobile-filters"
         aria-labelledby="mobile-filters-title"
-        onCancel={(event) => { event.preventDefault(); setMobileFiltersOpen(false); }}
-        onClose={() => setMobileFiltersOpen(false)}
-        onClick={(event) => { if (event.target === filterDialogRef.current) setMobileFiltersOpen(false); }}
+        onCancel={(event) => { event.preventDefault(); if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}
+        onClose={() => { filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}
+        onClick={(event) => { if (event.target === filterDialogRef.current) { if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); } }}
       >
-        <form onSubmit={(event) => { event.preventDefault(); setMobileFiltersOpen(false); }}>
+        <form onSubmit={(event) => { event.preventDefault(); if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}>
           <div className="dialog-head">
             <h2 id="mobile-filters-title">Filters</h2>
-            <button type="button" className="close-button" aria-label="Close filters" onClick={() => setMobileFiltersOpen(false)}>×</button>
+            <button type="button" className="close-button" aria-label="Close filters" onClick={() => { if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}>×</button>
           </div>
           <label className="form-field">Year
             <select aria-label="Filter by year" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
@@ -766,7 +882,7 @@ export default function App() {
       </div>
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
-      <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)}
+      <SettingsDialog open={settingsOpen} onClose={() => { if (settingsHistoryRef.current && window.history.state?.frameSettings) { window.history.back(); return; } settingsHistoryRef.current = false; setSettingsOpen(false); }}
         trakt={trakt} onConnectTrakt={connectTrakt} onDisconnectTrakt={disconnectTrakt} onSyncTrakt={syncTraktMovies}
         onExport={exportCollection} onImport={importCollection} />
     </>

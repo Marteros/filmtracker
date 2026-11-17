@@ -39,6 +39,14 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
   }, []);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const onCloseEvent = () => onClose();
+    dialog.addEventListener('close', onCloseEvent);
+    return () => dialog.removeEventListener('close', onCloseEvent);
+  }, [onClose]);
+
+  useEffect(() => {
     if (!movie.tmdbId) return;
     const controller = new AbortController();
     setCastLoading(true); setCastError('');
@@ -112,6 +120,7 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
       className="details-dialog"
       aria-labelledby="details-title"
       onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onClose={() => { /* history handled by parent */ }}
     >
       <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>

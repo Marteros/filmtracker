@@ -50,7 +50,7 @@ export async function searchMovies(query: string, signal: AbortSignal): Promise<
   return (payload.results || []).filter((movie) => movie.id && movie.title);
 }
 
-export type DiscoveryCategory = 'trending' | 'popular' | 'top_rated';
+export type DiscoveryCategory = 'trending' | 'popular' | 'top_rated' | 'upcoming';
 
 export async function getDiscoveryMovies(
   category: DiscoveryCategory,

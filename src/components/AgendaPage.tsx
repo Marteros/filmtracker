@@ -32,6 +32,14 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
   }, [open]);
 
   useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const onCloseEvent = () => { if (open) onClose(); };
+    dialog.addEventListener('close', onCloseEvent);
+    return () => dialog.removeEventListener('close', onCloseEvent);
+  }, [open, onClose]);
+
+  useEffect(() => {
     if (!open) return;
     document.documentElement.classList.add('details-open');
     return () => { document.documentElement.classList.remove('details-open'); };
