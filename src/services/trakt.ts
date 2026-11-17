@@ -3,6 +3,10 @@ const AUTH_ROOT = 'https://auth.trakt.tv';
 const VERIFIER_KEY = 'frame-trakt-pkce-verifier';
 const STATE_KEY = 'frame-trakt-pkce-state';
 
+// Vul hier de Client ID van je Trakt API-app in (public client, geen secret nodig).
+// Redirect URI in Trakt moet overeenkomen met de app-URL (bijv. https://marteros.github.io/filmtracker/ en http://localhost:5173/ voor ontwikkeling).
+export const TRAKT_CLIENT_ID = 'JTLuuORctIbh-DNquvocGM-mALQ72HnGTLevZZuGkcE';
+
 export interface TraktCredentials {
   clientId: string;
   accessToken: string;

@@ -8,7 +8,7 @@ import { SearchField } from './components/SearchField';
 import { InsightsPage } from './components/InsightsPage';
 import { AgendaPage } from './components/AgendaPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
-import { finishTraktAuthorization, getWatchedMovies, type TraktCredentials } from './services/trakt';
+import { beginTraktAuthorization, finishTraktAuthorization, getWatchedMovies, TRAKT_CLIENT_ID, type TraktCredentials } from './services/trakt';
 import { getMovieDetails } from './services/tmdb';
 import { downloadBackup, importBackup, type ImportMode } from './services/backup';
 import type { Movie, MovieDraft, TmdbMovie } from './types';
@@ -54,14 +54,15 @@ export default function App() {
     window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
 
     if (authError) {
-      setTraktNotice('Trakt-aanmelding is geannuleerd. Je kunt het koppelen opnieuw starten via Instellingen.');
+      setTraktNotice('Trakt-aanmelding is geannuleerd. Je kunt het inloggen opnieuw starten via Instellingen.');
       return;
     }
-    if (!code || !returnedState || !trakt.clientId) {
-      setTraktNotice('De Trakt-terugkoppeling is onvolledig. Controleer je Client ID en probeer opnieuw.');
+    const clientId = trakt.clientId || TRAKT_CLIENT_ID;
+    if (!code || !returnedState || !clientId) {
+      setTraktNotice('De Trakt-terugkoppeling is onvolledig. Controleer de Trakt Client ID in de app en probeer opnieuw.');
       return;
     }
-    finishTraktAuthorization(trakt.clientId, code, returnedState)
+    finishTraktAuthorization(clientId, code, returnedState)
       .then((credentials) => {
         settingsRepository.saveTrakt(credentials);
         setTrakt(credentials);
@@ -394,10 +395,18 @@ export default function App() {
     setSelectedMovie((current) => (current && current.id === id ? { ...current, ...patch } : current));
   }, []);
 
-  function saveTraktCredentials(clientId: string) {
-    const next = { clientId, accessToken: '', refreshToken: '', expiresAt: 0 };
+  async function connectTrakt() {
+    if (!TRAKT_CLIENT_ID) throw new Error('Trakt is nog niet geconfigureerd. Voeg een Trakt Client ID toe in de appcode.');
+    const next = { clientId: TRAKT_CLIENT_ID, accessToken: '', refreshToken: '', expiresAt: 0 };
     settingsRepository.saveTrakt(next);
     setTrakt(next);
+    const authorizationUrl = await beginTraktAuthorization(TRAKT_CLIENT_ID);
+    window.location.assign(authorizationUrl);
+  }
+
+  function disconnectTrakt() {
+    settingsRepository.clearTrakt();
+    setTrakt({ clientId: '', accessToken: '', refreshToken: '', expiresAt: 0 });
   }
 
   function exportCollection() {
@@ -417,8 +426,10 @@ export default function App() {
   }
 
   async function syncTraktMovies(): Promise<number> {
-    if (!trakt.clientId || !trakt.accessToken) throw new Error('Koppel eerst je Trakt-account.');
-    const watched = await getWatchedMovies(trakt, (updated) => {
+    const clientId = trakt.clientId || TRAKT_CLIENT_ID;
+    if (!clientId || !trakt.accessToken) throw new Error('Log eerst in met Trakt.');
+    const effective = { ...trakt, clientId };
+    const watched = await getWatchedMovies(effective, (updated) => {
       settingsRepository.saveTrakt(updated);
       setTrakt(updated);
     });
@@ -673,7 +684,7 @@ export default function App() {
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} onClose={() => setSettingsOpen(false)}
-        trakt={trakt} onSaveTrakt={saveTraktCredentials} onSyncTrakt={syncTraktMovies}
+        trakt={trakt} onConnectTrakt={connectTrakt} onDisconnectTrakt={disconnectTrakt} onSyncTrakt={syncTraktMovies}
         onExport={exportCollection} onImport={importCollection} />
     </>
   );

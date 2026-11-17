@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { beginTraktAuthorization, type TraktCredentials } from '../services/trakt';
+import type { TraktCredentials } from '../services/trakt';
 
 type BackupMode = 'merge' | 'replace';
 
@@ -7,15 +7,15 @@ interface Props {
   open: boolean;
   onClose(): void;
   trakt: TraktCredentials;
-  onSaveTrakt(clientId: string): void;
+  onConnectTrakt(): Promise<void>;
+  onDisconnectTrakt(): void;
   onSyncTrakt(): Promise<number>;
   onExport(): void;
   onImport(file: File, mode: BackupMode): Promise<string>;
 }
 
-export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt, onExport, onImport }: Props) {
+export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconnectTrakt, onSyncTrakt, onExport, onImport }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [traktClientId, setTraktClientId] = useState(trakt.clientId);
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [backupMode, setBackupMode] = useState<BackupMode>('merge');
@@ -29,7 +29,6 @@ export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt,
     if (open && !element.open) element.showModal();
     if (!open && element.open) element.close();
     if (open) {
-      setTraktClientId(trakt.clientId);
       setTraktMessage('');
       setBackupMessage('');
       if (fileRef.current) fileRef.current.value = '';
@@ -37,13 +36,9 @@ export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt,
   }, [open, trakt]);
 
   async function startTraktLink() {
-    if (!traktClientId.trim()) { setTraktMessage('Vul eerst je Trakt Client ID in.'); return; }
     setBusy(true); setTraktMessage('');
     try {
-      const clientId = traktClientId.trim();
-      onSaveTrakt(clientId);
-      const authorizationUrl = await beginTraktAuthorization(clientId);
-      window.location.assign(authorizationUrl);
+      await onConnectTrakt();
     } catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Trakt kon niet worden gekoppeld.'); }
     finally { setBusy(false); }
   }
@@ -53,6 +48,12 @@ export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt,
     try { const count = await onSyncTrakt(); setTraktMessage(`${count} ${count === 1 ? 'film' : 'films'} nieuw bijgewerkt vanuit Trakt.`); }
     catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Synchroniseren mislukt.'); }
     finally { setBusy(false); }
+  }
+
+  function disconnectTrakt() {
+    if (!window.confirm('Trakt-verbinding verbreken op dit toestel?')) return;
+    onDisconnectTrakt();
+    setTraktMessage('Trakt-verbinding verbroken.');
   }
 
   function exportBackup() {
@@ -91,15 +92,12 @@ export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt,
         <div className="settings-scroll">
           <section className="trakt-settings" aria-labelledby="trakt-settings-title">
             <h3 id="trakt-settings-title">Trakt-synchronisatie</h3>
-            <label className="form-field" htmlFor="trakt-client-id">Client ID
-              <input id="trakt-client-id" autoComplete="off" value={traktClientId} onChange={(event) => setTraktClientId(event.target.value)} />
-            </label>
-            <p className="settings-help"><a href="https://trakt.tv/oauth/applications" target="_blank" rel="noreferrer">Trakt API-appgegevens</a></p>
-            {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Trakt-account koppelen'}</button>}
+            <p className="settings-help">Koppel Trakt om je kijkgeschiedenis te importeren. Eenrichtingssync: bekeken films worden als Gezien gemarkeerd; notities en beoordelingen blijven behouden.</p>
+            {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Bezig…' : 'Inloggen met Trakt'}</button>}
             {trakt.accessToken && <p className="trakt-message" role="status">Trakt is gekoppeld.</p>}
             {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Synchroniseren…' : 'Synchroniseer kijkgeschiedenis'}</button>}
+            {trakt.accessToken && <button className="remove-token trakt-disconnect" type="button" disabled={busy} onClick={disconnectTrakt}>Ontkoppelen</button>}
             {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
-            <p className="settings-help">Eenrichtingssync: bekeken films worden als Gezien gemarkeerd. Posters worden via TMDb opgehaald. Je notities en beoordelingen blijven behouden. Er is geen Trakt Client Secret nodig.</p>
           </section>
           <section className="backup-settings" aria-labelledby="backup-settings-title">
             <h3 id="backup-settings-title">Gegevens &amp; back-up</h3>
