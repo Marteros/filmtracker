@@ -7,7 +7,7 @@ interface Props {
   collection: Movie[];
   query: string;
   onQueryChange(value: string): void;
-  onAdd(movie: TmdbMovie): boolean;
+  onAdd(movie: TmdbMovie, status: 'seen' | 'watchlist'): boolean;
   onOpen(movie: TmdbMovie): void;
   hidden?: boolean;
 }
@@ -131,15 +131,30 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     }
   }
 
-  function handleAdd(movie: TmdbMovie) {
+  function handleAdd(movie: TmdbMovie, status: 'seen' | 'watchlist') {
     setActionError('');
-    if (!onAdd(movie)) setActionError('Opslaan lukte niet. Controleer de beschikbare opslagruimte op dit toestel.');
+    if (!onAdd(movie, status)) setActionError('Opslaan lukte niet. Controleer de beschikbare opslagruimte op dit toestel.');
   }
 
   function renderCard(movie: TmdbMovie) {
     const saved = matchingMovie(movie, collection);
     const poster = tmdbPoster(movie.poster_path, 'w342');
     const vote = movie.vote_average?.toLocaleString('nl-NL', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    const onWatchlist = saved?.status === 'watchlist';
+    const isSeen = saved?.status === 'seen';
+    const watchlistLabel = isSeen
+      ? `${movie.title} is al gezien`
+      : onWatchlist
+        ? `${movie.title} staat op je kijklijst`
+        : `Voeg ${movie.title} toe aan je kijklijst`;
+    const seenLabel = isSeen
+      ? `${movie.title} is gezien`
+      : onWatchlist
+        ? `Markeer ${movie.title} als gezien`
+        : `Markeer ${movie.title} als gezien`;
+    const checkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>;
+    const bookmarkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>;
+    const eyeIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" /><circle cx="12" cy="12" r="3" /></svg>;
     return (
       <article className="discover-card" key={movie.id}>
         <div className="discover-poster">
@@ -148,18 +163,28 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
           <button className="discover-poster-open" type="button" onClick={() => onOpen(movie)} aria-label={`Bekijk details van ${movie.title}`}>
             <span className="discover-poster-hint">Bekijk details</span>
           </button>
-          <button
-            className={`discover-poster-add${saved ? ' saved' : ''}`}
-            type="button"
-            aria-label={saved ? `${movie.title} staat ${saved.status === 'seen' ? 'bij Gezien' : 'op je kijklijst'}` : `Voeg ${movie.title} toe aan je kijklijst`}
-            title={saved ? (saved.status === 'seen' ? 'Gezien' : 'Op kijklijst') : 'Toevoegen aan kijklijst'}
-            disabled={Boolean(saved)}
-            onClick={() => handleAdd(movie)}
-          >
-            {saved
-              ? <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
-              : <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>}
-          </button>
+          <div className="discover-poster-actions">
+            <button
+              className={`discover-poster-action${onWatchlist ? ' saved' : ''}`}
+              type="button"
+              aria-label={watchlistLabel}
+              title={onWatchlist ? 'Op kijklijst' : isSeen ? 'Gezien' : 'Toevoegen aan kijklijst'}
+              disabled={Boolean(saved)}
+              onClick={() => handleAdd(movie, 'watchlist')}
+            >
+              {onWatchlist ? checkIcon : bookmarkIcon}
+            </button>
+            <button
+              className={`discover-poster-action${isSeen ? ' saved' : ''}`}
+              type="button"
+              aria-label={seenLabel}
+              title={isSeen ? 'Gezien' : 'Markeer als gezien'}
+              disabled={isSeen}
+              onClick={() => handleAdd(movie, 'seen')}
+            >
+              {isSeen ? checkIcon : eyeIcon}
+            </button>
+          </div>
         </div>
         <div className="discover-card-copy">
           <h2>{movie.title}</h2>

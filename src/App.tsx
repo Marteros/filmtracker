@@ -291,7 +291,13 @@ export default function App() {
 
   function saveDiscoveredMovie(movie: TmdbMovie, status: 'seen' | 'watchlist' = 'watchlist'): Movie | undefined {
     const existing = findSavedMovie(movie);
-    if (existing) return existing;
+    if (existing) {
+      if (status === 'seen' && existing.status === 'watchlist') {
+        const updated: Movie = { ...existing, status: 'seen', watchedAt: existing.watchedAt ?? Date.now() };
+        return persist(movies.map((movieItem) => movieItem.id === existing.id ? updated : movieItem)) ? updated : undefined;
+      }
+      return existing;
+    }
     const saved: Movie = {
       id: createId(),
       tmdbId: movie.id,
@@ -603,7 +609,7 @@ export default function App() {
         collection={movies}
         query={discoverQuery}
         onQueryChange={setDiscoverQuery}
-        onAdd={(movie) => Boolean(saveDiscoveredMovie(movie))}
+        onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
         onOpen={openDiscoveredDetails}
       />}
       {activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
