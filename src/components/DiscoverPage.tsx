@@ -15,7 +15,6 @@ interface Props {
 }
 
 const SECTIONS: Array<{ id: DiscoveryCategory; title: string }> = [
-  { id: 'upcoming', title: 'Coming soon' },
   { id: 'trending', title: 'Trending' },
   { id: 'popular', title: 'Popular' },
   { id: 'top_rated', title: 'Top rated' },
@@ -47,6 +46,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [retry, setRetry] = useState(0);
@@ -155,8 +155,13 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     } else if (selectedSection) {
       setPage(1);
+      setHasMore(true);
       getDiscoveryMovies(selectedSection, controller.signal)
-        .then((results) => { if (!controller.signal.aborted) setFeeds((current) => ({ ...current, [selectedSection]: results })); })
+        .then((results) => {
+          if (controller.signal.aborted) return;
+          setFeeds((current) => ({ ...current, [selectedSection]: results }));
+          setHasMore(results.length >= 20);
+        })
         .catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.'); })
         .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     } else {
@@ -171,14 +176,20 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   }, [debouncedQuery, retry, selectedSection]);
 
   async function loadMore() {
-    if (!selectedSection || loadingMore) return;
+    if (!selectedSection || loadingMore || !hasMore) return;
     const nextPage = page + 1;
     setLoadingMore(true);
     setError('');
     try {
       const results = await getDiscoveryMovies(selectedSection, new AbortController().signal, undefined, nextPage);
-      setFeeds((current) => ({ ...current, [selectedSection]: [...(current[selectedSection] || []), ...results] }));
+      setFeeds((current) => {
+        const existing = current[selectedSection] || [];
+        const seen = new Set(existing.map((m) => m.id));
+        const appended = results.filter((m) => !seen.has(m.id));
+        return { ...current, [selectedSection]: [...existing, ...appended] };
+      });
       setPage(nextPage);
+      setHasMore(results.length >= 20);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Could not load more movies.');
     } finally {
@@ -397,7 +408,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
           <section className="discover-all-grid" aria-label={`${SECTIONS.find((section) => section.id === selectedSection)?.title} movies`}>
             {(feeds[selectedSection] || []).map(renderCard)}
           </section>
-          {!error && <button className="discover-load-more" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading…' : 'Load more movies'}</button>}
+          {!error && hasMore && <button className="discover-load-more" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading…' : 'Load more movies'}</button>}
         </>
       ) : (
         <div className="discover-sections">
