@@ -79,6 +79,7 @@ export function MovieDialog({ open, token, movie, onClose, onSave }: Props) {
           <button type="button" className="close-button" aria-label="Venster sluiten" onClick={onClose}>×</button>
         </div>
         <MovieSearchCombobox
+          key={`${open ? 'open' : 'closed'}-${movie?.id ?? 'new'}`}
           value={title}
           token={token}
           inputRef={titleRef}

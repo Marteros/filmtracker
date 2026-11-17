@@ -14,13 +14,15 @@ interface Props {
 export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onSelect }: Props) {
   const id = useId();
   const [focused, setFocused] = useState(false);
+  const [typed, setTyped] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const { results, state, message } = useMovieSearch(value, token);
-  const expanded = focused && (state === 'success' || state === 'empty' || state === 'loading');
+  const { results, state, message } = useMovieSearch(typed ? value : '', token);
+  const expanded = focused && typed && (state === 'success' || state === 'empty' || state === 'loading');
 
   function choose(movie: TmdbMovie) {
     onSelect(movie);
     setFocused(false);
+    setTyped(false);
     setActiveIndex(-1);
   }
 
@@ -52,7 +54,7 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
         aria-controls={`${id}-listbox`}
         aria-activedescendant={activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
         value={value}
-        onChange={(event) => { onValueChange(event.target.value); setFocused(true); setActiveIndex(-1); }}
+        onChange={(event) => { onValueChange(event.target.value); setFocused(true); setTyped(true); setActiveIndex(-1); }}
         onFocus={() => setFocused(true)}
         onBlur={(event) => {
           if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) {
@@ -63,7 +65,7 @@ export function MovieSearchCombobox({ value, token, inputRef, onValueChange, onS
         }}
         onKeyDown={onKeyDown}
       />
-      {focused && (state === 'success' || state === 'empty' || state === 'loading') && (
+      {expanded && (
         <div id={`${id}-listbox`} className="suggestions" role="listbox" aria-label="Filmsuggesties">
           {state === 'loading' && <div className="suggestion-status"><span className="spinner" aria-hidden="true" /> Films zoeken…</div>}
           {state === 'empty' && <div className="suggestion-status">Geen resultaten</div>}
