@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { beginTraktAuthorization, type TraktCredentials } from '../services/trakt';
 
 type BackupMode = 'merge' | 'replace';
@@ -60,20 +60,27 @@ export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt,
     setBackupMessage('Back-up gedownload.');
   }
 
-  async function importBackup(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  function pickImportFile() {
+    setBackupMessage('');
+    fileRef.current?.click();
+  }
+
+  async function handleImportFile() {
     const file = fileRef.current?.files?.[0];
-    if (!file) { setBackupMessage('Kies eerst een back-upbestand.'); return; }
-    if (backupMode === 'replace' && !window.confirm('Dit vervangt je huidige collectie. Wil je doorgaan?')) return;
+    if (!file) return;
+    if (backupMode === 'replace' && !window.confirm('Dit vervangt je huidige collectie. Wil je doorgaan?')) {
+      if (fileRef.current) fileRef.current.value = '';
+      return;
+    }
     setBackupBusy(true); setBackupMessage('');
     try {
       const message = await onImport(file, backupMode);
       setBackupMessage(message);
-      if (fileRef.current) fileRef.current.value = '';
     } catch (reason) {
       setBackupMessage(reason instanceof Error ? reason.message : 'Importeren mislukt.');
     } finally {
       setBackupBusy(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
   }
 
@@ -96,20 +103,17 @@ export function SettingsDialog({ open, onClose, trakt, onSaveTrakt, onSyncTrakt,
           </section>
           <section className="backup-settings" aria-labelledby="backup-settings-title">
             <h3 id="backup-settings-title">Gegevens &amp; back-up</h3>
-            <p className="settings-help">Exporteer je collectie als JSON-bestand. Alleen je filmcollectie wordt geëxporteerd; Trakt-instellingen niet.</p>
-            <button className="save-button trakt-action" type="button" onClick={exportBackup}>Exporteer collectie</button>
-            <form className="backup-import" onSubmit={importBackup}>
-              <label className="form-field" htmlFor="backup-file">Back-upbestand
-                <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" />
-              </label>
-              <label className="form-field" htmlFor="backup-mode">Importeren als
-                <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
-                  <option value="merge">Samenvoegen (duplicaten overslaan)</option>
-                  <option value="replace">Alles vervangen</option>
-                </select>
-              </label>
-              <button className="save-button trakt-action" type="submit" disabled={backupBusy}>{backupBusy ? 'Importeren…' : 'Importeer collectie'}</button>
-            </form>
+            <div className="backup-actions">
+              <button className="save-button" type="button" onClick={exportBackup}>Exporteer</button>
+              <button className="save-button" type="button" disabled={backupBusy} onClick={pickImportFile}>{backupBusy ? 'Importeren…' : 'Importeer'}</button>
+            </div>
+            <label className="backup-mode-control" htmlFor="backup-mode">Bij import
+              <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
+                <option value="merge">Samenvoegen</option>
+                <option value="replace">Alles vervangen</option>
+              </select>
+            </label>
+            <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
             {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
           </section>
         </div>

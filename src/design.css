@@ -959,8 +959,11 @@ html.details-open, html.details-open body { overflow: hidden; }
 /* --- Back-up & inzichten --- */
 .backup-settings, .trakt-settings { margin-top: 18px; padding-top: 16px; border-top: 1px solid #d8e0e3; }
 .backup-settings h3, .trakt-settings h3 { margin: 0 0 10px; color: #142a3b; font-size: 15px; font-weight: 600; }
-.backup-import { margin-top: 10px; }
-.backup-import .save-button { margin-top: 6px; }
+.backup-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.backup-actions .save-button { width: 100%; margin-top: 0; }
+.backup-mode-control { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; color: #536772; font-size: 12px; }
+.backup-mode-control select { min-height: 34px; padding: 0 24px 0 10px; border: 1px solid #c6d0d5; border-radius: 999px; background: #f8f9f8; color: #17364a; font-size: 12px; cursor: pointer; }
+.backup-mode-control select:focus-visible { border-color: #176b73; box-shadow: 0 0 0 3px #176b7320; }
 .trakt-action { margin-top: 8px; }
 .settings-scroll > .trakt-settings:first-child { margin-top: 0; padding-top: 0; border-top: 0; }
 
