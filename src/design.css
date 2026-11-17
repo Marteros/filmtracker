@@ -21,10 +21,12 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scrollbar-color: 
 body { color: var(--ink); }
 button, input, textarea, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
-button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible {
-  outline: 3px solid #c98d38;
+button:focus-visible, a:focus-visible {
+  outline: 2px solid #176b73;
   outline-offset: 2px;
-  box-shadow: 0 0 0 7px #142a3b;
+}
+input:focus-visible, textarea:focus-visible, select:focus-visible {
+  outline: none;
 }
 
 .app { width: min(100% - 48px, 1120px); padding-bottom: 56px; }
@@ -51,6 +53,7 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   cursor: pointer;
 }
 .select-control.active select { border-color: #176b73; background: #e8f1f1; color: #145a61; }
+.select-control select:focus-visible { border-color: #176b73; box-shadow: 0 0 0 3px #176b7320; }
 
 @media (min-width: 651px) {
   .toolbar {
@@ -203,9 +206,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
 .form-field input:focus, .form-field select:focus, .form-field textarea:focus {
   border-color: #176b73;
   box-shadow: 0 0 0 3px #176b7320;
-}
-.form-field input:focus-visible, .form-field select:focus-visible, .form-field textarea:focus-visible {
-  box-shadow: 0 0 0 7px #142a3b;
 }
 .save-button {
   border-radius: 6px;
