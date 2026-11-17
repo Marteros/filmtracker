@@ -5,7 +5,7 @@ const STATE_KEY = 'frame-trakt-pkce-state';
 
 // Enter the Client ID of your Trakt API app here (public client, no secret required).
 // The Redirect URI in Trakt must match the app URL (e.g. https://marteros.github.io/filmtracker/ and http://localhost:5173/ for development).
-export const TRAKT_CLIENT_ID = 'JTLuuORctIbh-DNquvocGM-mALQ72HnGTLevZZuGkcE';
+export const TRAKT_CLIENT_ID = 'x8He9YCDNIBNgaLGYdyzEteTPN-qC6EpSzLn69tCtsM';
 
 export interface TraktCredentials {
   clientId: string;
