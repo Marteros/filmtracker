@@ -130,16 +130,25 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
 .card-actions { flex-direction: column; gap: 8px; opacity: 1; }
 .poster-frame .card-actions { z-index: 3; }
 .card-action {
+  display: grid;
   width: 38px;
   height: 38px;
-  border-color: #ffffff48;
+  place-items: center;
+  padding: 0;
+  margin: 0;
+  border: 1px solid #ffffff48;
+  border-radius: 50%;
   background: #122a3ab8;
   color: #f3f5f2;
   font-size: 14px;
+  line-height: 0;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
 }
-.card-action svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.card-action svg { display: block; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .card-action.delete { color: #f0b9ad; }
 .card-action:hover { background: #122a3ae8; color: #f0c878; }
 .card-action.delete:hover { color: #ffc2b5; }
@@ -213,7 +222,7 @@ input:focus-visible, textarea:focus-visible, select:focus-visible {
   font-weight: 600;
 }
 .save-button:hover { background: #24536a; }
-.close-button { width: 44px; height: 44px; flex: none; background: #e3e9e9; color: #17364a; }
+.close-button { display: grid; place-items: center; width: 44px; height: 44px; flex: none; padding: 0; margin: 0; border: 0; border-radius: 50%; background: #e3e9e9; color: #17364a; font-size: 20px; line-height: 0; cursor: pointer; appearance: none; -webkit-appearance: none; }
 .suggestions { border-color: #c5d0d5; border-radius: 7px; }
 .suggestion-item:hover, .suggestion-item.highlighted, .suggestion-item:focus-visible { background: #eaf0ef; }
 .suggestion-title { color: #142a3b; }
@@ -263,17 +272,21 @@ html.details-open, html.details-open body { overflow: hidden; }
   height: 44px;
   place-items: center;
   padding: 0;
+  margin: 0;
   border: 1px solid #ffffff59;
   border-radius: 50%;
   background: #f5f6f2e6;
   color: #122a3a;
+  line-height: 0;
   box-shadow: 0 6px 20px #07172266;
   backdrop-filter: blur(12px);
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   -webkit-tap-highlight-color: transparent;
 }
 .details-close:hover { background: #fff; }
-.details-close svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+.details-close svg { display: block; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
 .details-page {
   position: relative;
   isolation: isolate;
@@ -500,13 +513,18 @@ html.details-open, html.details-open body { overflow: hidden; }
     width: 44px;
     height: 44px;
     place-items: center;
+    padding: 0;
+    margin: 0;
     border: 1px solid #cbd4d9;
     border-radius: 50%;
     background: #f8f9f8;
     color: #17364a;
+    line-height: 0;
+    appearance: none;
+    -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .mobile-settings svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-settings svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mobile-appbar-actions { display: flex; align-items: center; gap: 8px; }
   .mobile-search-toggle,
   .mobile-search-close {
@@ -514,15 +532,20 @@ html.details-open, html.details-open body { overflow: hidden; }
     width: 44px;
     height: 44px;
     place-items: center;
+    padding: 0;
+    margin: 0;
     border: 1px solid #cbd4d9;
     border-radius: 50%;
     background: #f8f9f8;
     color: #17364a;
+    line-height: 0;
     cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent;
   }
   .mobile-search-toggle svg,
-  .mobile-search-close svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-search-close svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mobile-search-inline {
     display: flex;
     width: 100%;
@@ -591,7 +614,7 @@ html.details-open, html.details-open body { overflow: hidden; }
 .discover-search input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #142a3b; font-size: 14px; }
 .discover-search input:focus-visible { outline: none; box-shadow: none; }
 .discover-search input::placeholder { color: var(--muted); opacity: 1; }
-.discover-search > button { width: 34px; height: 34px; flex: none; border: 0; border-radius: 50%; background: transparent; color: #536772; font-size: 21px; cursor: pointer; }
+.discover-search > button { display: grid; width: 34px; height: 34px; flex: none; place-items: center; padding: 0; margin: 0; border: 0; border-radius: 50%; background: transparent; color: #536772; font-size: 21px; line-height: 1; cursor: pointer; appearance: none; -webkit-appearance: none; }
 .discover-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: start; gap: 28px 18px; }
 .discover-card { min-width: 0; }
 .discover-all-grid .discover-card { content-visibility: auto; contain-intrinsic-size: auto 340px; }
@@ -713,13 +736,18 @@ html.details-open, html.details-open body { overflow: hidden; }
   width: 42px;
   height: 42px;
   place-items: center;
+  padding: 0;
+  margin: 0;
   border: 1px solid #cbd4d9;
   border-radius: 50%;
   background: #f8f9f8;
   color: #17364a;
+  line-height: 0;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
 }
-.desktop-settings svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.desktop-settings svg { display: block; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .app { margin-right: auto; margin-left: auto; }
 .discover-page { margin: 0 auto; }
 .mobile-filter-button { display: none; }
@@ -777,7 +805,7 @@ html.details-open, html.details-open body { overflow: hidden; }
   font-weight: 600;
   cursor: pointer;
 }
-.mobile-bottom-tabs button svg { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.mobile-bottom-tabs button svg { display: block; width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .mobile-bottom-tabs button:hover { color: #142a3b; }
 .mobile-bottom-tabs button.active { background: #dce8e7; color: #145a61; }
 .mobile-bottom-tabs .tab-label { white-space: nowrap; }
@@ -787,15 +815,20 @@ html.details-open, html.details-open body { overflow: hidden; }
   height: 52px;
   flex: none;
   place-items: center;
+  padding: 0;
+  margin: 0;
   border: 2px solid #f8f9f8;
   border-radius: 50%;
   background: #17364a;
   color: #fff;
+  line-height: 0;
   box-shadow: 0 8px 28px #142a3b30;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   pointer-events: auto;
 }
-.mobile-add-button svg { width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.mobile-add-button svg { display: block; width: 23px; height: 23px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
 .app, .discover-page, .insights-page { padding-bottom: calc(120px + env(safe-area-inset-bottom)); }
 
 @media (max-width: 650px) {
@@ -810,14 +843,19 @@ html.details-open, html.details-open body { overflow: hidden; }
     height: 44px;
     flex: none;
     place-items: center;
+    padding: 0;
+    margin: 0;
     border: 1px solid #cbd4d9;
     border-radius: 50%;
     background: #f8f9f8;
     color: #17364a;
+    line-height: 0;
     cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
     -webkit-tap-highlight-color: transparent;
   }
-  .mobile-filter-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .mobile-filter-button svg { display: block; width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
   .mobile-filter-button.has-active { border-color: #176b73; background: #dce8e7; color: #145a61; }
   .collection-controls { display: none; }
   .toolbar { display: none; }
@@ -930,17 +968,22 @@ html.details-open, html.details-open body { overflow: hidden; }
   height: 38px;
   place-items: center;
   padding: 0;
+  margin: 0;
   border: 1px solid #ffffffa8;
   border-radius: 50%;
   background: #102b3be8;
   color: #fff;
+  line-height: 0;
   box-shadow: 0 2px 8px #0004;
   cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
   transition: background 140ms ease, transform 140ms ease;
 }
 .discover-poster-action:hover:not(:disabled) { background: #176b73; transform: scale(1.06); }
-.discover-poster-action:disabled { border-color: #d7e6e2; background: #d7e6e2ed; color: #145a61; cursor: default; }
-.discover-poster-action svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.discover-poster-action:disabled { border-color: #ffffff66; background: #102b3ba8; color: #ffffff99; cursor: default; }
+.discover-poster-action.saved { border-color: #d7e6e2; background: #d7e6e2ed; color: #145a61; }
+.discover-poster-action svg { display: block; width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .discover-card-copy h2 {
   min-height: 2.65em;
   font-size: 13px;
