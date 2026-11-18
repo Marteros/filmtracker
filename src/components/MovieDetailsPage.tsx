@@ -34,7 +34,6 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
     document.documentElement.classList.add('details-open');
     return () => {
       document.documentElement.classList.remove('details-open');
-      if (dialog.open) dialog.close();
     };
   }, []);
 

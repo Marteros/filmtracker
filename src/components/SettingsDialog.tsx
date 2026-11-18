@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { TraktCredentials } from '../services/trakt';
+import type { ThemeMode } from '../services/theme';
 
 type BackupMode = 'merge' | 'replace';
 
@@ -10,11 +11,13 @@ interface Props {
   onConnectTrakt(): Promise<void>;
   onDisconnectTrakt(): void;
   onSyncTrakt(): Promise<number>;
+  themeMode: ThemeMode;
+  onThemeModeChange(mode: ThemeMode): void;
   onExport(): void;
   onImport(file: File, mode: BackupMode): Promise<string>;
 }
 
-export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconnectTrakt, onSyncTrakt, onExport, onImport }: Props) {
+export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconnectTrakt, onSyncTrakt, themeMode, onThemeModeChange, onExport, onImport }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -95,6 +98,28 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
       <div className="settings-shell">
         <div className="dialog-head"><h2 id="settings-title">Settings</h2><button type="button" className="close-button" aria-label="Close dialog" onClick={onClose}>×</button></div>
         <div className="settings-scroll">
+          <section className="appearance-settings" aria-labelledby="appearance-settings-title">
+            <h3 id="appearance-settings-title">Appearance</h3>
+            <p className="settings-help">Choose how Frame looks. “Follow system” matches your device setting.</p>
+            <div className="theme-switch" role="radiogroup" aria-label="Theme">
+              {([
+                { value: 'system', label: 'Follow system' },
+                { value: 'dark', label: 'On' },
+                { value: 'light', label: 'Off' },
+              ] as const).map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={themeMode === option.value}
+                  className={themeMode === option.value ? 'active' : ''}
+                  onClick={() => onThemeModeChange(option.value)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </section>
           <section className="trakt-settings" aria-labelledby="trakt-settings-title">
             <h3 id="trakt-settings-title">Trakt sync</h3>
             <p className="settings-help">Connect Trakt to import your watch history and watchlist. One-way sync: watched movies are marked as Seen and watchlist movies as Watchlist; notes and ratings are kept.</p>

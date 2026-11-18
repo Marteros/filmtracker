@@ -11,6 +11,7 @@ import { movieRepository, settingsRepository } from './services/movieRepository'
 import { beginTraktAuthorization, finishTraktAuthorization, getWatchedMovies, getWatchlistMovies, TRAKT_CLIENT_ID, type TraktCredentials, type TraktMovieRef } from './services/trakt';
 import { getMovieDetails } from './services/tmdb';
 import { downloadBackup, importBackup, type ImportMode } from './services/backup';
+import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from './services/theme';
 import type { Movie, MovieDraft, TmdbMovie } from './types';
 
 type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
@@ -25,6 +26,7 @@ function createId() {
 export default function App() {
   const [movies, setMovies] = useState<Movie[]>(() => movieRepository.getAll());
   const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
+  const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
   const [activeTab, setActiveTab] = useState<AppTab>('history');
   const [discoverMounted, setDiscoverMounted] = useState(false);
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
@@ -55,6 +57,24 @@ export default function App() {
   const moviesRef = useRef(movies);
 
   useEffect(() => { moviesRef.current = movies; }, [movies]);
+
+  useEffect(() => {
+    applyTheme(themeMode);
+    if (themeMode !== 'system' || !window.matchMedia) return;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = () => applyTheme('system');
+    if (media.addEventListener) media.addEventListener('change', onChange);
+    else media.addListener(onChange);
+    return () => {
+      if (media.removeEventListener) media.removeEventListener('change', onChange);
+      else media.removeListener(onChange);
+    };
+  }, [themeMode]);
+
+  function changeThemeMode(mode: ThemeMode) {
+    setThemeMode(mode);
+    saveThemeMode(mode);
+  }
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -884,6 +904,7 @@ export default function App() {
       <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog open={settingsOpen} onClose={() => { if (settingsHistoryRef.current && window.history.state?.frameSettings) { window.history.back(); return; } settingsHistoryRef.current = false; setSettingsOpen(false); }}
         trakt={trakt} onConnectTrakt={connectTrakt} onDisconnectTrakt={disconnectTrakt} onSyncTrakt={syncTraktMovies}
+        themeMode={themeMode} onThemeModeChange={changeThemeMode}
         onExport={exportCollection} onImport={importCollection} />
     </>
   );
