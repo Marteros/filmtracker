@@ -725,6 +725,22 @@ html.details-open, html.details-open body { overflow: hidden; }
 .discover-random-result { margin: 4px auto 0; width: min(100%, 240px); }
 .discover-random-result .discover-card { width: 100%; }
 .randomizer-dialog .discover-inline-error { margin: 0; }
+@media (min-width: 651px) {
+  .discover-random-controls {
+    grid-template-columns: repeat(2, minmax(0, 200px));
+    justify-content: center;
+  }
+  .discover-random-controls .select-control select {
+    width: 100%;
+    max-width: none;
+  }
+  .discover-random-controls .discover-random-submit {
+    grid-column: 1 / -1;
+    justify-self: center;
+    width: 200px;
+    margin-top: 0;
+  }
+}
 .discover-search {
   display: flex;
   width: min(100%, 540px);

@@ -127,6 +127,14 @@ export async function getRandomDiscoveryMovie(
 
   const first = await fetchPage(1);
   const totalPages = Math.max(1, Math.min(first.total_pages || 1, 500));
+  const pageCache = new Map<number, { results?: TmdbMovie[]; total_pages?: number }>([[1, first]]);
+  const getPage = async (page: number) => {
+    const cached = pageCache.get(page);
+    if (cached) return cached;
+    const payload = await fetchPage(page);
+    pageCache.set(page, payload);
+    return payload;
+  };
   const pickFrom = (movies: TmdbMovie[], avoidRecent: boolean) => {
     const usable = movies.filter(isUsable);
     const preferred = avoidRecent ? usable.filter((movie) => !avoidIds.has(movie.id)) : usable;
@@ -139,15 +147,15 @@ export async function getRandomDiscoveryMovie(
   }
 
   for (let attempt = 0; attempt < 8; attempt += 1) {
-    const page = attempt === 0 ? 1 : 1 + randomInt(totalPages);
-    const payload = page === 1 ? first : await fetchPage(page);
+    const page = 1 + randomInt(totalPages);
+    const payload = await getPage(page);
     const pick = pickFrom(payload.results || [], true);
     if (pick) return pick;
   }
 
   for (let attempt = 0; attempt < 4; attempt += 1) {
-    const page = attempt === 0 ? 1 : 1 + randomInt(totalPages);
-    const payload = page === 1 ? first : await fetchPage(page);
+    const page = 1 + randomInt(totalPages);
+    const payload = await getPage(page);
     const pick = pickFrom(payload.results || [], false);
     if (pick) return pick;
   }
