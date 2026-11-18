@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Movie, MovieRating, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
 import { getActorMovieCredits, getMovieCast, getMovieDetails, tmdbPoster } from '../services/tmdb';
+import { shareOrCopyMovie } from '../services/share';
 import { RatingInput } from './RatingInput';
 
 interface Props {
@@ -16,7 +17,9 @@ interface Props {
 
 export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onSetStatus, onSetRating, onRemove, onEdit, onEnrich }: Props) {
   const [statusMessage, setStatusMessage] = useState('');
+  const [toast, setToast] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const toastTimer = useRef<number | undefined>(undefined);
   const [details, setDetails] = useState<TmdbMovieDetails>();
   const [error, setError] = useState('');
   const [cast, setCast] = useState<TmdbCastMember[]>([]);
@@ -44,6 +47,8 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
     dialog.addEventListener('close', onCloseEvent);
     return () => dialog.removeEventListener('close', onCloseEvent);
   }, [onClose]);
+
+  useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   useEffect(() => {
     if (!movie.tmdbId) return;
@@ -110,6 +115,19 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
     else setStatusMessage('Could not save. Check the available storage on this device.');
   }
 
+  function showToast(message: string) {
+    window.clearTimeout(toastTimer.current);
+    setToast(message);
+    toastTimer.current = window.setTimeout(() => setToast(''), 2500);
+  }
+
+  async function onShare() {
+    if (!movie.tmdbId) return;
+    const result = await shareOrCopyMovie(movie.title, movie.tmdbId);
+    if (result === 'copied') showToast('Link copied.');
+    else if (result === 'failed') showToast("Couldn't copy the link.");
+  }
+
   const checkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>;
   const plusIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>;
 
@@ -121,6 +139,15 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
       onCancel={(event) => { event.preventDefault(); onClose(); }}
       onClose={() => { /* history handled by parent */ }}
     >
+      {movie.tmdbId && (
+        <button className="details-share" type="button" aria-label={`Share ${movie.title}`} title="Share" onClick={onShare}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M12 3v12" />
+            <path d="m8 7 4-4 4 4" />
+            <path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" />
+          </svg>
+        </button>
+      )}
       <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
       </button>
@@ -214,6 +241,7 @@ export function MovieDetailsPage({ movie, onClose, discoveryPreview = false, onS
           </div>}
         </section>
       </div>
+      {toast && <div className="toast" role="status">{toast}</div>}
     </dialog>
   );
 }

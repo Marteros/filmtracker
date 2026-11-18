@@ -48,6 +48,7 @@ export default function App() {
   const [storageError, setStorageError] = useState('');
   const [traktNotice, setTraktNotice] = useState('');
   const traktCallbackHandled = useRef(false);
+  const sharedMovieHandled = useRef(false);
   const filterDialogRef = useRef<HTMLDialogElement>(null);
   const detailsHistoryRef = useRef(false);
   const agendaHistoryRef = useRef(false);
@@ -75,6 +76,29 @@ export default function App() {
     setThemeMode(mode);
     saveThemeMode(mode);
   }
+
+  useEffect(() => {
+    if (sharedMovieHandled.current) return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('code') || params.has('error')) return;
+    const raw = params.get('movie');
+    if (!raw) return;
+    const tmdbId = Number(raw);
+    if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+      return;
+    }
+    sharedMovieHandled.current = true;
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    getMovieDetails(tmdbId, new AbortController().signal)
+      .then((movie) => {
+        window.history.replaceState({ ...(window.history.state || {}) }, '');
+        openDiscoveredDetails(movie);
+      })
+      .catch(() => {
+        setTraktNotice('Could not open the shared movie. Check your connection and try again.');
+      });
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
