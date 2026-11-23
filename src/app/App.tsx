@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppShell } from './AppShell';
 import { useAppNavigation } from './useAppNavigation';
 import { useCollection } from './useCollection';
@@ -6,11 +6,12 @@ import { CollectionPage } from '@/features/collection/CollectionPage';
 import { FilterDialog } from '@/features/collection/FilterDialog';
 import { MovieDialog } from '@/features/collection/MovieDialog';
 import { useCollectionFilters, type SortOrder } from '@/features/collection/useCollectionFilters';
-import { DiscoverPage } from '@/features/discover/DiscoverPage';
 import { MovieDetailsPage } from '@/features/details/MovieDetailsPage';
 import { AgendaPage } from '@/features/agenda/AgendaPage';
-import { InsightsPage } from '@/features/insights/InsightsPage';
 import { SettingsDialog } from '@/features/settings/SettingsDialog';
+
+const DiscoverPage = lazy(() => import('@/features/discover/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
+const InsightsPage = lazy(() => import('@/features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })));
 import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
 import { readOverlay } from '@/lib/overlayState';
 import { parseDateOnly } from '@/lib/dates';
@@ -543,17 +544,23 @@ export default function App() {
       )}
 
       {nav.discoverMounted && (
-        <DiscoverPage
-          hidden={nav.activeTab !== 'discover'}
-          collection={movies}
-          query={discoverQuery}
-          onQueryChange={setDiscoverQuery}
-          onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
-          onOpen={openDiscoveredDetails}
-        />
+        <Suspense fallback={null}>
+          <DiscoverPage
+            hidden={nav.activeTab !== 'discover'}
+            collection={movies}
+            query={discoverQuery}
+            onQueryChange={setDiscoverQuery}
+            onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
+            onOpen={openDiscoveredDetails}
+          />
+        </Suspense>
       )}
 
-      {nav.activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
+      {nav.activeTab === 'insights' && (
+        <Suspense fallback={null}>
+          <InsightsPage movies={movies} onOpen={openMovie} />
+        </Suspense>
+      )}
 
       {selectedMovie && (
         <MovieDetailsPage
