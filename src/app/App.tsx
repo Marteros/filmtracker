@@ -133,9 +133,6 @@ export default function App() {
     return `${parts.join(', ')}.`;
   }
 
-  const mobileSearchValue = nav.activeTab === 'discover' ? discoverQuery : filters.query;
-  const setMobileSearchValue = nav.activeTab === 'discover' ? setDiscoverQuery : filters.setQuery;
-
   return (
     <AppShell
       activeTab={nav.activeTab}
@@ -152,8 +149,8 @@ export default function App() {
         filters.setMobileFiltersOpen(false);
       }}
       onMobileSearchClose={() => filters.setMobileSearchOpen(false)}
-      mobileSearchValue={mobileSearchValue}
-      onMobileSearchChange={setMobileSearchValue}
+      mobileSearchValue={nav.activeTab === 'discover' ? discoverQuery : filters.query}
+      onMobileSearchChange={nav.activeTab === 'discover' ? setDiscoverQuery : filters.setQuery}
       showMobileFilter={nav.activeTab === 'history' || nav.activeTab === 'watchlist'}
       mobileFilterActive={filters.yearFilter !== 'all' || filters.sortOrder !== 'newest'}
       mobileFiltersOpen={filters.mobileFiltersOpen}
