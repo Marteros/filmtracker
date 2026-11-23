@@ -1,15 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
 import { findMovie } from '@/lib/movie';
-import {
-  getDiscoveryMovies,
-  getRandomDiscoveryMovie,
-  searchMovies,
-  type DiscoveryCategory,
-  type RandomMovieCriteria,
-} from '@/services/tmdb';
+import { getDiscoveryMovies, searchMovies, type DiscoveryCategory } from '@/services/tmdb';
 import { DiscoverCard } from './DiscoverCard';
-import { RandomizerDialog, type PeriodPreset } from './RandomizerDialog';
+import { RandomizerDialog } from './RandomizerDialog';
+import { useRandomizer } from './useRandomizer';
 import { SearchField } from '@/components/ui/SearchField';
 import type { Movie, TmdbMovie } from '@/types';
 
@@ -28,16 +23,6 @@ const SECTIONS: Array<{ id: DiscoveryCategory; title: string }> = [
   { id: 'top_rated', title: 'Top rated' },
 ];
 
-function periodToYears(preset: PeriodPreset): Pick<RandomMovieCriteria, 'fromYear' | 'toYear'> {
-  if (preset === 'classic') return { toYear: 1979 };
-  if (preset === '80s') return { fromYear: 1980, toYear: 1989 };
-  if (preset === '90s') return { fromYear: 1990, toYear: 1999 };
-  if (preset === '2000s') return { fromYear: 2000, toYear: 2009 };
-  if (preset === '2010s') return { fromYear: 2010, toYear: 2019 };
-  if (preset === 'recent') return { fromYear: 2020 };
-  return {};
-}
-
 export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, hidden = false }: Props) {
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [searchResults, setSearchResults] = useState<TmdbMovie[]>([]);
@@ -50,16 +35,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [retry, setRetry] = useState(0);
-  const [randomDialogOpen, setRandomDialogOpen] = useState(false);
-  const [randomGenre, setRandomGenre] = useState<number | 'all'>('all');
-  const [randomRating, setRandomRating] = useState<number | 'all'>('all');
-  const [randomPeriod, setRandomPeriod] = useState<PeriodPreset>('all');
-  const [randomLanguage, setRandomLanguage] = useState<string>('all');
-  const [randomLoading, setRandomLoading] = useState(false);
-  const [randomError, setRandomError] = useState('');
-  const [randomMovie, setRandomMovie] = useState<TmdbMovie | null>(null);
-  const [recentRandomIds, setRecentRandomIds] = useState<number[]>([]);
-  const randomDialogRef = useRef<HTMLDialogElement>(null);
+  const randomizer = useRandomizer(collection);
   const overviewScrollRef = useRef(0);
   const restoreOverviewScrollRef = useRef<number | null>(null);
 
@@ -76,10 +52,6 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         setError('');
       }
     },
-  });
-  const randomOverlay = useHistoryOverlay<boolean>({
-    key: 'frameRandomizer',
-    onChange: (value) => setRandomDialogOpen(Boolean(value)),
   });
 
   useLayoutEffect(() => {
@@ -183,74 +155,8 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     if (!onAdd(movie, status)) setActionError('Could not save. Check the available storage on this device.');
   }
 
-  function openRandomDialog() {
-    setRandomError('');
-    if (randomDialogOpen) return;
-    setRandomDialogOpen(true);
-    randomOverlay.open(true);
-  }
-
-  function closeRandomDialog() {
-    randomOverlay.close();
-  }
-
   function handleOpenMovie(movie: TmdbMovie) {
     onOpen(movie);
-  }
-
-  async function pickRandomMovie() {
-    setRandomLoading(true);
-    setRandomError('');
-    try {
-      const criteria: RandomMovieCriteria = {
-        ...periodToYears(randomPeriod),
-        ...(randomGenre === 'all' ? {} : { genreId: randomGenre }),
-        ...(randomRating === 'all' ? {} : { minRating: randomRating }),
-        ...(randomLanguage === 'all' ? {} : { originalLanguage: randomLanguage }),
-      };
-      const avoidIds = new Set(recentRandomIds);
-      let movie = await getRandomDiscoveryMovie(
-        criteria,
-        (candidate) =>
-          Boolean(
-            findMovie(collection, {
-              tmdbId: candidate.id,
-              title: candidate.title,
-              year: candidate.release_date?.slice(0, 4),
-            }),
-          ),
-        new AbortController().signal,
-        avoidIds,
-      );
-      if (!movie && avoidIds.size) {
-        movie = await getRandomDiscoveryMovie(
-          criteria,
-          (candidate) =>
-            Boolean(
-              findMovie(collection, {
-                tmdbId: candidate.id,
-                title: candidate.title,
-                year: candidate.release_date?.slice(0, 4),
-              }),
-            ),
-          new AbortController().signal,
-          new Set(),
-        );
-      }
-      setRandomMovie(movie);
-      if (movie) {
-        setRecentRandomIds((current) => [movie.id, ...current.filter((id) => id !== movie.id)].slice(0, 20));
-      } else {
-        setRandomError(
-          'No movie found with these criteria that is not already in your collection. Try broader filters.',
-        );
-      }
-    } catch (reason) {
-      setRandomMovie(null);
-      setRandomError(reason instanceof Error ? reason.message : 'Could not fetch a random movie.');
-    } finally {
-      setRandomLoading(false);
-    }
   }
 
   return (
@@ -259,7 +165,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         <h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Discover'}</h1>
         <div className="discover-header-actions">
           {!selectedSection && !debouncedQuery && (
-            <button className="discover-random-button" type="button" onClick={openRandomDialog}>
+            <button className="discover-random-button" type="button" onClick={randomizer.openDialog}>
               Surprise me
             </button>
           )}
@@ -272,22 +178,22 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       </header>
 
       <RandomizerDialog
-        dialogRef={randomDialogRef}
-        open={randomDialogOpen}
-        onClose={closeRandomDialog}
-        genre={randomGenre}
-        onGenreChange={setRandomGenre}
-        rating={randomRating}
-        onRatingChange={setRandomRating}
-        period={randomPeriod}
-        onPeriodChange={setRandomPeriod}
-        language={randomLanguage}
-        onLanguageChange={setRandomLanguage}
-        loading={randomLoading}
-        error={randomError}
-        movie={randomMovie}
+        dialogRef={randomizer.dialogRef}
+        open={randomizer.open}
+        onClose={randomizer.closeDialog}
+        genre={randomizer.genre}
+        onGenreChange={randomizer.setGenre}
+        rating={randomizer.rating}
+        onRatingChange={randomizer.setRating}
+        period={randomizer.period}
+        onPeriodChange={randomizer.setPeriod}
+        language={randomizer.language}
+        onLanguageChange={randomizer.setLanguage}
+        loading={randomizer.loading}
+        error={randomizer.error}
+        movie={randomizer.movie}
         collection={collection}
-        onPick={pickRandomMovie}
+        onPick={randomizer.pick}
         onOpenMovie={handleOpenMovie}
         onAddMovie={handleAdd}
       />

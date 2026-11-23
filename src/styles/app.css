@@ -209,6 +209,9 @@ button {
   font-size: 20px;
   cursor: pointer;
 }
+.close-button:hover {
+  background: var(--surface-muted);
+}
 .form-field {
   position: relative;
   display: block;
@@ -277,7 +280,7 @@ button {
   cursor: pointer;
 }
 .star-choice.selected {
-  color: #789739;
+  color: var(--star);
 }
 .clear-rating {
   margin-left: 5px;
@@ -3484,30 +3487,6 @@ html.modal-open body {
 :root[data-theme='dark'] .discover-poster-hint {
   color: #fff;
 }
-:root[data-theme='dark'] .discover-poster-fallback,
-:root[data-theme='dark'] .movie-list-poster-fallback {
-  color: var(--cinema-ink);
-}
-:root[data-theme='dark'] .agenda-poster-fallback {
-  color: #f0d69a;
-}
-:root[data-theme='dark'] .discover-poster-action {
-  color: var(--cinema-ink);
-  border-color: var(--cinema-border);
-  background: var(--cinema-surface);
-}
-:root[data-theme='dark'] .discover-poster-action:hover:not(:disabled) {
-  background: var(--cinema-surface-hover);
-  color: var(--cinema-gold-soft);
-}
-:root[data-theme='dark'] .discover-poster-action.saved {
-  border-color: #2f6b66;
-  background: color-mix(in srgb, var(--accent) 35%, var(--cinema-bg));
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .discover-poster-action:disabled {
-  color: color-mix(in srgb, var(--cinema-ink) 60%, transparent);
-}
 :root[data-theme='dark'] .discover-random-button {
   background: var(--btn-bg);
   border-color: var(--btn-bg);
@@ -3545,9 +3524,6 @@ html.modal-open body {
 :root[data-theme='dark'] .insight-chip strong {
   color: var(--accent-strong);
 }
-:root[data-theme='dark'] .view-toggle button.active svg rect {
-  fill: currentColor;
-}
 :root[data-theme='dark'] .select-control.active select {
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -3568,15 +3544,6 @@ html.modal-open body {
 }
 :root[data-theme='dark'] .mobile-bottom-tabs {
   box-shadow: 0 8px 28px #00000040;
-}
-:root[data-theme='dark'] .close-button:hover {
-  background: var(--surface-muted);
-}
-:root[data-theme='dark'] .star-choice.selected {
-  color: var(--star);
-}
-:root[data-theme='dark'] .mobile-bottom-tabs button:hover {
-  color: var(--ink);
 }
 :root[data-theme='dark'] .inline-icon {
   background: var(--chip-bg);
