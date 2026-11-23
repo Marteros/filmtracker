@@ -469,7 +469,10 @@ export default function App() {
     return `${parts.join(', ')}.`;
   }
 
-  async function syncTraktMovies(onProgress?: (done: number, total: number) => void): Promise<number> {
+  async function syncTraktMovies(
+    onProgress?: (done: number, total: number) => void,
+    signal?: AbortSignal,
+  ): Promise<number> {
     const clientId = trakt.clientId || TRAKT_CLIENT_ID;
     if (!clientId || !trakt.accessToken) throw new Error('Sign in with Trakt first.');
     const effective = { ...trakt, clientId };
@@ -479,11 +482,11 @@ export default function App() {
       saveTraktSettings(updated);
       setTrakt(updated);
     };
-    const watched = await getWatchedMovies(effective, onCredentials);
-    const watchlist = await getWatchlistMovies(refreshed || effective, onCredentials);
+    const watched = await getWatchedMovies(effective, onCredentials, signal);
+    const watchlist = await getWatchlistMovies(refreshed || effective, onCredentials, signal);
     const result = await buildSyncedCollection(
       { watched, watchlist, current: movies },
-      { getDetails: getMovieDetailsCached, limit: 4, onProgress },
+      { getDetails: getMovieDetailsCached, limit: 4, onProgress, signal },
     );
     if (result.changed && !collection.replaceAll(result.movies)) {
       throw new Error('Sync failed. Check the available storage on this device.');

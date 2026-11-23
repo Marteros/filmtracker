@@ -40,7 +40,8 @@ async function enrichMovie(movie: Movie, tmdbId: number | undefined, deps: Trakt
       updated = { ...updated, genres: details.genres.map((g) => g.name) };
     if (!updated.releaseDate && details.release_date) updated = { ...updated, releaseDate: details.release_date };
     return updated;
-  } catch {
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') throw error;
     return movie;
   }
 }

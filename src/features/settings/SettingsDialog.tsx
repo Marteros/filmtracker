@@ -11,7 +11,7 @@ interface Props {
   trakt: TraktCredentials;
   onConnectTrakt(): Promise<void>;
   onDisconnectTrakt(): void;
-  onSyncTrakt(onProgress?: (done: number, total: number) => void): Promise<number>;
+  onSyncTrakt(onProgress?: (done: number, total: number) => void, signal?: AbortSignal): Promise<number>;
   themeMode: ThemeMode;
   onThemeModeChange(mode: ThemeMode): void;
   onExport(): void;
@@ -35,6 +35,7 @@ export function SettingsDialog({
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null);
+  const syncControllerRef = useRef<AbortController | null>(null);
   const [backupMode, setBackupMode] = useState<BackupMode>('merge');
   const [backupMessage, setBackupMessage] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
@@ -65,22 +66,30 @@ export function SettingsDialog({
   }
 
   async function syncTrakt() {
+    const controller = new AbortController();
+    syncControllerRef.current = controller;
     setBusy(true);
     setTraktMessage('');
     setSyncProgress(null);
     try {
-      const count = await onSyncTrakt((done, total) => setSyncProgress({ done, total }));
+      const count = await onSyncTrakt((done, total) => setSyncProgress({ done, total }), controller.signal);
       setTraktMessage(
         count > 0
           ? `${count} ${count === 1 ? 'movie' : 'movies'} updated from Trakt (watch history and watchlist).`
           : 'Everything is already in sync (watch history and watchlist).',
       );
     } catch (reason) {
-      setTraktMessage(reason instanceof Error ? reason.message : 'Sync failed.');
+      if (reason instanceof Error && reason.name === 'AbortError') setTraktMessage('Sync cancelled.');
+      else setTraktMessage(reason instanceof Error ? reason.message : 'Sync failed.');
     } finally {
       setBusy(false);
       setSyncProgress(null);
+      syncControllerRef.current = null;
     }
+  }
+
+  function cancelSync() {
+    syncControllerRef.current?.abort();
   }
 
   function disconnectTrakt() {
@@ -192,6 +201,11 @@ export function SettingsDialog({
                     ? `Syncing ${syncProgress.done} / ${syncProgress.total}…`
                     : 'Syncing…'
                   : 'Sync with Trakt'}
+              </button>
+            )}
+            {busy && (
+              <button className="remove-token trakt-disconnect" type="button" onClick={cancelSync}>
+                Cancel sync
               </button>
             )}
             {trakt.accessToken && (
