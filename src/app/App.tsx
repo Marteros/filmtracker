@@ -469,7 +469,7 @@ export default function App() {
     return `${parts.join(', ')}.`;
   }
 
-  async function syncTraktMovies(): Promise<number> {
+  async function syncTraktMovies(onProgress?: (done: number, total: number) => void): Promise<number> {
     const clientId = trakt.clientId || TRAKT_CLIENT_ID;
     if (!clientId || !trakt.accessToken) throw new Error('Sign in with Trakt first.');
     const effective = { ...trakt, clientId };
@@ -483,7 +483,7 @@ export default function App() {
     const watchlist = await getWatchlistMovies(refreshed || effective, onCredentials);
     const result = await buildSyncedCollection(
       { watched, watchlist, current: movies },
-      { getDetails: getMovieDetailsCached, limit: 4 },
+      { getDetails: getMovieDetailsCached, limit: 4, onProgress },
     );
     if (result.changed && !collection.replaceAll(result.movies)) {
       throw new Error('Sync failed. Check the available storage on this device.');

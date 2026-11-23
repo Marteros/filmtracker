@@ -11,7 +11,7 @@ interface Props {
   trakt: TraktCredentials;
   onConnectTrakt(): Promise<void>;
   onDisconnectTrakt(): void;
-  onSyncTrakt(): Promise<number>;
+  onSyncTrakt(onProgress?: (done: number, total: number) => void): Promise<number>;
   themeMode: ThemeMode;
   onThemeModeChange(mode: ThemeMode): void;
   onExport(): void;
@@ -34,6 +34,7 @@ export function SettingsDialog({
   useModalScrollLock(open);
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ done: number; total: number } | null>(null);
   const [backupMode, setBackupMode] = useState<BackupMode>('merge');
   const [backupMessage, setBackupMessage] = useState('');
   const [backupBusy, setBackupBusy] = useState(false);
@@ -66,8 +67,9 @@ export function SettingsDialog({
   async function syncTrakt() {
     setBusy(true);
     setTraktMessage('');
+    setSyncProgress(null);
     try {
-      const count = await onSyncTrakt();
+      const count = await onSyncTrakt((done, total) => setSyncProgress({ done, total }));
       setTraktMessage(
         count > 0
           ? `${count} ${count === 1 ? 'movie' : 'movies'} updated from Trakt (watch history and watchlist).`
@@ -77,6 +79,7 @@ export function SettingsDialog({
       setTraktMessage(reason instanceof Error ? reason.message : 'Sync failed.');
     } finally {
       setBusy(false);
+      setSyncProgress(null);
     }
   }
 
@@ -184,7 +187,11 @@ export function SettingsDialog({
             )}
             {trakt.accessToken && (
               <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>
-                {busy ? 'Syncing…' : 'Sync with Trakt'}
+                {busy
+                  ? syncProgress && syncProgress.total > 0
+                    ? `Syncing ${syncProgress.done} / ${syncProgress.total}…`
+                    : 'Syncing…'
+                  : 'Sync with Trakt'}
               </button>
             )}
             {trakt.accessToken && (

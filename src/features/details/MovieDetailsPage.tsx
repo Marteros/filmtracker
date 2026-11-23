@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Movie, MovieRating, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '@/types';
-import { getActorMovieCredits, getMovieCast, getMovieDetails, tmdbPoster } from '@/services/tmdb';
+import { getActorMovieCredits, getMovieCast, tmdbPoster } from '@/services/tmdb';
+import { getMovieDetailsCached } from '@/lib/tmdbCache';
 import { shareOrCopyMovie } from '@/services/share';
 import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 import { RatingInput } from '@/components/ui/RatingInput';
@@ -73,7 +74,7 @@ export function MovieDetailsPage({
     const controller = new AbortController();
     setCastLoading(true);
     setCastError('');
-    getMovieDetails(movie.tmdbId, controller.signal)
+    getMovieDetailsCached(movie.tmdbId, controller.signal)
       .then((data) => {
         setDetails(data);
         const current = movieRef.current;
