@@ -9,9 +9,8 @@ import {
   type RandomMovieCriteria,
 } from '@/services/tmdb';
 import { DiscoverCard } from './DiscoverCard';
+import { RandomizerDialog, type PeriodPreset } from './RandomizerDialog';
 import { SearchField } from '@/components/ui/SearchField';
-import { MOVIE_GENRES } from '@/features/discover/genres';
-import { LANGUAGE_OPTIONS } from '@/features/discover/languages';
 import type { Movie, TmdbMovie } from '@/types';
 
 interface Props {
@@ -28,8 +27,6 @@ const SECTIONS: Array<{ id: DiscoveryCategory; title: string }> = [
   { id: 'popular', title: 'Popular' },
   { id: 'top_rated', title: 'Top rated' },
 ];
-
-type PeriodPreset = 'all' | 'classic' | '80s' | '90s' | '2000s' | '2010s' | 'recent';
 
 function periodToYears(preset: PeriodPreset): Pick<RandomMovieCriteria, 'fromYear' | 'toYear'> {
   if (preset === 'classic') return { toYear: 1979 };
@@ -53,7 +50,6 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
   const [retry, setRetry] = useState(0);
-  const randomDialogRef = useRef<HTMLDialogElement>(null);
   const [randomDialogOpen, setRandomDialogOpen] = useState(false);
   const [randomGenre, setRandomGenre] = useState<number | 'all'>('all');
   const [randomRating, setRandomRating] = useState<number | 'all'>('all');
@@ -63,6 +59,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [randomError, setRandomError] = useState('');
   const [randomMovie, setRandomMovie] = useState<TmdbMovie | null>(null);
   const [recentRandomIds, setRecentRandomIds] = useState<number[]>([]);
+  const randomDialogRef = useRef<HTMLDialogElement>(null);
   const overviewScrollRef = useRef(0);
   const restoreOverviewScrollRef = useRef<number | null>(null);
 
@@ -84,13 +81,6 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     key: 'frameRandomizer',
     onChange: (value) => setRandomDialogOpen(Boolean(value)),
   });
-
-  useEffect(() => {
-    const dialog = randomDialogRef.current;
-    if (!dialog) return;
-    if (randomDialogOpen && !dialog.open) dialog.showModal();
-    if (!randomDialogOpen && dialog.open) dialog.close();
-  }, [randomDialogOpen]);
 
   useLayoutEffect(() => {
     if (selectedSection) {
@@ -221,14 +211,28 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       const avoidIds = new Set(recentRandomIds);
       let movie = await getRandomDiscoveryMovie(
         criteria,
-        (candidate) => Boolean(findMovie(collection, { tmdbId: candidate.id, title: candidate.title, year: candidate.release_date?.slice(0, 4) })),
+        (candidate) =>
+          Boolean(
+            findMovie(collection, {
+              tmdbId: candidate.id,
+              title: candidate.title,
+              year: candidate.release_date?.slice(0, 4),
+            }),
+          ),
         new AbortController().signal,
         avoidIds,
       );
       if (!movie && avoidIds.size) {
         movie = await getRandomDiscoveryMovie(
           criteria,
-          (candidate) => Boolean(findMovie(collection, { tmdbId: candidate.id, title: candidate.title, year: candidate.release_date?.slice(0, 4) })),
+          (candidate) =>
+            Boolean(
+              findMovie(collection, {
+                tmdbId: candidate.id,
+                title: candidate.title,
+                year: candidate.release_date?.slice(0, 4),
+              }),
+            ),
           new AbortController().signal,
           new Set(),
         );
@@ -267,120 +271,26 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         </div>
       </header>
 
-      <dialog
-        ref={randomDialogRef}
-        className="movie-dialog randomizer-dialog"
-        aria-labelledby="randomizer-title"
-        onCancel={(event) => {
-          event.preventDefault();
-          closeRandomDialog();
-        }}
+      <RandomizerDialog
+        dialogRef={randomDialogRef}
+        open={randomDialogOpen}
         onClose={closeRandomDialog}
-        onClick={(event) => {
-          if (event.target === randomDialogRef.current) closeRandomDialog();
-        }}
-      >
-        <div className="randomizer-shell">
-          <div className="dialog-head">
-            <h2 id="randomizer-title">Surprise me</h2>
-            <button type="button" className="close-button" aria-label="Close dialog" onClick={closeRandomDialog}>
-              ×
-            </button>
-          </div>
-          <p className="settings-help randomizer-help">
-            Choose criteria and get a random movie suggestion that is not already in your collection.
-          </p>
-          <div className="discover-random-controls">
-            <label className="select-control" htmlFor="random-genre">
-              <span className="select-label-text">Genre</span>
-              <select
-                id="random-genre"
-                value={String(randomGenre)}
-                onChange={(event) => setRandomGenre(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-              >
-                <option value="all">All genres</option>
-                {MOVIE_GENRES.map((genre) => (
-                  <option key={genre.id} value={genre.id}>
-                    {genre.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="select-control" htmlFor="random-rating">
-              <span className="select-label-text">Rating</span>
-              <select
-                id="random-rating"
-                value={String(randomRating)}
-                onChange={(event) => setRandomRating(event.target.value === 'all' ? 'all' : Number(event.target.value))}
-              >
-                <option value="all">Any rating</option>
-                <option value="6">6+ stars</option>
-                <option value="7">7+ stars</option>
-                <option value="7.5">7.5+ stars</option>
-                <option value="8">8+ stars</option>
-              </select>
-            </label>
-            <label className="select-control" htmlFor="random-period">
-              <span className="select-label-text">Period</span>
-              <select
-                id="random-period"
-                value={randomPeriod}
-                onChange={(event) => setRandomPeriod(event.target.value as PeriodPreset)}
-              >
-                <option value="all">All years</option>
-                <option value="classic">Before 1980</option>
-                <option value="80s">1980s</option>
-                <option value="90s">1990s</option>
-                <option value="2000s">2000–2009</option>
-                <option value="2010s">2010–2019</option>
-                <option value="recent">2020–now</option>
-              </select>
-            </label>
-            <label className="select-control" htmlFor="random-language">
-              <span className="select-label-text">Language</span>
-              <select
-                id="random-language"
-                value={randomLanguage}
-                onChange={(event) => setRandomLanguage(event.target.value)}
-              >
-                <option value="all">All languages</option>
-                {LANGUAGE_OPTIONS.map((language) => (
-                  <option key={language.code} value={language.code}>
-                    {language.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              className="discover-primary discover-random-submit"
-              type="button"
-              onClick={pickRandomMovie}
-              disabled={randomLoading}
-            >
-              {randomLoading ? 'Searching…' : randomMovie ? 'Another one' : 'Get suggestion'}
-            </button>
-          </div>
-          {randomError && (
-            <p className="discover-inline-error" role="alert">
-              {randomError}
-            </p>
-          )}
-          {randomMovie && (
-            <div className="discover-random-result" aria-live="polite">
-              <DiscoverCard
-                movie={randomMovie}
-                saved={findMovie(collection, {
-                  tmdbId: randomMovie.id,
-                  title: randomMovie.title,
-                  year: randomMovie.release_date?.slice(0, 4),
-                })}
-                onOpen={handleOpenMovie}
-                onAdd={handleAdd}
-              />
-            </div>
-          )}
-        </div>
-      </dialog>
+        genre={randomGenre}
+        onGenreChange={setRandomGenre}
+        rating={randomRating}
+        onRatingChange={setRandomRating}
+        period={randomPeriod}
+        onPeriodChange={setRandomPeriod}
+        language={randomLanguage}
+        onLanguageChange={setRandomLanguage}
+        loading={randomLoading}
+        error={randomError}
+        movie={randomMovie}
+        collection={collection}
+        onPick={pickRandomMovie}
+        onOpenMovie={handleOpenMovie}
+        onAddMovie={handleAdd}
+      />
 
       <div className="toolbar discover-toolbar">
         <SearchField
