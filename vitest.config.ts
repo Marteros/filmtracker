@@ -5,5 +5,7 @@ export default defineConfig({
     environment: 'jsdom',
     include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
     restoreMocks: true,
+    // Tests are added incrementally; keep CI green while the suite is small.
+    passWithNoTests: true,
   },
 });

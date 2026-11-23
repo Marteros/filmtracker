@@ -5,6 +5,7 @@ import { SettingsDialog } from './components/SettingsDialog';
 import { MovieDetailsPage } from './components/MovieDetailsPage';
 import { DiscoverPage } from './components/DiscoverPage';
 import { SearchField } from './components/SearchField';
+import { ViewToggle } from './components/ViewToggle';
 import { InsightsPage } from './components/InsightsPage';
 import { AgendaPage } from './components/AgendaPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
@@ -327,10 +328,10 @@ export default function App() {
 
   const years = useMemo(
     () =>
-      [...new Set(statusMovies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort(
+      [...new Set(movies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort(
         (a, b) => Number(b) - Number(a),
       ),
-    [statusMovies],
+    [movies],
   );
   function persist(next: Movie[]) {
     try {
@@ -482,42 +483,8 @@ export default function App() {
     try {
       localStorage.setItem(COLLECTION_VIEW_KEY, view);
     } catch {
-      /* voorkeur lokaal bewaren */
+      /* Keep the view preference local. */
     }
-  }
-
-  function ViewToggle({ className = '' }: { className?: string }) {
-    return (
-      <div className={`view-toggle ${className}`.trim()} role="group" aria-label="View">
-        <button
-          type="button"
-          className={collectionView === 'grid' ? 'active' : ''}
-          aria-pressed={collectionView === 'grid'}
-          aria-label="Grid view"
-          title="Grid view"
-          onClick={() => changeCollectionView('grid')}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
-            <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
-            <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
-            <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          className={collectionView === 'list' ? 'active' : ''}
-          aria-pressed={collectionView === 'list'}
-          aria-label="List view"
-          title="List view"
-          onClick={() => changeCollectionView('list')}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M4 6.5h16M4 12h16M4 17.5h16" />
-          </svg>
-        </button>
-      </div>
-    );
   }
 
   function findSavedMovie(movie: TmdbMovie) {
@@ -950,12 +917,12 @@ export default function App() {
                 {collectionCount}
               </span>
             </div>
-            <ViewToggle className="mobile-view-toggle" />
+            <ViewToggle view={collectionView} onChange={changeCollectionView} className="mobile-view-toggle" />
           </div>
           <div className="toolbar">
             <SearchField value={query} onChange={setQuery} label="Search movies" placeholder="Search by movie title…" />
             <div className="collection-controls">
-              <ViewToggle />
+              <ViewToggle view={collectionView} onChange={changeCollectionView} />
               <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>
                 <span className="select-label-text">Year</span>
                 <select
@@ -1005,16 +972,17 @@ export default function App() {
           <MovieGrid
             view={collectionView}
             movies={visibleMovies}
-            hasMovies={collectionCount > 0}
-            searching={false}
+            collectionHasMovies={movies.length > 0}
             emptyMessage={
               query && !visibleMovies.length
                 ? 'No search results'
-                : !collectionCount
-                  ? isWatchlist
-                    ? 'No movies on your watchlist yet'
-                    : 'No seen movies yet'
-                  : undefined
+                : !collectionCount && yearFilter !== 'all'
+                  ? 'No movies match your filters'
+                  : !collectionCount
+                    ? isWatchlist
+                      ? 'No movies on your watchlist yet'
+                      : 'No seen movies yet'
+                    : undefined
             }
             onAdd={openAddDialog}
             onDiscover={() => switchTab('discover')}
@@ -1167,7 +1135,7 @@ export default function App() {
             </svg>
           </button>
         </div>
-        <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
+        <nav className="mobile-bottom-tabs" aria-label="Main navigation">
           <button
             type="button"
             className={activeTab === 'history' ? 'active' : ''}

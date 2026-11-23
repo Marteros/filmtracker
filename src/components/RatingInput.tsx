@@ -12,11 +12,16 @@ export function RatingInput({ value, onChange, idPrefix }: Props) {
   const prefix = idPrefix ?? `rating-${uid.replace(/:/g, '')}`;
 
   function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>, rating: number) {
-    if (!['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+    let next: number | null = null;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowUp') next = rating + 1;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowDown') next = rating - 1;
+    else if (event.key === 'Home') next = 1;
+    else if (event.key === 'End') next = 5;
+    if (next === null) return;
     event.preventDefault();
-    const next = Math.max(1, Math.min(5, rating + (event.key === 'ArrowRight' ? 1 : -1))) as MovieRating;
-    onChange(next);
-    document.getElementById(`${prefix}-${next}`)?.focus();
+    const clamped = Math.max(1, Math.min(5, next)) as MovieRating;
+    onChange(clamped);
+    document.getElementById(`${prefix}-${clamped}`)?.focus();
   }
 
   return (

@@ -25,7 +25,7 @@ export function useMovieSearch(query: string) {
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
       setState('loading');
-      setMessage('Films zoeken…');
+      setMessage('Searching movies…');
       try {
         const movies = await searchMovies(normalized, controller.signal);
         setResults(movies.slice(0, 7));
@@ -35,7 +35,7 @@ export function useMovieSearch(query: string) {
         if (controller.signal.aborted) return;
         setResults([]);
         setState(error instanceof TmdbError && error.kind === 'network' && !navigator.onLine ? 'offline' : 'error');
-        setMessage(error instanceof Error ? error.message : 'Er ging iets mis bij het zoeken.');
+        setMessage(error instanceof Error ? error.message : 'Something went wrong while searching.');
       }
     }, 320);
 

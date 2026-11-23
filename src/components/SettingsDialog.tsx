@@ -47,7 +47,7 @@ export function SettingsDialog({
       setBackupMessage('');
       if (fileRef.current) fileRef.current.value = '';
     }
-  }, [open, trakt]);
+  }, [open]);
 
   async function startTraktLink() {
     setBusy(true);

@@ -59,10 +59,6 @@ export function InsightsPage({ movies, onOpen }: Props) {
     const topGenres = [...genres.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
 
     const recent = [...seen].sort((a, b) => (b.watchedAt || b.addedAt) - (a.watchedAt || a.addedAt)).slice(0, 5);
-    const topRated = [...seen]
-      .filter((m) => m.rating)
-      .sort((a, b) => (b.rating || 0) - (a.rating || 0) || (b.watchedAt || b.addedAt) - (a.watchedAt || a.addedAt))
-      .slice(0, 5);
 
     return {
       seen,
@@ -78,7 +74,6 @@ export function InsightsPage({ movies, onOpen }: Props) {
       totalRuntime,
       runtimeCount,
       recent,
-      topRated,
     };
   }, [movies]);
 

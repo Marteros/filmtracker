@@ -1,5 +1,5 @@
-// Cloudflare Worker voor Frame.
-// Deploy deze code in Cloudflare en zet TMDB_TOKEN als environment variable.
+// Cloudflare Worker for Frame.
+// Deploy this code in Cloudflare and set TMDB_TOKEN as an environment variable.
 
 const PRODUCTION_ORIGIN = 'https://marteros.github.io';
 
@@ -41,9 +41,9 @@ export default {
     const headers = corsHeaders(request.headers.get('Origin') || '');
 
     if (request.method === 'OPTIONS') return new Response(null, { headers });
-    if (request.method !== 'GET') return errorResponse('Niet toegestaan', 405, headers);
+    if (request.method !== 'GET') return errorResponse('Not allowed', 405, headers);
     if (!ALLOWED_PATHS.some((pattern) => pattern.test(url.pathname))) {
-      return errorResponse('Niet toegestaan', 403, headers);
+      return errorResponse('Not allowed', 403, headers);
     }
 
     const upstream = new URL(url.pathname, 'https://api.themoviedb.org');

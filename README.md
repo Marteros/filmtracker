@@ -16,7 +16,7 @@ Personal movie journal built with React, TypeScript, and Vite. It stores your co
 
 ## Requirements
 
-- Node.js 18+ (or newer)
+- Node.js 20+ (see `engines` in `package.json`)
 - npm
 
 ## Local development
@@ -35,9 +35,23 @@ npm run build
 npm run preview
 ```
 
+## Scripts
+
+| Script                 | Purpose                                   |
+| ---------------------- | ----------------------------------------- |
+| `npm run dev`          | Start the Vite dev server.                |
+| `npm run build`        | Type-check and create a production build. |
+| `npm run preview`      | Serve the production build locally.       |
+| `npm run typecheck`    | Run TypeScript without emitting output.   |
+| `npm run lint`         | Run ESLint.                               |
+| `npm run format`       | Format the codebase with Prettier.        |
+| `npm run format:check` | Verify formatting without writing.        |
+| `npm run test`         | Run the Vitest suite once.                |
+| `npm run check`        | Run typecheck, lint, tests, and build.    |
+
 ## Deploy (GitHub Pages)
 
-The project is configured for deployment at `https://marteros.github.io/filmtracker/` (see `base` in `vite.config.ts`). With GitHub Actions enabled for Pages, a push to `main` can trigger a deploy.
+The app uses a relative base (`base: './'` in `vite.config.ts`), so the build works from any subpath, including `https://marteros.github.io/filmtracker/`. With GitHub Actions enabled for Pages, a push to `main` can trigger a deploy.
 
 ## TMDb
 
@@ -49,7 +63,7 @@ Open **Settings** and choose **Sign in with Trakt** to connect your account. Sig
 
 Frame uses Trakt but is not endorsed or certified by Trakt.
 
-To enable this, set a valid `TRAKT_CLIENT_ID` in `src/services/trakt.ts` and configure matching Redirect URIs in your Trakt API app for the app URLs you use.
+To enable this, a valid `TRAKT_CLIENT_ID` is already configured in `src/services/trakt.ts`. Configure matching Redirect URIs in your Trakt API app for the app URLs you use (for example `http://localhost:5173/` and `https://marteros.github.io/filmtracker/`).
 
 ## Privacy
 

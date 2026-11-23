@@ -55,6 +55,7 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
         required
         autoComplete="off"
         role="combobox"
+        aria-haspopup="listbox"
         aria-autocomplete="list"
         aria-expanded={expanded}
         aria-controls={`${id}-listbox`}

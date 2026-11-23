@@ -28,6 +28,17 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       ...jsxA11y.flatConfigs.recommended.rules,
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // React Compiler-regels zijn nog niet van toepassing; deze codebase gebruikt
+      // bewust effecten voor native <dialog>-synchronisatie en data-fetching.
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/static-components': 'off',
+      // Bewuste keuze: zoekvelden krijgen focus bij openen.
+      'jsx-a11y/no-autofocus': 'off',
+      // Dialog-backdrops zijn klikbaar maar niet interactief voor toetsenbord;
+      // Escape/Annuleren is de toegankelijke route.
+      'jsx-a11y/click-events-have-key-events': 'warn',
+      'jsx-a11y/no-noninteractive-element-interactions': 'warn',
+      '@typescript-eslint/no-explicit-any': 'warn',
     },
   },
   {
