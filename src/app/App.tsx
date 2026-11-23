@@ -673,9 +673,8 @@ export default function App() {
       if (matchIndex >= 0) {
         const old = next[matchIndex];
         let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
-        if (watchedAt) {
-          if (!updated.watchedAt) updated = { ...updated, watchedAt };
-          if (updated.addedAt !== watchedAt) updated = { ...updated, addedAt: watchedAt };
+        if (watchedAt && !updated.watchedAt) {
+          updated = { ...updated, watchedAt };
         }
         updated = await enrichFromTmdb(updated, tmdbId || updated.tmdbId);
         if (updated !== old) {
@@ -710,7 +709,6 @@ export default function App() {
         const old = next[matchIndex];
         if (old.status === 'seen') continue;
         let updated = old;
-        if (listedAt && updated.addedAt !== listedAt) updated = { ...updated, addedAt: listedAt };
         updated = await enrichFromTmdb(updated, tmdbId || updated.tmdbId);
         if (updated !== old) {
           next[matchIndex] = updated;
