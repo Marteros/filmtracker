@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { Movie } from '../types';
-import { findMovieById, mergeMovies } from '../lib/movie';
+import type { Movie } from '@/types';
+import { findMovieById, mergeMovies } from '@/lib/movie';
 import {
   CollectionStoreError,
   loadCollection,
   saveCollection,
   subscribeToCollection,
-} from '../services/collectionStore';
+} from '@/services/collectionStore';
 
 const STORAGE_ERROR = 'Could not save. Check the available storage on this device.';
 

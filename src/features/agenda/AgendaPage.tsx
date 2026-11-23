@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef } from 'react';
-import type { Movie } from '../types';
-import { parseDate, startOfDay } from '../lib/dates';
-import { tmdbPoster } from '../services/tmdb';
+import type { Movie } from '@/types';
+import { parseDate, startOfDay } from '@/lib/dates';
+import { tmdbPoster } from '@/services/tmdb';
+import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 
 interface Props {
   open: boolean;
@@ -30,13 +31,7 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
     return () => dialog.removeEventListener('close', onCloseEvent);
   }, [open, onClose]);
 
-  useEffect(() => {
-    if (!open) return;
-    document.documentElement.classList.add('details-open');
-    return () => {
-      document.documentElement.classList.remove('details-open');
-    };
-  }, [open]);
+  useModalScrollLock(open);
 
   const groups = useMemo(() => {
     const today = startOfDay(new Date());

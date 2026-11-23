@@ -1,7 +1,7 @@
 import { useId, useState, type KeyboardEvent, type Ref } from 'react';
-import { useMovieSearch } from '../hooks/useMovieSearch';
-import { tmdbPoster } from '../services/tmdb';
-import type { TmdbMovie } from '../types';
+import { useMovieSearch } from '@/hooks/useMovieSearch';
+import { tmdbPoster } from '@/services/tmdb';
+import type { TmdbMovie } from '@/types';
 
 interface Props {
   value: string;

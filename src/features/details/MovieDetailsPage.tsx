@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Movie, MovieRating, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
-import { getActorMovieCredits, getMovieCast, getMovieDetails, tmdbPoster } from '../services/tmdb';
-import { shareOrCopyMovie } from '../services/share';
-import { RatingInput } from './RatingInput';
+import type { Movie, MovieRating, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '@/types';
+import { getActorMovieCredits, getMovieCast, getMovieDetails, tmdbPoster } from '@/services/tmdb';
+import { shareOrCopyMovie } from '@/services/share';
+import { useModalScrollLock } from '@/hooks/useModalScrollLock';
+import { RatingInput } from '@/components/ui/RatingInput';
 
 interface Props {
   movie: Movie;
@@ -39,14 +40,12 @@ export function MovieDetailsPage({
   const [actorMoviesLoading, setActorMoviesLoading] = useState(false);
   const [actorMoviesError, setActorMoviesError] = useState('');
 
+  useModalScrollLock(true);
+
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (!dialog.open) dialog.showModal();
-    document.documentElement.classList.add('details-open');
-    return () => {
-      document.documentElement.classList.remove('details-open');
-    };
   }, []);
 
   useEffect(() => {

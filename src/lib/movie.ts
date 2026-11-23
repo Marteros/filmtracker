@@ -1,4 +1,4 @@
-import type { Movie } from '../types';
+import type { Movie } from '@/types';
 
 export type MovieIdentity = Pick<Movie, 'tmdbId' | 'title' | 'year'>;
 

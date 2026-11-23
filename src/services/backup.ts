@@ -1,6 +1,6 @@
-import type { Movie } from '../types';
-import { mergeMovies } from '../lib/movie';
-import { normalizeMovie } from '../lib/validation';
+import type { Movie } from '@/types';
+import { mergeMovies } from '@/lib/movie';
+import { normalizeMovie } from '@/lib/validation';
 
 const SCHEMA_VERSION = 1;
 

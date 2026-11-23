@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
-import type { Movie, MovieDraft, MovieRating, TmdbMovie } from '../types';
-import { toDateInput } from '../lib/dates';
-import { MovieSearchCombobox } from './MovieSearchCombobox';
-import { RatingInput } from './RatingInput';
+import type { Movie, MovieDraft, MovieRating, TmdbMovie } from '@/types';
+import { toDateInput } from '@/lib/dates';
+import { MovieSearchCombobox } from '@/components/ui/MovieSearchCombobox';
+import { RatingInput } from '@/components/ui/RatingInput';
+import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 
 interface Props {
   open: boolean;
@@ -13,6 +14,7 @@ interface Props {
 
 export function MovieDialog({ open, movie, onClose, onSave }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  useModalScrollLock(open);
   const titleRef = useRef<HTMLInputElement>(null);
   const [title, setTitle] = useState('');
   const [year, setYear] = useState('');

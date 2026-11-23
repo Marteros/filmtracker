@@ -1,4 +1,4 @@
-import type { Movie, MovieRating, MovieStatus } from '../types';
+import type { Movie, MovieRating, MovieStatus } from '@/types';
 
 function isStatus(value: unknown): value is MovieStatus {
   return value === 'seen' || value === 'watchlist';

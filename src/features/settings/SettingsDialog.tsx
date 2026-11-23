@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import type { TraktCredentials } from '../services/trakt';
-import type { ThemeMode } from '../services/theme';
+import type { TraktCredentials } from '@/services/trakt';
+import type { ThemeMode } from '@/services/theme';
+import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 
 type BackupMode = 'merge' | 'replace';
 
@@ -30,6 +31,7 @@ export function SettingsDialog({
   onImport,
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  useModalScrollLock(open);
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
   const [backupMode, setBackupMode] = useState<BackupMode>('merge');

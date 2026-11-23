@@ -607,8 +607,8 @@ select:focus-visible {
   background: #0b1a25cc;
   backdrop-filter: blur(6px);
 }
-html.details-open,
-html.details-open body {
+html.modal-open,
+html.modal-open body {
   overflow: hidden;
 }
 .details-close,

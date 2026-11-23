@@ -1,5 +1,5 @@
-import type { Movie, StoredCollectionV2 } from '../types';
-import { normalizeMovie } from '../lib/validation';
+import type { Movie, StoredCollectionV2 } from '@/types';
+import { normalizeMovie } from '@/lib/validation';
 
 export const COLLECTION_KEY_V2 = 'frame-film-journal-v2';
 export const COLLECTION_KEY_V1 = 'frame-film-journal-v1';

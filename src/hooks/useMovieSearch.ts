@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { searchMovies, TmdbError } from '../services/tmdb';
-import type { SearchState, TmdbMovie } from '../types';
+import { searchMovies, TmdbError } from '@/services/tmdb';
+import type { SearchState, TmdbMovie } from '@/types';
 
 export function useMovieSearch(query: string) {
   const [results, setResults] = useState<TmdbMovie[]>([]);

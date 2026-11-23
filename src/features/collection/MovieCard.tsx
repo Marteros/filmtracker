@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
-import type { Movie } from '../types';
-import { formatReleaseLabel } from '../lib/dates';
-import { tmdbPoster } from '../services/tmdb';
+import type { Movie } from '@/types';
+import { formatReleaseLabel } from '@/lib/dates';
+import { tmdbPoster } from '@/services/tmdb';
 
 const PALETTES = [
   'linear-gradient(145deg,#486579,#172a35 65%,#10151c)',

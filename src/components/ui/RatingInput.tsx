@@ -1,5 +1,5 @@
 import { useId, type KeyboardEvent } from 'react';
-import type { MovieRating } from '../types';
+import type { MovieRating } from '@/types';
 
 interface Props {
   value?: MovieRating;

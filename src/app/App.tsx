@@ -1,17 +1,18 @@
+import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MovieDialog } from './components/MovieDialog';
-import { MovieGrid } from './components/MovieGrid';
-import { SettingsDialog } from './components/SettingsDialog';
-import { MovieDetailsPage } from './components/MovieDetailsPage';
-import { DiscoverPage } from './components/DiscoverPage';
-import { SearchField } from './components/SearchField';
-import { ViewToggle } from './components/ViewToggle';
-import { InsightsPage } from './components/InsightsPage';
-import { AgendaPage } from './components/AgendaPage';
-import { useCollection } from './app/useCollection';
-import { migrateSettings, getTraktSettings, saveTraktSettings, clearTraktSettings } from './services/settingsStore';
-import { parseDateOnly } from './lib/dates';
-import { findMovie } from './lib/movie';
+import { MovieDialog } from '@/features/collection/MovieDialog';
+import { MovieGrid } from '@/features/collection/MovieGrid';
+import { SettingsDialog } from '@/features/settings/SettingsDialog';
+import { MovieDetailsPage } from '@/features/details/MovieDetailsPage';
+import { DiscoverPage } from '@/features/discover/DiscoverPage';
+import { SearchField } from '@/components/ui/SearchField';
+import { ViewToggle } from '@/features/collection/ViewToggle';
+import { InsightsPage } from '@/features/insights/InsightsPage';
+import { AgendaPage } from '@/features/agenda/AgendaPage';
+import { useCollection } from './useCollection';
+import { migrateSettings, getTraktSettings, saveTraktSettings, clearTraktSettings } from '@/services/settingsStore';
+import { parseDateOnly } from '@/lib/dates';
+import { findMovie } from '@/lib/movie';
 import {
   beginTraktAuthorization,
   finishTraktAuthorization,
@@ -20,11 +21,11 @@ import {
   TRAKT_CLIENT_ID,
   type TraktCredentials,
   type TraktMovieRef,
-} from './services/trakt';
-import { getMovieDetails, TmdbError } from './services/tmdb';
-import { downloadBackup, importBackup, type ImportMode } from './services/backup';
-import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from './services/theme';
-import type { Movie, MovieDraft, TmdbMovie } from './types';
+} from '@/services/trakt';
+import { getMovieDetails, TmdbError } from '@/services/tmdb';
+import { downloadBackup, importBackup, type ImportMode } from '@/services/backup';
+import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from '@/services/theme';
+import type { Movie, MovieDraft, TmdbMovie } from '@/types';
 
 type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
 type AppTab = 'history' | 'watchlist' | 'discover' | 'insights';
@@ -56,6 +57,7 @@ export default function App() {
   const [discoverQuery, setDiscoverQuery] = useState('');
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  useModalScrollLock(mobileFiltersOpen);
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
@@ -420,20 +422,15 @@ export default function App() {
   }
 
   function openMovieFromAgenda(movie: Movie) {
-    if (agendaHistoryRef.current && window.history.state?.frameAgenda) {
-      agendaHistoryRef.current = false;
-      setAgendaOpen(false);
-      window.history.replaceState(
-        { ...(window.history.state || {}), frameAgenda: false, frameDetails: { movieId: movie.id } },
-        '',
-      );
+    // Keep agenda mounted under the details overlay so browser back returns to it.
+    setSelectedDiscoveryMovie(undefined);
+    setSelectedMovie(movie);
+    if (!detailsHistoryRef.current) {
+      window.history.pushState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
       detailsHistoryRef.current = true;
-      setSelectedDiscoveryMovie(undefined);
-      setSelectedMovie(movie);
-      return;
+    } else {
+      window.history.replaceState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
     }
-    setAgendaOpen(false);
-    openMovie(movie);
   }
 
   function closeDetails() {

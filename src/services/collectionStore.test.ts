@@ -7,7 +7,7 @@ import {
   saveCollection,
   subscribeToCollection,
 } from './collectionStore';
-import type { Movie } from '../types';
+import type { Movie } from '@/types';
 
 const movie: Movie = {
   id: 'id-1',

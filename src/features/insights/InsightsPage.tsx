@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
-import type { Movie } from '../types';
-import { monthKey } from '../lib/dates';
+import type { Movie } from '@/types';
+import { monthKey } from '@/lib/dates';
 
 interface Props {
   movies: Movie[];

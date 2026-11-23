@@ -6,11 +6,11 @@ import {
   tmdbPoster,
   type DiscoveryCategory,
   type RandomMovieCriteria,
-} from '../services/tmdb';
-import { SearchField } from './SearchField';
-import { MOVIE_GENRES } from '../constants/genres';
-import { LANGUAGE_OPTIONS } from '../constants/languages';
-import type { Movie, TmdbMovie } from '../types';
+} from '@/services/tmdb';
+import { SearchField } from '@/components/ui/SearchField';
+import { MOVIE_GENRES } from '@/features/discover/genres';
+import { LANGUAGE_OPTIONS } from '@/features/discover/languages';
+import type { Movie, TmdbMovie } from '@/types';
 
 interface Props {
   collection: Movie[];

@@ -1,4 +1,4 @@
-import type { Movie } from '../types';
+import type { Movie } from '@/types';
 import { MovieCard } from './MovieCard';
 import { CollectionEmpty } from './CollectionEmpty';
 

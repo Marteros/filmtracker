@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { importBackup } from './backup';
-import type { Movie } from '../types';
+import type { Movie } from '@/types';
 
 function movie(overrides: Partial<Movie> = {}): Movie {
   return {

@@ -1,4 +1,4 @@
-import type { TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '../types';
+import type { TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '@/types';
 
 const API_ROOT = 'https://filmtracker-proxy.levonmarteros.workers.dev/3';
 const IMAGE_ROOT = 'https://image.tmdb.org/t/p';
