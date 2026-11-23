@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect, useState } from 'react';
 import { AppShell } from './AppShell';
 import { useAppNavigation } from './useAppNavigation';
 import { useCollection } from './useCollection';
@@ -11,21 +11,16 @@ import { AgendaPage } from '@/features/agenda/AgendaPage';
 import { SettingsDialog } from '@/features/settings/SettingsDialog';
 import { useTraktSync } from '@/features/settings/useTraktSync';
 import { useDetailsFlow } from './useDetailsFlow';
+import { useSharedMovieLink } from './useSharedMovieLink';
+import { useMovieDialog } from './useMovieDialog';
 
 const DiscoverPage = lazy(() => import('@/features/discover/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
 const InsightsPage = lazy(() => import('@/features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })));
 import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
 import { readOverlay } from '@/lib/overlayState';
-import { parseDateOnly } from '@/lib/dates';
 import { downloadBackup, importBackup, type ImportMode } from '@/services/backup';
 import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from '@/services/theme';
 import { migrateSettings } from '@/services/settingsStore';
-import { getMovieDetails, TmdbError } from '@/services/tmdb';
-import type { Movie, MovieDraft } from '@/types';
-
-function createId() {
-  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
 
 export default function App() {
   const collection = useCollection();
@@ -36,12 +31,8 @@ export default function App() {
 
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
   const [discoverQuery, setDiscoverQuery] = useState('');
-  const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
-  const [editingMovie, setEditingMovie] = useState<Movie>();
-  const [shareNotice, setShareNotice] = useState('');
-  const sharedMovieHandled = useRef(false);
   const { trakt, traktNotice, connectTrakt, disconnectTrakt, syncTraktMovies } = useTraktSync(collection);
   const details = useDetailsFlow(collection);
   const {
@@ -57,6 +48,8 @@ export default function App() {
     removeMovieFromDetails,
     enrichMovie,
   } = details;
+  const shareNotice = useSharedMovieLink(openDiscoveredDetails);
+  const movieDialog = useMovieDialog(collection, selectedMovie, setSelectedMovie);
 
   useEffect(() => {
     migrateSettings();
@@ -92,13 +85,6 @@ export default function App() {
     key: 'frameFilters',
     onChange: (value) => filters.setMobileFiltersOpen(Boolean(value)),
   });
-  const movieDialogOverlay = useHistoryOverlay<boolean>({
-    key: 'frameMovieDialog',
-    onChange: (value) => {
-      setMovieDialogOpen(Boolean(value));
-      if (!value) setEditingMovie(undefined);
-    },
-  });
   useLayoutEffect(() => {
     window.scrollTo(0, 0);
   }, []);
@@ -112,59 +98,13 @@ export default function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (sharedMovieHandled.current) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.has('code') || params.has('error')) return;
-    const raw = params.get('movie');
-    if (!raw) return;
-    const tmdbId = Number(raw);
-    if (!Number.isInteger(tmdbId) || tmdbId <= 0) {
-      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-      return;
-    }
-    sharedMovieHandled.current = true;
-    const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
-    void (async () => {
-      let movie: Awaited<ReturnType<typeof getMovieDetails>> | undefined;
-      for (let attempt = 0; attempt < 2; attempt += 1) {
-        try {
-          movie = await getMovieDetails(tmdbId, new AbortController().signal);
-          break;
-        } catch (error) {
-          const network = error instanceof TmdbError && error.kind === 'network';
-          if (network && attempt === 0) {
-            await wait(500);
-            continue;
-          }
-          setShareNotice(
-            network
-              ? 'Could not open the shared movie. Check your connection and try again.'
-              : 'Could not open the shared movie.',
-          );
-          return;
-        }
-      }
-      if (!movie) return;
-      window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-      setShareNotice('');
-      openDiscoveredDetails(movie);
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
     filters.closeMobilePanels();
   }, [nav.activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  function openSettings() {
-    if (settingsOpen) return;
-    setSettingsOpen(true);
-    settingsOverlay.open(true);
-  }
-  function openAgenda() {
-    if (agendaOpen) return;
-    setAgendaOpen(true);
-    agendaOverlay.open(true);
+  function openSimple(isOpen: boolean, setOpen: (v: boolean) => void, overlay: { open: (v: boolean) => void }) {
+    if (isOpen) return;
+    setOpen(true);
+    overlay.open(true);
   }
   function openFilters() {
     if (filters.mobileFiltersOpen) return;
@@ -172,48 +112,6 @@ export default function App() {
     filters.setMobileFiltersOpen(true);
     filtersOverlay.open(true);
   }
-  function openMovieDialog(movie?: Movie) {
-    setEditingMovie(movie);
-    if (movieDialogOpen) return;
-    setMovieDialogOpen(true);
-    movieDialogOverlay.open(true);
-  }
-
-  function handleSave(draft: MovieDraft): string | null {
-    const duplicate = movies.find((movie) => {
-      if (movie.id === editingMovie?.id) return false;
-      return (
-        (draft.tmdbId && movie.tmdbId === draft.tmdbId) ||
-        movie.title.toLocaleLowerCase() === draft.title.toLocaleLowerCase()
-      );
-    });
-    if (duplicate) return `“${duplicate.title}” is already in your collection. You can edit that movie.`;
-    const old = editingMovie;
-    const watchedAt =
-      draft.status === 'seen' ? (parseDateOnly(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
-    const nextMovie: Movie = {
-      id: old?.id || createId(),
-      title: draft.title,
-      year: draft.year || undefined,
-      releaseDate: draft.releaseDate || old?.releaseDate,
-      status: draft.status,
-      rating: draft.status === 'seen' ? draft.rating : undefined,
-      note: draft.note || undefined,
-      tmdbId: draft.tmdbId,
-      posterPath: draft.posterPath || old?.posterPath,
-      palette: old?.palette ?? Math.floor(Math.random() * 8),
-      addedAt: old?.addedAt ?? Date.now(),
-      watchedAt,
-      runtime: draft.runtime ?? old?.runtime,
-      genres: draft.genres ?? old?.genres,
-    };
-    const saved = old ? collection.updateMovie(old.id, nextMovie) : collection.addMovie(nextMovie);
-    if (!saved) return 'Could not save. Check the available storage on this device.';
-    if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
-    movieDialogOverlay.close();
-    return null;
-  }
-
   function removeMovie(id: string): boolean {
     const movie = collection.findById(id);
     if (!movie || !window.confirm(`Remove “${movie.title}” from your collection?`)) return false;
@@ -245,9 +143,9 @@ export default function App() {
         filters.closeMobilePanels();
         nav.switchTab(tab);
       }}
-      onOpenSettings={openSettings}
-      onOpenAgenda={openAgenda}
-      onAdd={() => openMovieDialog()}
+      onOpenSettings={() => openSimple(settingsOpen, setSettingsOpen, settingsOverlay)}
+      onOpenAgenda={() => openSimple(agendaOpen, setAgendaOpen, agendaOverlay)}
+      onAdd={() => movieDialog.openDialog()}
       mobileSearchOpen={filters.mobileSearchOpen}
       onMobileSearchOpen={() => {
         filters.setMobileSearchOpen(true);
@@ -278,10 +176,10 @@ export default function App() {
           onSortOrderChange={(value: SortOrder) => filters.changeSortOrder(value)}
           collectionView={filters.collectionView}
           onCollectionViewChange={filters.changeCollectionView}
-          onAdd={() => openMovieDialog()}
+          onAdd={() => movieDialog.openDialog()}
           onDiscover={() => nav.switchTab('discover')}
-          onOpenSettings={openSettings}
-          onEdit={(movie) => openMovieDialog(movie)}
+          onOpenSettings={() => openSimple(settingsOpen, setSettingsOpen, settingsOverlay)}
+          onEdit={movieDialog.openDialog}
           onDelete={removeMovie}
           onOpen={openMovie}
         />
@@ -313,7 +211,7 @@ export default function App() {
           onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
           onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
           onRemove={() => removeMovieFromDetails(selectedMovie.id)}
-          onEdit={selectedDiscoveryMovie ? undefined : (movie) => openMovieDialog(movie)}
+          onEdit={selectedDiscoveryMovie ? undefined : movieDialog.openDialog}
           onClose={closeDetails}
           onEnrich={enrichMovie}
         />
@@ -330,7 +228,12 @@ export default function App() {
         onReset={filters.resetFilters}
         onClose={filtersOverlay.close}
       />
-      <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={movieDialogOverlay.close} onSave={handleSave} />
+      <MovieDialog
+        open={movieDialog.open}
+        movie={movieDialog.editingMovie}
+        onClose={movieDialog.closeDialog}
+        onSave={movieDialog.handleSave}
+      />
       <SettingsDialog
         open={settingsOpen}
         onClose={settingsOverlay.close}
