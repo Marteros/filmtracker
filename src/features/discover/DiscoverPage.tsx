@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
 import {
   getDiscoveryMovies,
   getRandomDiscoveryMovie,
@@ -72,8 +73,25 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   const [recentRandomIds, setRecentRandomIds] = useState<number[]>([]);
   const overviewScrollRef = useRef(0);
   const restoreOverviewScrollRef = useRef<number | null>(null);
-  const sectionHistoryRef = useRef<DiscoveryCategory | null>(null);
-  const randomHistoryRef = useRef(false);
+
+  const sectionOverlay = useHistoryOverlay<DiscoveryCategory>({
+    key: 'frameSection',
+    onChange: (section) => {
+      if (section) {
+        if (!selectedSection) overviewScrollRef.current = window.scrollY;
+        setSelectedSection(section);
+        setError('');
+      } else {
+        restoreOverviewScrollRef.current = overviewScrollRef.current;
+        setSelectedSection(undefined);
+        setError('');
+      }
+    },
+  });
+  const randomOverlay = useHistoryOverlay<boolean>({
+    key: 'frameRandomizer',
+    onChange: (value) => setRandomDialogOpen(Boolean(value)),
+  });
 
   useEffect(() => {
     const dialog = randomDialogRef.current;
@@ -98,56 +116,12 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     overviewScrollRef.current = window.scrollY;
     setSelectedSection(section);
     setError('');
-    if (!sectionHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameSection: section }, '');
-      sectionHistoryRef.current = section;
-    } else {
-      window.history.replaceState({ ...(window.history.state || {}), frameSection: section }, '');
-      sectionHistoryRef.current = section;
-    }
+    sectionOverlay.open(section);
   }
 
   function closeSection() {
-    if (sectionHistoryRef.current && window.history.state?.frameSection) {
-      window.history.back();
-      return;
-    }
-    restoreOverviewScrollRef.current = overviewScrollRef.current;
-    sectionHistoryRef.current = null;
-    setSelectedSection(undefined);
-    setError('');
+    sectionOverlay.close();
   }
-
-  useEffect(() => {
-    function onPopState(event: PopStateEvent) {
-      const state = event.state || {};
-      const section = state.frameSection as DiscoveryCategory | undefined;
-
-      if (section) {
-        if (sectionHistoryRef.current !== section) {
-          if (!sectionHistoryRef.current) overviewScrollRef.current = window.scrollY;
-          sectionHistoryRef.current = section;
-          setSelectedSection(section);
-          setError('');
-        }
-      } else if (sectionHistoryRef.current) {
-        restoreOverviewScrollRef.current = overviewScrollRef.current;
-        sectionHistoryRef.current = null;
-        setSelectedSection(undefined);
-        setError('');
-      }
-
-      if (state.frameRandomizer) {
-        randomHistoryRef.current = true;
-        setRandomDialogOpen(true);
-      } else if (randomHistoryRef.current || randomDialogOpen) {
-        randomHistoryRef.current = false;
-        setRandomDialogOpen(false);
-      }
-    }
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, [randomDialogOpen]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 280);
@@ -231,19 +205,11 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     setRandomError('');
     if (randomDialogOpen) return;
     setRandomDialogOpen(true);
-    if (!randomHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameRandomizer: true }, '');
-      randomHistoryRef.current = true;
-    }
+    randomOverlay.open(true);
   }
 
   function closeRandomDialog() {
-    if (randomHistoryRef.current && window.history.state?.frameRandomizer) {
-      window.history.back();
-      return;
-    }
-    randomHistoryRef.current = false;
-    setRandomDialogOpen(false);
+    randomOverlay.close();
   }
 
   function handleOpenMovie(movie: TmdbMovie) {

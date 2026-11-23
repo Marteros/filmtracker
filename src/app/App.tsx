@@ -1,18 +1,23 @@
-import { useModalScrollLock } from '@/hooks/useModalScrollLock';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { MovieDialog } from '@/features/collection/MovieDialog';
-import { MovieGrid } from '@/features/collection/MovieGrid';
-import { SettingsDialog } from '@/features/settings/SettingsDialog';
-import { MovieDetailsPage } from '@/features/details/MovieDetailsPage';
-import { DiscoverPage } from '@/features/discover/DiscoverPage';
-import { SearchField } from '@/components/ui/SearchField';
-import { ViewToggle } from '@/features/collection/ViewToggle';
-import { InsightsPage } from '@/features/insights/InsightsPage';
-import { AgendaPage } from '@/features/agenda/AgendaPage';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { AppShell } from './AppShell';
+import { useAppNavigation } from './useAppNavigation';
 import { useCollection } from './useCollection';
-import { migrateSettings, getTraktSettings, saveTraktSettings, clearTraktSettings } from '@/services/settingsStore';
+import { CollectionPage } from '@/features/collection/CollectionPage';
+import { FilterDialog } from '@/features/collection/FilterDialog';
+import { MovieDialog } from '@/features/collection/MovieDialog';
+import { useCollectionFilters, type SortOrder } from '@/features/collection/useCollectionFilters';
+import { DiscoverPage } from '@/features/discover/DiscoverPage';
+import { MovieDetailsPage } from '@/features/details/MovieDetailsPage';
+import { AgendaPage } from '@/features/agenda/AgendaPage';
+import { InsightsPage } from '@/features/insights/InsightsPage';
+import { SettingsDialog } from '@/features/settings/SettingsDialog';
+import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
+import { readOverlay } from '@/lib/overlayState';
 import { parseDateOnly } from '@/lib/dates';
 import { findMovie } from '@/lib/movie';
+import { downloadBackup, importBackup, type ImportMode } from '@/services/backup';
+import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from '@/services/theme';
+import { clearTraktSettings, getTraktSettings, migrateSettings, saveTraktSettings } from '@/services/settingsStore';
 import {
   beginTraktAuthorization,
   finishTraktAuthorization,
@@ -23,41 +28,24 @@ import {
   type TraktMovieRef,
 } from '@/services/trakt';
 import { getMovieDetails, TmdbError } from '@/services/tmdb';
-import { downloadBackup, importBackup, type ImportMode } from '@/services/backup';
-import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from '@/services/theme';
 import type { Movie, MovieDraft, TmdbMovie } from '@/types';
-
-type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
-type AppTab = 'history' | 'watchlist' | 'discover' | 'insights';
-type CollectionView = 'grid' | 'list';
-const COLLECTION_VIEW_KEY = 'frame-collection-view-v1';
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 }
 
+type DetailsPayload = { movieId?: string; discovery?: TmdbMovie };
+
 export default function App() {
   const collection = useCollection();
-  const movies = collection.movies;
-  const storageError = collection.storageError;
+  const { movies, storageError } = collection;
+  const nav = useAppNavigation();
+  const isWatchlist = nav.activeTab === 'watchlist';
+  const filters = useCollectionFilters(movies, isWatchlist);
+
   const [trakt, setTrakt] = useState<TraktCredentials>(() => getTraktSettings());
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
-  const [activeTab, setActiveTab] = useState<AppTab>('history');
-  const [discoverMounted, setDiscoverMounted] = useState(false);
-  const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
-  const [yearFilter, setYearFilter] = useState('all');
-  const [collectionView, setCollectionView] = useState<CollectionView>(() => {
-    try {
-      return localStorage.getItem(COLLECTION_VIEW_KEY) === 'list' ? 'list' : 'grid';
-    } catch {
-      return 'grid';
-    }
-  });
-  const [query, setQuery] = useState('');
   const [discoverQuery, setDiscoverQuery] = useState('');
-  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
-  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  useModalScrollLock(mobileFiltersOpen);
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
@@ -68,12 +56,6 @@ export default function App() {
   const [shareNotice, setShareNotice] = useState('');
   const traktCallbackHandled = useRef(false);
   const sharedMovieHandled = useRef(false);
-  const filterDialogRef = useRef<HTMLDialogElement>(null);
-  const detailsHistoryRef = useRef(false);
-  const agendaHistoryRef = useRef(false);
-  const settingsHistoryRef = useRef(false);
-  const movieDialogHistoryRef = useRef(false);
-  const filtersHistoryRef = useRef(false);
 
   useEffect(() => {
     migrateSettings();
@@ -97,6 +79,96 @@ export default function App() {
     saveThemeMode(mode);
   }
 
+  const settingsOverlay = useHistoryOverlay<boolean>({
+    key: 'frameSettings',
+    onChange: (value) => setSettingsOpen(Boolean(value)),
+  });
+  const agendaOverlay = useHistoryOverlay<boolean>({
+    key: 'frameAgenda',
+    onChange: (value) => setAgendaOpen(Boolean(value)),
+  });
+  const filtersOverlay = useHistoryOverlay<boolean>({
+    key: 'frameFilters',
+    onChange: (value) => filters.setMobileFiltersOpen(Boolean(value)),
+  });
+  const movieDialogOverlay = useHistoryOverlay<boolean>({
+    key: 'frameMovieDialog',
+    onChange: (value) => {
+      setMovieDialogOpen(Boolean(value));
+      if (!value) setEditingMovie(undefined);
+    },
+  });
+  const detailsOverlay = useHistoryOverlay<DetailsPayload>({
+    key: 'frameDetails',
+    onChange: (payload) => {
+      if (!payload) {
+        setSelectedMovie(undefined);
+        setSelectedDiscoveryMovie(undefined);
+        return;
+      }
+      if (payload.discovery) {
+        setSelectedDiscoveryMovie(payload.discovery);
+        setSelectedMovie({
+          id: `discover-${payload.discovery.id}`,
+          tmdbId: payload.discovery.id,
+          title: payload.discovery.title,
+          year: payload.discovery.release_date?.slice(0, 4),
+          releaseDate: payload.discovery.release_date || undefined,
+          status: 'watchlist',
+          posterPath: payload.discovery.poster_path || undefined,
+          palette: 0,
+          addedAt: Date.now(),
+        });
+        return;
+      }
+      if (payload.movieId) {
+        const saved = collection.findById(payload.movieId);
+        if (saved) {
+          setSelectedDiscoveryMovie(undefined);
+          setSelectedMovie(saved);
+          return;
+        }
+      }
+      setSelectedMovie(undefined);
+      setSelectedDiscoveryMovie(undefined);
+    },
+  });
+
+  useLayoutEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // Restore overlays from an existing history entry (forward navigation / reload with state).
+  useEffect(() => {
+    const state = window.history.state;
+    if (readOverlay(state, 'frameSettings')) setSettingsOpen(true);
+    if (readOverlay(state, 'frameAgenda')) setAgendaOpen(true);
+    if (readOverlay(state, 'frameFilters')) filters.setMobileFiltersOpen(true);
+    const details = readOverlay(state, 'frameDetails') as DetailsPayload | undefined;
+    if (details?.discovery) {
+      setSelectedDiscoveryMovie(details.discovery);
+      setSelectedMovie({
+        id: `discover-${details.discovery.id}`,
+        tmdbId: details.discovery.id,
+        title: details.discovery.title,
+        year: details.discovery.release_date?.slice(0, 4),
+        releaseDate: details.discovery.release_date || undefined,
+        status: 'watchlist',
+        posterPath: details.discovery.poster_path || undefined,
+        palette: 0,
+        addedAt: Date.now(),
+      });
+    } else if (details?.movieId) {
+      const saved = collection.findById(details.movieId);
+      if (saved) {
+        setSelectedDiscoveryMovie(undefined);
+        setSelectedMovie(saved);
+      }
+    }
+    // Intentionally run once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (sharedMovieHandled.current) return;
     const params = new URLSearchParams(window.location.search);
@@ -109,7 +181,6 @@ export default function App() {
       return;
     }
     sharedMovieHandled.current = true;
-
     const wait = (ms: number) => new Promise<void>((resolve) => window.setTimeout(resolve, ms));
     void (async () => {
       let movie: Awaited<ReturnType<typeof getMovieDetails>> | undefined;
@@ -134,9 +205,9 @@ export default function App() {
       if (!movie) return;
       window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
       setShareNotice('');
-      window.history.replaceState({ ...(window.history.state || {}) }, '');
       openDiscoveredDetails(movie);
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -147,7 +218,6 @@ export default function App() {
     if ((!code && !authError) || traktCallbackHandled.current) return;
     traktCallbackHandled.current = true;
     window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-
     if (authError) {
       setTraktNotice('Trakt sign-in was cancelled. You can start connecting again via Settings.');
       return;
@@ -169,25 +239,11 @@ export default function App() {
   }, [trakt.clientId]);
 
   useEffect(() => {
-    if (mobileFiltersOpen) {
-      if (filtersHistoryRef.current && window.history.state?.frameFilters) window.history.back();
-      else {
-        filtersHistoryRef.current = false;
-        setMobileFiltersOpen(false);
-      }
-    }
-    setMobileSearchOpen(false);
-  }, [activeTab, selectedMovie, agendaOpen]);
+    filters.closeMobilePanels();
+  }, [nav.activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    const element = filterDialogRef.current;
-    if (!element) return;
-    if (mobileFiltersOpen && !element.open) element.showModal();
-    if (!mobileFiltersOpen && element.open) element.close();
-  }, [mobileFiltersOpen]);
-
-  useEffect(() => {
-    if (!mobileSearchOpen) return;
+    if (!filters.mobileSearchOpen) return;
     let armed = false;
     const timer = window.setTimeout(() => {
       armed = true;
@@ -195,277 +251,84 @@ export default function App() {
     function closeOnScroll() {
       if (!armed) return;
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      setMobileSearchOpen(false);
+      filters.setMobileSearchOpen(false);
     }
     window.addEventListener('scroll', closeOnScroll, { passive: true });
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener('scroll', closeOnScroll);
     };
-  }, [mobileSearchOpen]);
+  }, [filters.mobileSearchOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (activeTab === 'discover') setDiscoverMounted(true);
-  }, [activeTab]);
-
-  useLayoutEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
-  useEffect(() => {
-    function restoreDetailsFromState(state: any) {
-      const details = state?.frameDetails;
-      if (!details) return false;
-      if (details.discovery && typeof details.discovery === 'object') {
-        const movie = details.discovery as TmdbMovie;
-        setSelectedDiscoveryMovie(movie);
-        setSelectedMovie({
-          id: `discover-${movie.id}`,
-          tmdbId: movie.id,
-          title: movie.title,
-          year: movie.release_date?.slice(0, 4),
-          releaseDate: movie.release_date || undefined,
-          status: 'watchlist',
-          posterPath: movie.poster_path || undefined,
-          palette: 0,
-          addedAt: Date.now(),
-        });
-        return true;
-      }
-      if (typeof details.movieId === 'string') {
-        const saved = collection.findById(details.movieId);
-        if (saved) {
-          setSelectedDiscoveryMovie(undefined);
-          setSelectedMovie(saved);
-          return true;
-        }
-      }
-      return false;
-    }
-
-    function onPopState(event: PopStateEvent) {
-      const state = event.state || {};
-
-      // Details
-      if (state.frameDetails) {
-        detailsHistoryRef.current = true;
-        agendaHistoryRef.current = false;
-        if (!restoreDetailsFromState(state)) {
-          detailsHistoryRef.current = false;
-          setSelectedMovie(undefined);
-          setSelectedDiscoveryMovie(undefined);
-        }
-      } else if (detailsHistoryRef.current || selectedMovie) {
-        detailsHistoryRef.current = false;
-        setSelectedMovie(undefined);
-        setSelectedDiscoveryMovie(undefined);
-      }
-
-      // Agenda (only when details not active)
-      if (state.frameAgenda && !state.frameDetails) {
-        agendaHistoryRef.current = true;
-        setAgendaOpen(true);
-      } else if (agendaHistoryRef.current || agendaOpen) {
-        agendaHistoryRef.current = false;
-        setAgendaOpen(false);
-      }
-
-      // Settings dialog
-      if (state.frameSettings) {
-        settingsHistoryRef.current = true;
-        setSettingsOpen(true);
-      } else if (settingsHistoryRef.current || settingsOpen) {
-        settingsHistoryRef.current = false;
-        setSettingsOpen(false);
-      }
-
-      // Movie dialog
-      if (state.frameMovieDialog) {
-        movieDialogHistoryRef.current = true;
-        // Cannot reliably restore which movie was being edited; close to avoid inconsistent state.
-        if (!movieDialogOpen) setMovieDialogOpen(false);
-      } else if (movieDialogHistoryRef.current || movieDialogOpen) {
-        movieDialogHistoryRef.current = false;
-        setMovieDialogOpen(false);
-        setEditingMovie(undefined);
-      }
-
-      // Mobile filters dialog
-      if (state.frameFilters) {
-        filtersHistoryRef.current = true;
-        setMobileFiltersOpen(true);
-      } else if (filtersHistoryRef.current || mobileFiltersOpen) {
-        filtersHistoryRef.current = false;
-        setMobileFiltersOpen(false);
-      }
-    }
-
-    window.addEventListener('popstate', onPopState);
-    return () => window.removeEventListener('popstate', onPopState);
-  }, [agendaOpen, movieDialogOpen, mobileFiltersOpen, selectedMovie, settingsOpen]);
-
-  const isWatchlist = activeTab === 'watchlist';
-  const statusMovies = useMemo(
-    () => movies.filter((movie) => movie.status === (isWatchlist ? 'watchlist' : 'seen')),
-    [isWatchlist, movies],
-  );
-
-  const visibleMovies = useMemo(() => {
-    const search = query.trim().toLocaleLowerCase();
-    return statusMovies
-      .filter((movie) => {
-        const matchesQuery =
-          !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase().includes(search);
-        const matchesYear = yearFilter === 'all' || movie.year === yearFilter;
-        return matchesQuery && matchesYear;
-      })
-      .sort((a, b) => {
-        if (sortOrder === 'oldest') return a.addedAt - b.addedAt;
-        if (sortOrder === 'title') return a.title.localeCompare(b.title);
-        if (sortOrder === 'year')
-          return (Number(b.year) || 0) - (Number(a.year) || 0) || a.title.localeCompare(b.title);
-        if (sortOrder === 'rating') return (b.rating || 0) - (a.rating || 0) || b.addedAt - a.addedAt;
-        return b.addedAt - a.addedAt;
-      });
-  }, [query, sortOrder, statusMovies, yearFilter]);
-
-  const collectionCount = statusMovies.length;
-
-  const years = useMemo(
-    () =>
-      [...new Set(movies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort(
-        (a, b) => Number(b) - Number(a),
-      ),
-    [movies],
-  );
-  function handleSave(draft: MovieDraft): string | null {
-    const duplicate = movies.find((movie) => {
-      if (movie.id === editingMovie?.id) return false;
-      return (
-        (draft.tmdbId && movie.tmdbId === draft.tmdbId) ||
-        movie.title.toLocaleLowerCase() === draft.title.toLocaleLowerCase()
-      );
-    });
-    if (duplicate) return `“${duplicate.title}” is already in your collection. You can edit that movie.`;
-
-    const old = editingMovie;
-    const watchedAt =
-      draft.status === 'seen' ? (parseDateOnly(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
-    const nextMovie: Movie = {
-      id: old?.id || createId(),
-      title: draft.title,
-      year: draft.year || undefined,
-      releaseDate: draft.releaseDate || old?.releaseDate,
-      status: draft.status,
-      rating: draft.status === 'seen' ? draft.rating : undefined,
-      note: draft.note || undefined,
-      tmdbId: draft.tmdbId,
-      posterPath: draft.posterPath || old?.posterPath,
-      palette: old?.palette ?? Math.floor(Math.random() * 8),
-      addedAt: old?.addedAt ?? Date.now(),
-      watchedAt,
-      runtime: draft.runtime ?? old?.runtime,
-      genres: draft.genres ?? old?.genres,
-    };
-    const saved = old ? collection.updateMovie(old.id, nextMovie) : collection.addMovie(nextMovie);
-    if (!saved) return 'Could not save. Check the available storage on this device.';
-    if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
-    closeMovieDialog();
-    return null;
+  function openSettings() {
+    if (settingsOpen) return;
+    setSettingsOpen(true);
+    settingsOverlay.open(true);
   }
-
-  function openAddDialog() {
-    setMobileFiltersOpen(false);
-    setMobileSearchOpen(false);
-    setEditingMovie(undefined);
-    if (movieDialogOpen) return;
-    setMovieDialogOpen(true);
-    if (!movieDialogHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameMovieDialog: true }, '');
-      movieDialogHistoryRef.current = true;
-    }
+  function closeSettings() {
+    settingsOverlay.close();
   }
-
-  function switchTab(tab: AppTab) {
-    if (tab === 'discover') setDiscoverMounted(true);
-    if (tab !== activeTab) setActiveTab(tab);
-    window.scrollTo(0, 0);
-  }
-
   function openAgenda() {
     if (agendaOpen) return;
     setAgendaOpen(true);
-    if (!agendaHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameAgenda: true }, '');
-      agendaHistoryRef.current = true;
-    }
+    agendaOverlay.open(true);
   }
-
   function closeAgenda() {
-    if (agendaHistoryRef.current && window.history.state?.frameAgenda) {
-      window.history.back();
-      return;
-    }
-    agendaHistoryRef.current = false;
-    setAgendaOpen(false);
+    agendaOverlay.close();
+  }
+  function openFilters() {
+    if (filters.mobileFiltersOpen) return;
+    filters.setMobileSearchOpen(false);
+    filters.setMobileFiltersOpen(true);
+    filtersOverlay.open(true);
+  }
+  function closeFilters() {
+    filtersOverlay.close();
+  }
+  function openMovieDialog(movie?: Movie) {
+    setEditingMovie(movie);
+    if (movieDialogOpen) return;
+    setMovieDialogOpen(true);
+    movieDialogOverlay.open(true);
+  }
+  function closeMovieDialog() {
+    movieDialogOverlay.close();
   }
 
   function openMovie(movie: Movie) {
     setSelectedDiscoveryMovie(undefined);
     setSelectedMovie(movie);
-    if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
-      detailsHistoryRef.current = true;
+    detailsOverlay.open({ movieId: movie.id });
+  }
+  function openDiscoveredDetails(movie: TmdbMovie) {
+    const saved = findSavedMovie(movie);
+    if (saved) {
+      setSelectedDiscoveryMovie(undefined);
+      setSelectedMovie(saved);
+      detailsOverlay.open({ movieId: saved.id });
     } else {
-      window.history.replaceState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
+      setSelectedDiscoveryMovie(movie);
+      setSelectedMovie({
+        id: `discover-${movie.id}`,
+        tmdbId: movie.id,
+        title: movie.title,
+        year: movie.release_date?.slice(0, 4),
+        releaseDate: movie.release_date || undefined,
+        status: 'watchlist',
+        posterPath: movie.poster_path || undefined,
+        palette: 0,
+        addedAt: Date.now(),
+      });
+      detailsOverlay.open({ discovery: movie });
     }
   }
-
   function openMovieFromAgenda(movie: Movie) {
-    // Keep agenda mounted under the details overlay so browser back returns to it.
     setSelectedDiscoveryMovie(undefined);
     setSelectedMovie(movie);
-    if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
-      detailsHistoryRef.current = true;
-    } else {
-      window.history.replaceState({ ...(window.history.state || {}), frameDetails: { movieId: movie.id } }, '');
-    }
+    detailsOverlay.open({ movieId: movie.id });
   }
-
   function closeDetails() {
-    if (detailsHistoryRef.current && window.history.state?.frameDetails) {
-      window.history.back();
-      return;
-    }
-    detailsHistoryRef.current = false;
-    setSelectedMovie(undefined);
-    setSelectedDiscoveryMovie(undefined);
-  }
-
-  function changeYearFilter(value: string) {
-    setYearFilter(value);
-    window.scrollTo(0, 0);
-  }
-
-  function changeSortOrder(value: SortOrder) {
-    setSortOrder(value);
-    window.scrollTo(0, 0);
-  }
-
-  function resetFilters() {
-    setYearFilter('all');
-    setSortOrder('newest');
-    window.scrollTo(0, 0);
-  }
-
-  function changeCollectionView(view: CollectionView) {
-    setCollectionView(view);
-    try {
-      localStorage.setItem(COLLECTION_VIEW_KEY, view);
-    } catch {
-      /* Keep the view preference local. */
-    }
+    detailsOverlay.close();
   }
 
   function findSavedMovie(movie: TmdbMovie) {
@@ -497,32 +360,45 @@ export default function App() {
     return collection.addMovie(saved) ? saved : undefined;
   }
 
-  function openDiscoveredDetails(movie: TmdbMovie) {
-    const saved = findSavedMovie(movie);
-    const detailsState = saved ? { movieId: saved.id } : { discovery: movie };
-    if (saved) {
-      setSelectedDiscoveryMovie(undefined);
-      setSelectedMovie(saved);
-    } else {
-      setSelectedDiscoveryMovie(movie);
-      setSelectedMovie({
-        id: `discover-${movie.id}`,
-        tmdbId: movie.id,
-        title: movie.title,
-        year: movie.release_date?.slice(0, 4),
-        releaseDate: movie.release_date || undefined,
-        status: 'watchlist',
-        posterPath: movie.poster_path || undefined,
-        palette: 0,
-        addedAt: Date.now(),
-      });
-    }
-    if (!detailsHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameDetails: detailsState }, '');
-      detailsHistoryRef.current = true;
-    } else {
-      window.history.replaceState({ ...(window.history.state || {}), frameDetails: detailsState }, '');
-    }
+  function handleSave(draft: MovieDraft): string | null {
+    const duplicate = movies.find((movie) => {
+      if (movie.id === editingMovie?.id) return false;
+      return (
+        (draft.tmdbId && movie.tmdbId === draft.tmdbId) ||
+        movie.title.toLocaleLowerCase() === draft.title.toLocaleLowerCase()
+      );
+    });
+    if (duplicate) return `“${duplicate.title}” is already in your collection. You can edit that movie.`;
+    const old = editingMovie;
+    const watchedAt =
+      draft.status === 'seen' ? (parseDateOnly(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
+    const nextMovie: Movie = {
+      id: old?.id || createId(),
+      title: draft.title,
+      year: draft.year || undefined,
+      releaseDate: draft.releaseDate || old?.releaseDate,
+      status: draft.status,
+      rating: draft.status === 'seen' ? draft.rating : undefined,
+      note: draft.note || undefined,
+      tmdbId: draft.tmdbId,
+      posterPath: draft.posterPath || old?.posterPath,
+      palette: old?.palette ?? Math.floor(Math.random() * 8),
+      addedAt: old?.addedAt ?? Date.now(),
+      watchedAt,
+      runtime: draft.runtime ?? old?.runtime,
+      genres: draft.genres ?? old?.genres,
+    };
+    const saved = old ? collection.updateMovie(old.id, nextMovie) : collection.addMovie(nextMovie);
+    if (!saved) return 'Could not save. Check the available storage on this device.';
+    if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
+    closeMovieDialog();
+    return null;
+  }
+
+  function removeMovie(id: string): boolean {
+    const movie = collection.findById(id);
+    if (!movie || !window.confirm(`Remove “${movie.title}” from your collection?`)) return false;
+    return collection.removeMovie(id);
   }
 
   function setMovieStatusFromDetails(movie: Movie, status: 'seen' | 'watchlist'): boolean {
@@ -556,32 +432,6 @@ export default function App() {
     return collection.removeMovie(id);
   }
 
-  function openEditDialog(movie: Movie) {
-    setEditingMovie(movie);
-    if (movieDialogOpen) return;
-    setMovieDialogOpen(true);
-    if (!movieDialogHistoryRef.current) {
-      window.history.pushState({ ...(window.history.state || {}), frameMovieDialog: true }, '');
-      movieDialogHistoryRef.current = true;
-    }
-  }
-
-  function closeMovieDialog() {
-    if (movieDialogHistoryRef.current && window.history.state?.frameMovieDialog) {
-      window.history.back();
-      return;
-    }
-    movieDialogHistoryRef.current = false;
-    setMovieDialogOpen(false);
-    setEditingMovie(undefined);
-  }
-
-  function removeMovie(id: string): boolean {
-    const movie = movies.find((item) => item.id === id);
-    if (!movie || !window.confirm(`Remove “${movie.title}” from your collection?`)) return false;
-    return collection.removeMovie(id);
-  }
-
   const enrichMovie = useCallback(
     (id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>) => {
       collection.enrichMovie(id, patch);
@@ -598,23 +448,19 @@ export default function App() {
     const authorizationUrl = await beginTraktAuthorization(TRAKT_CLIENT_ID);
     window.location.assign(authorizationUrl);
   }
-
   function disconnectTrakt() {
     clearTraktSettings();
     setTrakt({ clientId: '', accessToken: '', refreshToken: '', expiresAt: 0 });
   }
-
   function exportCollection() {
     downloadBackup(movies);
   }
-
   async function importCollection(file: File, mode: ImportMode): Promise<string> {
     const result = await importBackup(file, movies, mode);
-    if (!collection.replaceAll(result.movies))
-      throw new Error('Import failed. Check the available storage on this device.');
-    if (mode === 'replace') {
+    const ok = mode === 'replace' ? collection.replaceAll(result.movies) : collection.mergeMany(result.movies);
+    if (!ok) throw new Error('Import failed. Check the available storage on this device.');
+    if (mode === 'replace')
       return `${result.added} ${result.added === 1 ? 'movie' : 'movies'} imported (collection replaced).`;
-    }
     const parts = [`${result.added} ${result.added === 1 ? 'movie' : 'movies'} added`];
     if (result.skipped) parts.push(`${result.skipped} skipped`);
     if (result.invalid) parts.push(`${result.invalid} invalid`);
@@ -633,10 +479,8 @@ export default function App() {
     };
     const watched = await getWatchedMovies(effective, onCredentials);
     const watchlist = await getWatchlistMovies(refreshed || effective, onCredentials);
-
     const next = [...movies];
     let changed = 0;
-
     const findMatchIndex = (entry: TraktMovieRef) => {
       const tmdbId = entry.ids?.tmdb;
       return next.findIndex(
@@ -646,7 +490,6 @@ export default function App() {
             movie.year === (entry.year ? String(entry.year) : undefined)),
       );
     };
-
     const enrichFromTmdb = async (movie: Movie, tmdbId?: number): Promise<Movie> => {
       if (!tmdbId || (movie.posterPath && movie.releaseDate && movie.runtime && movie.genres?.length)) return movie;
       try {
@@ -663,7 +506,6 @@ export default function App() {
       }
     };
 
-    // 1) Watch history: always import/update as seen (seen wins).
     for (const item of watched) {
       const entry = item.movie;
       if (!entry?.title) continue;
@@ -673,9 +515,7 @@ export default function App() {
       if (matchIndex >= 0) {
         const old = next[matchIndex];
         let updated = old.status === 'seen' ? old : { ...old, status: 'seen' as const };
-        if (watchedAt && !updated.watchedAt) {
-          updated = { ...updated, watchedAt };
-        }
+        if (watchedAt && !updated.watchedAt) updated = { ...updated, watchedAt };
         updated = await enrichFromTmdb(updated, tmdbId || updated.tmdbId);
         if (updated !== old) {
           next[matchIndex] = updated;
@@ -698,7 +538,6 @@ export default function App() {
       changed += 1;
     }
 
-    // 2) Watchlist: import as watchlist, but never downgrade a seen movie.
     for (const item of watchlist) {
       const entry = item.movie;
       if (!entry?.title) continue;
@@ -735,235 +574,61 @@ export default function App() {
     return changed;
   }
 
+  const mobileSearchValue = nav.activeTab === 'discover' ? discoverQuery : filters.query;
+  const setMobileSearchValue = nav.activeTab === 'discover' ? setDiscoverQuery : filters.setQuery;
+
   return (
-    <>
-      <header className="desktop-appbar">
-        <a className="desktop-brand" href="./" aria-label="Frame">
-          frame<span>.</span>
-        </a>
-        <button
-          className="desktop-settings"
-          type="button"
-          aria-label="Settings"
-          title="Settings"
-          onClick={() => {
-            if (!settingsOpen) {
-              setSettingsOpen(true);
-              if (!settingsHistoryRef.current) {
-                window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, '');
-                settingsHistoryRef.current = true;
-              }
-            }
-          }}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
-      </header>
-      <header className="mobile-appbar">
-        {mobileSearchOpen ? (
-          <div
-            className="mobile-search-inline"
-            id="mobile-search"
-            role="search"
-            aria-label="Search"
-            onKeyDown={(event) => {
-              if (event.key === 'Escape') setMobileSearchOpen(false);
-            }}
-          >
-            <SearchField
-              value={activeTab === 'discover' ? discoverQuery : query}
-              onChange={activeTab === 'discover' ? setDiscoverQuery : setQuery}
-              label="Search movies"
-              placeholder="Search by movie title…"
-              autoFocus
-            />
-            <button
-              className="mobile-search-close"
-              type="button"
-              aria-label="Close search"
-              title="Close search"
-              onClick={() => setMobileSearchOpen(false)}
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                <path d="M6 6l12 12M18 6 6 18" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <>
-            <a className="mobile-brand" href="./" aria-label="Frame — movie collection">
-              frame<span aria-hidden="true">.</span>
-            </a>
-            <div className="mobile-appbar-actions">
-              <button
-                className="mobile-search-toggle"
-                type="button"
-                aria-label="Search"
-                aria-expanded={false}
-                aria-controls="mobile-search"
-                title="Search"
-                onClick={() => {
-                  setMobileSearchOpen(true);
-                  setMobileFiltersOpen(false);
-                }}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-4-4" />
-                </svg>
-              </button>
-              {(activeTab === 'history' || activeTab === 'watchlist') && (
-                <button
-                  className={`mobile-filter-button${yearFilter !== 'all' || sortOrder !== 'newest' ? ' has-active' : ''}`}
-                  type="button"
-                  aria-label="Filters"
-                  aria-expanded={mobileFiltersOpen}
-                  aria-controls="mobile-filters"
-                  title="Filters"
-                  onClick={() => {
-                    setMobileSearchOpen(false);
-                    if (mobileFiltersOpen) {
-                      if (filtersHistoryRef.current && window.history.state?.frameFilters) {
-                        window.history.back();
-                        return;
-                      }
-                      filtersHistoryRef.current = false;
-                      setMobileFiltersOpen(false);
-                    } else {
-                      setMobileFiltersOpen(true);
-                      if (!filtersHistoryRef.current) {
-                        window.history.pushState({ ...(window.history.state || {}), frameFilters: true }, '');
-                        filtersHistoryRef.current = true;
-                      }
-                    }
-                  }}
-                >
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
-                  </svg>
-                </button>
-              )}
-              <button
-                className="mobile-settings"
-                type="button"
-                aria-label="Settings"
-                title="Settings"
-                onClick={() => {
-                  setSettingsOpen(true);
-                  if (!settingsHistoryRef.current) {
-                    window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, '');
-                    settingsHistoryRef.current = true;
-                  }
-                }}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              </button>
-            </div>
-          </>
-        )}
-      </header>
-      <main className="app" hidden={!(activeTab === 'history' || activeTab === 'watchlist')}>
-        <section className="collection" aria-label={isWatchlist ? 'Watchlist' : 'Seen'}>
-          <div className="mobile-collection-heading">
-            <div className="mobile-collection-title">
-              <h1>{isWatchlist ? 'Watchlist' : 'Seen'}</h1>
-              <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'movie' : 'movies'}`}>
-                {collectionCount}
-              </span>
-            </div>
-            <ViewToggle view={collectionView} onChange={changeCollectionView} className="mobile-view-toggle" />
-          </div>
-          <div className="toolbar">
-            <SearchField value={query} onChange={setQuery} label="Search movies" placeholder="Search by movie title…" />
-            <div className="collection-controls">
-              <ViewToggle view={collectionView} onChange={changeCollectionView} />
-              <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>
-                <span className="select-label-text">Year</span>
-                <select
-                  aria-label="Filter by year"
-                  value={yearFilter}
-                  onChange={(event) => changeYearFilter(event.target.value)}
-                >
-                  <option value="all">All years</option>
-                  {years.map((year) => (
-                    <option key={year} value={year}>
-                      {year}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className={`select-control${sortOrder !== 'newest' ? ' active' : ''}`}>
-                <span className="select-label-text">Sort</span>
-                <select
-                  aria-label="Sort movies"
-                  value={sortOrder}
-                  onChange={(event) => changeSortOrder(event.target.value as SortOrder)}
-                >
-                  <option value="newest">Newest added</option>
-                  <option value="oldest">Oldest added</option>
-                  <option value="title">Title A–Z</option>
-                  <option value="year">Year: new to old</option>
-                  <option value="rating">Highest rated</option>
-                </select>
-              </label>
-            </div>
-          </div>
-          {storageError && (
-            <p className="storage-error" role="alert">
-              {storageError}
-            </p>
-          )}
-          {traktNotice && (
-            <p className="trakt-message" role="status">
-              {traktNotice}
-            </p>
-          )}
-          {shareNotice && (
-            <p className="trakt-message" role="status">
-              {shareNotice}
-            </p>
-          )}
-          <MovieGrid
-            view={collectionView}
-            movies={visibleMovies}
-            collectionHasMovies={movies.length > 0}
-            emptyMessage={
-              query && !visibleMovies.length
-                ? 'No search results'
-                : !collectionCount && yearFilter !== 'all'
-                  ? 'No movies match your filters'
-                  : !collectionCount
-                    ? isWatchlist
-                      ? 'No movies on your watchlist yet'
-                      : 'No seen movies yet'
-                    : undefined
-            }
-            onAdd={openAddDialog}
-            onDiscover={() => switchTab('discover')}
-            onOpenSettings={() => {
-              if (!settingsOpen) {
-                setSettingsOpen(true);
-                if (!settingsHistoryRef.current) {
-                  window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, '');
-                  settingsHistoryRef.current = true;
-                }
-              }
-            }}
-            onEdit={openEditDialog}
-            onDelete={removeMovie}
-            onOpen={openMovie}
-          />
-        </section>
-      </main>
-      {discoverMounted && (
+    <AppShell
+      activeTab={nav.activeTab}
+      onSwitchTab={(tab) => {
+        filters.closeMobilePanels();
+        nav.switchTab(tab);
+      }}
+      onOpenSettings={openSettings}
+      onOpenAgenda={openAgenda}
+      onAdd={() => openMovieDialog()}
+      mobileSearchOpen={filters.mobileSearchOpen}
+      onMobileSearchOpen={() => {
+        filters.setMobileSearchOpen(true);
+        filters.setMobileFiltersOpen(false);
+      }}
+      onMobileSearchClose={() => filters.setMobileSearchOpen(false)}
+      mobileSearchValue={mobileSearchValue}
+      onMobileSearchChange={setMobileSearchValue}
+      showMobileFilter={nav.activeTab === 'history' || nav.activeTab === 'watchlist'}
+      mobileFilterActive={filters.yearFilter !== 'all' || filters.sortOrder !== 'newest'}
+      mobileFiltersOpen={filters.mobileFiltersOpen}
+      onMobileFilterToggle={() => (filters.mobileFiltersOpen ? closeFilters() : openFilters())}
+      storageError={storageError}
+      traktNotice={traktNotice}
+      shareNotice={shareNotice}
+    >
+      {(nav.activeTab === 'history' || nav.activeTab === 'watchlist') && (
+        <CollectionPage
+          isWatchlist={isWatchlist}
+          movies={movies}
+          visibleMovies={filters.visibleMovies}
+          query={filters.query}
+          onQueryChange={filters.setQuery}
+          years={filters.years}
+          yearFilter={filters.yearFilter}
+          onYearFilterChange={filters.changeYearFilter}
+          sortOrder={filters.sortOrder}
+          onSortOrderChange={(value: SortOrder) => filters.changeSortOrder(value)}
+          collectionView={filters.collectionView}
+          onCollectionViewChange={filters.changeCollectionView}
+          onAdd={() => openMovieDialog()}
+          onDiscover={() => nav.switchTab('discover')}
+          onOpenSettings={openSettings}
+          onEdit={(movie) => openMovieDialog(movie)}
+          onDelete={removeMovie}
+          onOpen={openMovie}
+        />
+      )}
+
+      {nav.discoverMounted && (
         <DiscoverPage
-          hidden={activeTab !== 'discover'}
+          hidden={nav.activeTab !== 'discover'}
           collection={movies}
           query={discoverQuery}
           onQueryChange={setDiscoverQuery}
@@ -971,7 +636,9 @@ export default function App() {
           onOpen={openDiscoveredDetails}
         />
       )}
-      {activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
+
+      {nav.activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
+
       {selectedMovie && (
         <MovieDetailsPage
           movie={selectedMovie}
@@ -979,205 +646,27 @@ export default function App() {
           onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
           onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
           onRemove={() => removeMovieFromDetails(selectedMovie.id)}
-          onEdit={selectedDiscoveryMovie ? undefined : openEditDialog}
+          onEdit={selectedDiscoveryMovie ? undefined : (movie) => openMovieDialog(movie)}
           onClose={closeDetails}
           onEnrich={enrichMovie}
         />
       )}
+
       <AgendaPage open={agendaOpen} movies={movies} onClose={closeAgenda} onOpen={openMovieFromAgenda} />
-      <dialog
-        ref={filterDialogRef}
-        className="movie-dialog mobile-filter-dialog"
-        id="mobile-filters"
-        aria-labelledby="mobile-filters-title"
-        onCancel={(event) => {
-          event.preventDefault();
-          if (filtersHistoryRef.current && window.history.state?.frameFilters) {
-            window.history.back();
-            return;
-          }
-          filtersHistoryRef.current = false;
-          setMobileFiltersOpen(false);
-        }}
-        onClose={() => {
-          filtersHistoryRef.current = false;
-          setMobileFiltersOpen(false);
-        }}
-        onClick={(event) => {
-          if (event.target === filterDialogRef.current) {
-            if (filtersHistoryRef.current && window.history.state?.frameFilters) {
-              window.history.back();
-              return;
-            }
-            filtersHistoryRef.current = false;
-            setMobileFiltersOpen(false);
-          }
-        }}
-      >
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            if (filtersHistoryRef.current && window.history.state?.frameFilters) {
-              window.history.back();
-              return;
-            }
-            filtersHistoryRef.current = false;
-            setMobileFiltersOpen(false);
-          }}
-        >
-          <div className="dialog-head">
-            <h2 id="mobile-filters-title">Filters</h2>
-            <button
-              type="button"
-              className="close-button"
-              aria-label="Close filters"
-              onClick={() => {
-                if (filtersHistoryRef.current && window.history.state?.frameFilters) {
-                  window.history.back();
-                  return;
-                }
-                filtersHistoryRef.current = false;
-                setMobileFiltersOpen(false);
-              }}
-            >
-              ×
-            </button>
-          </div>
-          <label className="form-field">
-            Year
-            <select
-              aria-label="Filter by year"
-              value={yearFilter}
-              onChange={(event) => changeYearFilter(event.target.value)}
-            >
-              <option value="all">All years</option>
-              {years.map((year) => (
-                <option key={year} value={year}>
-                  {year}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="form-field">
-            Sort
-            <select
-              aria-label="Sort movies"
-              value={sortOrder}
-              onChange={(event) => changeSortOrder(event.target.value as SortOrder)}
-            >
-              <option value="newest">Newest added</option>
-              <option value="oldest">Oldest added</option>
-              <option value="title">Title A–Z</option>
-              <option value="year">Year: new to old</option>
-              <option value="rating">Highest rated</option>
-            </select>
-          </label>
-          <button className="save-button" type="submit">
-            Done
-          </button>
-          <button className="remove-token" type="button" onClick={resetFilters}>
-            Clear filters
-          </button>
-        </form>
-      </dialog>
-      <div className="mobile-bottom-actions">
-        <div className="bottom-bar-side left">
-          <button
-            className="mobile-add-button agenda-button"
-            type="button"
-            aria-label="Agenda"
-            title="Agenda"
-            onClick={openAgenda}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <rect x="3" y="5" width="18" height="16" rx="2" />
-              <path d="M16 3v4M8 3v4M3 10h18" />
-            </svg>
-          </button>
-        </div>
-        <nav className="mobile-bottom-tabs" aria-label="Main navigation">
-          <button
-            type="button"
-            className={activeTab === 'history' ? 'active' : ''}
-            aria-label="Seen"
-            aria-current={activeTab === 'history' ? 'page' : undefined}
-            onClick={() => switchTab('history')}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M3 10.5 12 3l9 7.5" />
-              <path d="M5.5 9v11h13V9" />
-              <path d="M10 20v-5h4v5" />
-            </svg>
-            <span className="tab-label">Seen</span>
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'watchlist' ? 'active' : ''}
-            aria-label="Watchlist"
-            aria-current={activeTab === 'watchlist' ? 'page' : undefined}
-            onClick={() => switchTab('watchlist')}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
-            </svg>
-            <span className="tab-label">Watchlist</span>
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'discover' ? 'active' : ''}
-            aria-label="Discover"
-            aria-current={activeTab === 'discover' ? 'page' : undefined}
-            onClick={() => switchTab('discover')}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="12" cy="12" r="9" />
-              <path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" />
-            </svg>
-            <span className="tab-label">Discover</span>
-          </button>
-          <button
-            type="button"
-            className={activeTab === 'insights' ? 'active' : ''}
-            aria-label="Insights"
-            aria-current={activeTab === 'insights' ? 'page' : undefined}
-            onClick={() => switchTab('insights')}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M4 19V5" />
-              <path d="M8 19v-6" />
-              <path d="M12 19V9" />
-              <path d="M16 19V7" />
-              <path d="M20 19v-9" />
-            </svg>
-            <span className="tab-label">Insights</span>
-          </button>
-        </nav>
-        <div className="bottom-bar-side">
-          <button
-            className="mobile-add-button"
-            type="button"
-            aria-label="Add movie"
-            title="Add movie"
-            onClick={openAddDialog}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-        </div>
-      </div>
-      <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
+      <FilterDialog
+        open={filters.mobileFiltersOpen}
+        years={filters.years}
+        yearFilter={filters.yearFilter}
+        onYearFilterChange={filters.changeYearFilter}
+        sortOrder={filters.sortOrder}
+        onSortOrderChange={filters.changeSortOrder}
+        onReset={filters.resetFilters}
+        onClose={closeFilters}
+      />
       <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
       <SettingsDialog
         open={settingsOpen}
-        onClose={() => {
-          if (settingsHistoryRef.current && window.history.state?.frameSettings) {
-            window.history.back();
-            return;
-          }
-          settingsHistoryRef.current = false;
-          setSettingsOpen(false);
-        }}
+        onClose={closeSettings}
         trakt={trakt}
         onConnectTrakt={connectTrakt}
         onDisconnectTrakt={disconnectTrakt}
@@ -1187,6 +676,6 @@ export default function App() {
         onExport={exportCollection}
         onImport={importCollection}
       />
-    </>
+    </AppShell>
   );
 }
