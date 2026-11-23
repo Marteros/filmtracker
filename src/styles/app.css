@@ -68,7 +68,7 @@ button {
   display: block;
   object-fit: cover;
 }
-.poster:after {
+.poster::after {
   position: absolute;
   inset: 45% 0 0;
   z-index: 1;
@@ -173,7 +173,7 @@ button {
   padding: 0;
   border: 1px solid #ffffff;
   border-radius: 14px;
-  background: rgba(250, 250, 252, 0.96);
+  background: rgb(250, 250, 252, 0.96);
   color: var(--ink);
   box-shadow: 0 16px 60px #0003;
   backdrop-filter: blur(24px);
@@ -505,7 +505,6 @@ button {
   }
 }
 
-
 /* Component/design styles */
 * {
   box-sizing: border-box;
@@ -664,7 +663,7 @@ select:focus-visible {
 .poster:focus-visible .poster-image {
   transform: scale(1.035);
 }
-.poster:after {
+.poster::after {
   border-radius: 0 0 4px 4px;
 }
 .poster-details-hint {
@@ -707,10 +706,10 @@ select:focus-visible {
   place-items: center;
   padding: 0;
   margin: 0;
-  border: 1px solid #ffffff48;
+  border: 1px solid var(--cinema-border);
   border-radius: 50%;
-  background: #122a3ab8;
-  color: #f3f5f2;
+  background: var(--cinema-surface);
+  color: var(--cinema-ink);
   font-size: 14px;
   line-height: 0;
   backdrop-filter: none;
@@ -733,8 +732,8 @@ select:focus-visible {
   color: #f0b9ad;
 }
 .card-action:hover {
-  background: #122a3ae8;
-  color: #f0c878;
+  background: var(--cinema-surface-hover);
+  color: var(--cinema-gold-soft);
 }
 .card-action.delete:hover {
   color: #ffc2b5;
@@ -974,8 +973,8 @@ select:focus-visible {
   margin: 0;
   padding: 0;
   border: 0;
-  background: #122a3a;
-  color: #f5f6f2;
+  background: var(--cinema-bg);
+  color: var(--cinema-ink);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
@@ -1000,8 +999,8 @@ html.modal-open body {
   margin: 0;
   border: 1px solid #ffffff59;
   border-radius: 50%;
-  background: #f5f6f2e6;
-  color: #122a3a;
+  background: var(--cinema-ink) e6;
+  color: var(--cinema-bg);
   line-height: 0;
   box-shadow: 0 6px 20px #07172266;
   backdrop-filter: blur(12px);
@@ -1041,8 +1040,8 @@ html.modal-open body {
   padding: 10px 14px;
   border: 1px solid #ffffff2e;
   border-radius: 999px;
-  background: #122a3ae6;
-  color: #f5f6f2;
+  background: var(--cinema-bg) e6;
+  color: var(--cinema-ink);
   font-size: 13px;
   line-height: 1.2;
   text-align: center;
@@ -1057,8 +1056,8 @@ html.modal-open body {
   min-height: 100dvh;
   overflow: hidden;
   padding: calc(env(safe-area-inset-top, 0px) + 76px) max(24px, calc((100vw - 1040px) / 2)) 70px;
-  background: #122a3a;
-  color: #f5f6f2;
+  background: var(--cinema-bg);
+  color: var(--cinema-ink);
 }
 .details-backdrop {
   position: absolute;
@@ -1161,7 +1160,7 @@ html.modal-open body {
 }
 .details-facts .details-vote {
   border-color: #c98d38;
-  color: #f0c878;
+  color: var(--cinema-gold-soft);
 }
 .details-controls {
   display: flex;
@@ -1189,7 +1188,7 @@ html.modal-open body {
   border: 1px solid #ffffff59;
   border-radius: 4px;
   background: #ffffff12;
-  color: #f5f6f2;
+  color: var(--cinema-ink);
   font-size: 12px;
   font-weight: 650;
   cursor: pointer;
@@ -1244,7 +1243,7 @@ html.modal-open body {
   line-height: 1;
 }
 .details-inline-rating .star-choice.selected {
-  color: #f0c878;
+  color: var(--cinema-gold-soft);
 }
 .details-inline-rating .clear-rating {
   margin-left: 6px;
@@ -1267,7 +1266,7 @@ html.modal-open body {
   cursor: pointer;
 }
 .details-edit-link:hover {
-  color: #f5f6f2;
+  color: var(--cinema-ink);
 }
 .details-description {
   max-width: 940px;
@@ -1294,7 +1293,7 @@ html.modal-open body {
   border-top: 1px solid #ffffff25;
 }
 .details-error {
-  color: #f0c878 !important;
+  color: var(--cinema-gold-soft) !important;
   font-size: 13px !important;
 }
 .cast-section {
@@ -2009,7 +2008,7 @@ html.modal-open body {
   height: 100%;
   place-items: center;
   background: linear-gradient(145deg, #486579, #172a35 65%, #10151c);
-  color: #f3f5f2;
+  color: var(--cinema-ink);
   font-family: Georgia, serif;
   font-size: 48px;
 }
@@ -2683,10 +2682,10 @@ html.modal-open body {
   place-items: center;
   padding: 0;
   margin: 0;
-  border: 1px solid #ffffff48;
+  border: 1px solid var(--cinema-border);
   border-radius: 50%;
-  background: #122a3ab8;
-  color: #f3f5f2;
+  background: var(--cinema-surface);
+  color: var(--cinema-ink);
   line-height: 0;
   cursor: pointer;
   appearance: none;
@@ -2696,13 +2695,13 @@ html.modal-open body {
     color 140ms ease;
 }
 .discover-poster-action:hover:not(:disabled) {
-  background: #122a3ae8;
-  color: #f0c878;
+  background: var(--cinema-surface-hover);
+  color: var(--cinema-gold-soft);
 }
 .discover-poster-action:disabled {
   border-color: #ffffff66;
   background: #102b3ba8;
-  color: #ffffff99;
+  color: color-mix(in srgb, var(--cinema-ink) 60%, transparent);
   cursor: default;
 }
 .discover-poster-action.saved {
@@ -2995,7 +2994,7 @@ html.modal-open body {
   background: var(--surface-muted);
 }
 .agenda-dialog {
-  background: #122a3a;
+  background: var(--cinema-bg);
 }
 .agenda-page {
   max-width: none;
@@ -3008,7 +3007,7 @@ html.modal-open body {
 }
 .agenda-header h1 {
   margin: 6px 0 8px;
-  color: #f5f6f2;
+  color: var(--cinema-ink);
   font-family: Georgia, 'Times New Roman', serif;
   font-size: clamp(34px, 5vw, 48px);
   font-weight: 500;
@@ -3052,7 +3051,7 @@ html.modal-open body {
   border: 1px solid #ffffff2e;
   border-radius: 8px;
   background: #ffffff0a;
-  color: #f5f6f2;
+  color: var(--cinema-ink);
   text-align: left;
   cursor: pointer;
 }
@@ -3093,7 +3092,7 @@ html.modal-open body {
 .agenda-item-title {
   font-size: 15px;
   font-weight: 650;
-  color: #f5f6f2;
+  color: var(--cinema-ink);
 }
 .agenda-item-meta {
   font-size: 13px;
@@ -3229,7 +3228,7 @@ html.modal-open body {
   width: 100%;
   height: 100%;
   place-items: center;
-  color: #f3f5f2;
+  color: var(--cinema-ink);
   font-family: Georgia, serif;
   font-size: 20px;
 }
@@ -3526,36 +3525,36 @@ html.modal-open body {
 }
 :root[data-theme='dark'] .discover-poster-fallback,
 :root[data-theme='dark'] .movie-list-poster-fallback {
-  color: #f3f5f2;
+  color: var(--cinema-ink);
 }
 :root[data-theme='dark'] .agenda-poster-fallback {
   color: #f0d69a;
 }
 :root[data-theme='dark'] .discover-poster-action {
-  color: #f3f5f2;
-  border-color: #ffffff48;
-  background: #122a3ab8;
+  color: var(--cinema-ink);
+  border-color: var(--cinema-border);
+  background: var(--cinema-surface);
 }
 :root[data-theme='dark'] .discover-poster-action:hover:not(:disabled) {
-  background: #122a3ae8;
-  color: #f0c878;
+  background: var(--cinema-surface-hover);
+  color: var(--cinema-gold-soft);
 }
 :root[data-theme='dark'] .discover-poster-action.saved {
   border-color: #2f6b66;
-  background: #1d4f4ced;
-  color: #bff0eb;
+  background: color-mix(in srgb, var(--accent) 35%, var(--cinema-bg));
+  color: var(--accent-strong);
 }
 :root[data-theme='dark'] .discover-poster-action:disabled {
-  color: #ffffff99;
+  color: color-mix(in srgb, var(--cinema-ink) 60%, transparent);
 }
 :root[data-theme='dark'] .card-action {
-  color: #f3f5f2;
-  border-color: #ffffff48;
-  background: #122a3ab8;
+  color: var(--cinema-ink);
+  border-color: var(--cinema-border);
+  background: var(--cinema-surface);
 }
 :root[data-theme='dark'] .card-action:hover {
-  background: #122a3ae8;
-  color: #f0c878;
+  background: var(--cinema-surface-hover);
+  color: var(--cinema-gold-soft);
 }
 :root[data-theme='dark'] .card-action.delete {
   color: #f0b9ad;
@@ -3641,23 +3640,23 @@ html.modal-open body {
   box-shadow: 0 8px 28px #00000040;
 }
 :root[data-theme='dark'] .agenda-dialog {
-  background: #122a3a;
+  background: var(--cinema-bg);
 }
 :root[data-theme='dark'] .details-dialog,
 :root[data-theme='dark'] .details-page {
-  background: #122a3a;
-  color: #f5f6f2;
+  background: var(--cinema-bg);
+  color: var(--cinema-ink);
 }
 :root[data-theme='dark'] .details-copy h1,
 :root[data-theme='dark'] .details-description p,
 :root[data-theme='dark'] .details-watched {
-  color: #f5f6f2;
+  color: var(--cinema-ink);
 }
 :root[data-theme='dark'] .agenda-item-title {
-  color: #f5f6f2;
+  color: var(--cinema-ink);
 }
 :root[data-theme='dark'] .agenda-header h1 {
-  color: #f5f6f2;
+  color: var(--cinema-ink);
 }
 :root[data-theme='dark'] .close-button:hover {
   background: var(--surface-muted);
@@ -3666,10 +3665,10 @@ html.modal-open body {
   color: var(--star);
 }
 :root[data-theme='dark'] .details-inline-rating .star-choice.selected {
-  color: #f0c878;
+  color: var(--cinema-gold-soft);
 }
 :root[data-theme='dark'] .discover-rating {
-  color: #f0c878;
+  color: var(--cinema-gold-soft);
 }
 :root[data-theme='dark'] .mobile-bottom-tabs button:hover {
   color: var(--ink);

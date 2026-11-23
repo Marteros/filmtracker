@@ -37,19 +37,20 @@ npm run preview
 
 ## Scripts
 
-| Script                  | Purpose                                       |
-| ----------------------- | --------------------------------------------- |
-| `npm run dev`           | Start the Vite dev server.                    |
-| `npm run build`         | Type-check and create a production build.     |
-| `npm run preview`       | Serve the production build locally.           |
-| `npm run typecheck`     | Run TypeScript without emitting output.       |
-| `npm run lint`          | Run ESLint.                                   |
-| `npm run format`        | Format the codebase with Prettier.            |
-| `npm run format:check`  | Verify formatting without writing.            |
-| `npm run test`          | Run the Vitest suite once.                    |
-| `npm run check`         | Run typecheck, lint, tests, and build.        |
-| `npm run worker:dev`    | Run the TMDb proxy worker locally (wrangler). |
-| `npm run worker:deploy` | Deploy the TMDb proxy worker (wrangler).      |
+| Script                  | Purpose                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `npm run dev`           | Start the Vite dev server.                                |
+| `npm run build`         | Type-check and create a production build.                 |
+| `npm run preview`       | Serve the production build locally.                       |
+| `npm run typecheck`     | Run TypeScript without emitting output.                   |
+| `npm run lint`          | Run ESLint.                                               |
+| `npm run format`        | Format the codebase with Prettier.                        |
+| `npm run format:check`  | Verify formatting without writing.                        |
+| `npm run test`          | Run the Vitest suite once.                                |
+| `npm run check:privacy` | Verify PRIVACY.md and public/privacy.html headings match. |
+| `npm run check`         | Run typecheck, lint, tests, privacy check, and build.     |
+| `npm run worker:dev`    | Run the TMDb proxy worker locally (wrangler).             |
+| `npm run worker:deploy` | Deploy the TMDb proxy worker (wrangler).                  |
 
 ## Deploy (GitHub Pages)
 
@@ -76,6 +77,22 @@ To enable this, a valid `TRAKT_CLIENT_ID` is already configured in `src/services
 ## Privacy
 
 See [PRIVACY.md](PRIVACY.md) (and [privacy.html](public/privacy.html) for the hosted page) for details on local storage, TMDb proxy requests, and optional Trakt sync.
+
+## Release checklist
+
+- [ ] `npm run check` passes.
+- [ ] If app shell/static assets changed, bump `CACHE_NAME` in `public/sw.js`.
+- [ ] Verify PWA install/update and offline reload.
+- [ ] Verify Trakt redirect URIs still match deployed URLs.
+- [ ] If privacy text changed, update both `PRIVACY.md` and `public/privacy.html` and run `npm run check:privacy`.
+
+## Release checklist
+
+- [ ] `npm run check` passes.
+- [ ] If app shell/static assets changed, bump `CACHE_NAME` in `public/sw.js`.
+- [ ] Verify PWA install/update and offline reload.
+- [ ] Verify Trakt redirect URIs still match deployed URLs.
+- [ ] If privacy text changed, update both `PRIVACY.md` and `public/privacy.html` and run `npm run check:privacy`.
 
 ## Important
 

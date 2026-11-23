@@ -58,6 +58,15 @@
   -webkit-font-smoothing: antialiased;
   color: var(--ink);
   background: var(--bg);
+
+  --cinema-bg: #122a3a;
+  --cinema-surface: #122a3ab8;
+  --cinema-surface-hover: #122a3ae8;
+  --cinema-ink: #f5f6f2;
+  --cinema-muted: #b7c8d6;
+  --cinema-gold: #d4af66;
+  --cinema-gold-soft: #f0c878;
+  --cinema-border: #ffffff48;
 }
 
 :root[data-theme='dark'] {
@@ -111,4 +120,13 @@
   --bar-track: #22343f;
   --card-list-bg: #17232b;
   --shadow-color: #000000;
+
+  --cinema-bg: #122a3a;
+  --cinema-surface: #122a3ab8;
+  --cinema-surface-hover: #122a3ae8;
+  --cinema-ink: #f5f6f2;
+  --cinema-muted: #b7c8d6;
+  --cinema-gold: #d4af66;
+  --cinema-gold-soft: #f0c878;
+  --cinema-border: #ffffff48;
 }

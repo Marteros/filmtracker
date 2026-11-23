@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Movie, MovieRating, TmdbCastMember, TmdbMovie, TmdbMovieDetails } from '@/types';
-import { getActorMovieCredits, getMovieCast, tmdbPoster } from '@/services/tmdb';
-import { getMovieDetailsCached } from '@/lib/tmdbCache';
+import type { Movie, MovieRating } from '@/types';
+import { tmdbPoster } from '@/services/tmdb';
 import { shareOrCopyMovie } from '@/services/share';
 import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 import { RatingInput } from '@/components/ui/RatingInput';
+import { useMovieDetails } from './useMovieDetails';
+import { CastSection } from './CastSection';
 
 interface Props {
   movie: Movie;
@@ -31,15 +32,19 @@ export function MovieDetailsPage({
   const [toast, setToast] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
-  const [details, setDetails] = useState<TmdbMovieDetails>();
-  const [error, setError] = useState('');
-  const [cast, setCast] = useState<TmdbCastMember[]>([]);
-  const [castError, setCastError] = useState('');
-  const [castLoading, setCastLoading] = useState(false);
-  const [selectedActor, setSelectedActor] = useState<TmdbCastMember>();
-  const [actorMovies, setActorMovies] = useState<TmdbMovie[]>([]);
-  const [actorMoviesLoading, setActorMoviesLoading] = useState(false);
-  const [actorMoviesError, setActorMoviesError] = useState('');
+
+  const {
+    details,
+    error,
+    cast,
+    castError,
+    castLoading,
+    selectedActor,
+    setSelectedActor,
+    actorMovies,
+    actorMoviesLoading,
+    actorMoviesError,
+  } = useMovieDetails(movie, onEnrich);
 
   useModalScrollLock(true);
 
@@ -58,63 +63,6 @@ export function MovieDetailsPage({
   }, [onClose]);
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
-
-  const movieRef = useRef(movie);
-  useEffect(() => {
-    movieRef.current = movie;
-  }, [movie]);
-
-  const onEnrichRef = useRef(onEnrich);
-  useEffect(() => {
-    onEnrichRef.current = onEnrich;
-  }, [onEnrich]);
-
-  useEffect(() => {
-    if (!movie.tmdbId) return;
-    const controller = new AbortController();
-    setCastLoading(true);
-    setCastError('');
-    getMovieDetailsCached(movie.tmdbId, controller.signal)
-      .then((data) => {
-        setDetails(data);
-        const current = movieRef.current;
-        const patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>> = {};
-        if (!current.runtime && data.runtime) patch.runtime = data.runtime;
-        if (!current.genres?.length && data.genres?.length) patch.genres = data.genres.map((g) => g.name);
-        if (!current.posterPath && data.poster_path) patch.posterPath = data.poster_path;
-        if (!current.releaseDate && data.release_date) patch.releaseDate = data.release_date;
-        if (Object.keys(patch).length) onEnrichRef.current?.(current.id, patch);
-      })
-      .catch((reason: unknown) => {
-        if (reason instanceof Error && reason.name !== 'AbortError') setError(reason.message);
-      });
-    getMovieCast(movie.tmdbId, controller.signal)
-      .then(setCast)
-      .catch((reason: unknown) => {
-        if (reason instanceof Error && reason.name !== 'AbortError') setCastError(reason.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setCastLoading(false);
-      });
-    return () => controller.abort();
-  }, [movie.tmdbId]);
-
-  useEffect(() => {
-    if (!selectedActor) return;
-    const controller = new AbortController();
-    setActorMovies([]);
-    setActorMoviesLoading(true);
-    setActorMoviesError('');
-    getActorMovieCredits(selectedActor.id, controller.signal)
-      .then(setActorMovies)
-      .catch((reason: unknown) => {
-        if (reason instanceof Error && reason.name !== 'AbortError') setActorMoviesError(reason.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setActorMoviesLoading(false);
-      });
-    return () => controller.abort();
-  }, [selectedActor]);
 
   const backdrop = details?.backdrop_path ? tmdbPoster(details.backdrop_path, 'w780') : undefined;
   const poster = tmdbPoster(movie.posterPath, 'w500');
@@ -307,84 +255,17 @@ export function MovieDetailsPage({
             </div>
           )}
         </section>
-        <section className="cast-section" aria-labelledby="cast-heading">
-          <h2 id="cast-heading">Cast</h2>
-          {castError && (
-            <p className="cast-help" role="status">
-              {castError}
-            </p>
-          )}
-          {castLoading && <p className="cast-help">Loading cast…</p>}
-          {!castLoading && !cast.length && !castError && (
-            <p className="cast-help">{movie.tmdbId ? 'No cast found.' : 'No cast information available.'}</p>
-          )}
-          {!!cast.length && (
-            <div className="cast-list" aria-label="Cast of this movie">
-              {cast.slice(0, 24).map((actor) => {
-                const portrait = tmdbPoster(actor.profile_path, 'w185');
-                return (
-                  <button
-                    key={actor.id}
-                    className={`cast-person${selectedActor?.id === actor.id ? ' selected' : ''}`}
-                    type="button"
-                    aria-pressed={selectedActor?.id === actor.id}
-                    onClick={() => setSelectedActor(actor)}
-                  >
-                    {portrait ? (
-                      <img className="cast-portrait" src={portrait} alt="" loading="lazy" decoding="async" />
-                    ) : (
-                      <span className="cast-portrait cast-initials" aria-hidden="true">
-                        {actor.name
-                          .split(/\s+/)
-                          .slice(0, 2)
-                          .map((part) => part[0])
-                          .join('')}
-                      </span>
-                    )}
-                    <span className="cast-name">{actor.name}</span>
-                    {actor.character && <span className="cast-character">{actor.character}</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          {selectedActor && (
-            <div className="actor-filmography" aria-live="polite">
-              <div className="actor-filmography-heading">
-                <h3>Movies with {selectedActor.name}</h3>
-                <button type="button" onClick={() => setSelectedActor(undefined)}>
-                  Close
-                </button>
-              </div>
-              {actorMoviesLoading && <p className="cast-help">Loading movies…</p>}
-              {actorMoviesError && (
-                <p className="cast-help" role="status">
-                  {actorMoviesError}
-                </p>
-              )}
-              {!actorMoviesLoading && !actorMoviesError && (
-                <div className="actor-movie-list">
-                  {actorMovies.slice(0, 20).map((film) => {
-                    const filmPoster = tmdbPoster(film.poster_path, 'w185');
-                    return (
-                      <article className="actor-movie" key={film.id}>
-                        {filmPoster ? (
-                          <img src={filmPoster} alt={`Poster for ${film.title}`} loading="lazy" decoding="async" />
-                        ) : (
-                          <div className="actor-movie-placeholder" aria-hidden="true">
-                            {film.title.slice(0, 1)}
-                          </div>
-                        )}
-                        {film.release_date && <span>{film.release_date.slice(0, 4)}</span>}
-                      </article>
-                    );
-                  })}
-                  {!actorMovies.length && <p className="cast-help">No other movies found.</p>}
-                </div>
-              )}
-            </div>
-          )}
-        </section>
+        <CastSection
+          cast={cast}
+          castError={castError}
+          castLoading={castLoading}
+          hasTmdbId={Boolean(movie.tmdbId)}
+          selectedActor={selectedActor}
+          onSelectActor={setSelectedActor}
+          actorMovies={actorMovies}
+          actorMoviesLoading={actorMoviesLoading}
+          actorMoviesError={actorMoviesError}
+        />
       </div>
       {toast && (
         <div className="toast" role="status">
