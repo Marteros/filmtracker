@@ -37,17 +37,20 @@ npm run preview
 
 ## Scripts
 
-| Script                 | Purpose                                   |
-| ---------------------- | ----------------------------------------- |
-| `npm run dev`          | Start the Vite dev server.                |
-| `npm run build`        | Type-check and create a production build. |
-| `npm run preview`      | Serve the production build locally.       |
-| `npm run typecheck`    | Run TypeScript without emitting output.   |
-| `npm run lint`         | Run ESLint.                               |
-| `npm run format`       | Format the codebase with Prettier.        |
-| `npm run format:check` | Verify formatting without writing.        |
-| `npm run test`         | Run the Vitest suite once.                |
-| `npm run check`        | Run typecheck, lint, tests, and build.    |
+| Script                  | Purpose                                                   |
+| ----------------------- | --------------------------------------------------------- |
+| `npm run dev`           | Start the Vite dev server.                                |
+| `npm run build`         | Type-check and create a production build.                 |
+| `npm run preview`       | Serve the production build locally.                       |
+| `npm run typecheck`     | Run TypeScript without emitting output.                   |
+| `npm run lint`          | Run ESLint.                                               |
+| `npm run format`        | Format the codebase with Prettier.                        |
+| `npm run format:check`  | Verify formatting without writing.                        |
+| `npm run test`          | Run the Vitest suite once.                                |
+| `npm run check:privacy` | Verify PRIVACY.md and public/privacy.html headings match. |
+| `npm run check`         | Run typecheck, lint, tests, privacy check, and build.     |
+| `npm run worker:dev`    | Run the TMDb proxy worker locally (wrangler).             |
+| `npm run worker:deploy` | Deploy the TMDb proxy worker (wrangler).                  |
 
 ## Deploy (GitHub Pages)
 
@@ -56,6 +59,12 @@ The app uses a relative base (`base: './'` in `vite.config.ts`), so the build wo
 ## TMDb
 
 The app does not ask users for a TMDb key. All TMDb requests go through the Cloudflare Worker proxy at `https://filmtracker-proxy.levonmarteros.workers.dev/3` (source in `worker/index.js`). The worker injects the API token server-side; the browser does not send credentials.
+
+Worker config:
+
+- `worker/wrangler.toml` - wrangler config
+- `worker/.dev.vars.example` - local secrets template (`TMDB_TOKEN`, optional `ALLOWED_ORIGINS`)
+- Deploy with `npm run worker:deploy` (requires Wrangler and Cloudflare auth)
 
 ## Trakt sync
 
@@ -69,6 +78,22 @@ To enable this, a valid `TRAKT_CLIENT_ID` is already configured in `src/services
 
 See [PRIVACY.md](PRIVACY.md) (and [privacy.html](public/privacy.html) for the hosted page) for details on local storage, TMDb proxy requests, and optional Trakt sync.
 
+## Release checklist
+
+- [ ] `npm run check` passes.
+- [ ] If app shell/static assets changed, bump `CACHE_NAME` in `public/sw.js`.
+- [ ] Verify PWA install/update and offline reload.
+- [ ] Verify Trakt redirect URIs still match deployed URLs.
+- [ ] If privacy text changed, update both `PRIVACY.md` and `public/privacy.html` and run `npm run check:privacy`.
+
+## Release checklist
+
+- [ ] `npm run check` passes.
+- [ ] If app shell/static assets changed, bump `CACHE_NAME` in `public/sw.js`.
+- [ ] Verify PWA install/update and offline reload.
+- [ ] Verify Trakt redirect URIs still match deployed URLs.
+- [ ] If privacy text changed, update both `PRIVACY.md` and `public/privacy.html` and run `npm run check:privacy`.
+
 ## Important
 
 - All data is stored locally in the browser (localStorage). Clearing browser data removes your collection unless you have a backup.
@@ -76,8 +101,10 @@ See [PRIVACY.md](PRIVACY.md) (and [privacy.html](public/privacy.html) for the ho
 
 ## Project structure
 
-- `src/App.tsx`: app state and page orchestration
-- `src/components/`: UI components (including `DiscoverPage`, `SettingsDialog`, `MovieGrid`, dialogs)
-- `src/services/`: data, TMDb, Trakt, and backup logic
-- `src/types.ts`: shared types
-- `worker/index.js`: Cloudflare Worker TMDb proxy source
+- `src/app/`: app shell, navigation, collection hook, error boundary
+- `src/features/`: feature modules (collection, discover, details, agenda, insights, settings)
+- `src/components/ui/`: shared UI controls (search, rating, combobox)
+- `src/services/`: storage, TMDb, Trakt, backup, share, theme
+- `src/lib/`: pure utilities (dates, movie keys, validation, overlay state, concurrency, cache)
+- `src/styles/`: `tokens.css` and merged `app.css`
+- `worker/`: Cloudflare Worker TMDb proxy + wrangler config
