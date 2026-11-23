@@ -156,24 +156,6 @@ export default function App() {
     filters.closeMobilePanels();
   }, [nav.activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (!filters.mobileSearchOpen) return;
-    let armed = false;
-    const timer = window.setTimeout(() => {
-      armed = true;
-    }, 300);
-    function closeOnScroll() {
-      if (!armed) return;
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      filters.setMobileSearchOpen(false);
-    }
-    window.addEventListener('scroll', closeOnScroll, { passive: true });
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener('scroll', closeOnScroll);
-    };
-  }, [filters.mobileSearchOpen]); // eslint-disable-line react-hooks/exhaustive-deps
-
   function openSettings() {
     if (settingsOpen) return;
     setSettingsOpen(true);

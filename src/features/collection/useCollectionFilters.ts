@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Movie } from '@/types';
 
 export type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
@@ -83,6 +83,24 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
     setMobileSearchOpen(false);
     setMobileFiltersOpen(false);
   }, []);
+
+  useEffect(() => {
+    if (!mobileSearchOpen) return;
+    let armed = false;
+    const timer = window.setTimeout(() => {
+      armed = true;
+    }, 300);
+    function closeOnScroll() {
+      if (!armed) return;
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      setMobileSearchOpen(false);
+    }
+    window.addEventListener('scroll', closeOnScroll, { passive: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('scroll', closeOnScroll);
+    };
+  }, [mobileSearchOpen]);
 
   return {
     query,
