@@ -671,7 +671,7 @@ select:focus-visible {
   padding: 8px 9px;
   border-radius: 3px;
   background: #102b3be6;
-  color: var(--btn-fg);
+  color: #fff;
   font-size: 11px;
   font-weight: 500;
   text-align: left;
@@ -985,8 +985,8 @@ html.modal-open body {
   margin: 0;
   border: 1px solid #ffffff59;
   border-radius: 50%;
-  background: var(--cinema-ink) e6;
-  color: var(--cinema-bg);
+  background: #ffffff1a;
+  color: #fff;
   line-height: 0;
   box-shadow: 0 6px 20px #07172266;
   backdrop-filter: blur(12px);
@@ -1003,7 +1003,7 @@ html.modal-open body {
 }
 .details-close:hover,
 .details-share:hover {
-  background: var(--surface-2);
+  background: #ffffff30;
 }
 .details-close svg,
 .details-share svg {
