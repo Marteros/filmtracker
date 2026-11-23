@@ -17,7 +17,10 @@ export function SearchField({ value, onChange, label, placeholder, autoFocus = f
 
   return (
     <label className="discover-search">
-      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.8" cy="8.8" r="5.8" /><path d="m13.2 13.2 4 4" /></svg>
+      <svg viewBox="0 0 20 20" aria-hidden="true">
+        <circle cx="8.8" cy="8.8" r="5.8" />
+        <path d="m13.2 13.2 4 4" />
+      </svg>
       <input
         ref={inputRef}
         type="search"
@@ -27,7 +30,11 @@ export function SearchField({ value, onChange, label, placeholder, autoFocus = f
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
-      {value && <button type="button" aria-label="Clear search" onClick={() => onChange('')}>×</button>}
+      {value && (
+        <button type="button" aria-label="Clear search" onClick={() => onChange('')}>
+          ×
+        </button>
+      )}
     </label>
   );
 }

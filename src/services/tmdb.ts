@@ -4,13 +4,21 @@ const API_ROOT = 'https://filmtracker-proxy.levonmarteros.workers.dev/3';
 const IMAGE_ROOT = 'https://image.tmdb.org/t/p';
 
 export class TmdbError extends Error {
-  constructor(message: string, readonly kind: 'network' | 'request') {
+  constructor(
+    message: string,
+    readonly kind: 'network' | 'request',
+  ) {
     super(message);
     this.name = 'TmdbError';
   }
 }
 
-async function requestJson<T>(url: URL, signal: AbortSignal, networkMessage: string, requestMessage: string): Promise<T> {
+async function requestJson<T>(
+  url: URL,
+  signal: AbortSignal,
+  networkMessage: string,
+  requestMessage: string,
+): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, {
@@ -28,7 +36,7 @@ async function requestJson<T>(url: URL, signal: AbortSignal, networkMessage: str
   }
 
   try {
-    return await response.json() as T;
+    return (await response.json()) as T;
   } catch {
     throw new TmdbError(requestMessage, 'request');
   }

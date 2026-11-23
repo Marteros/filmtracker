@@ -39,7 +39,9 @@ function randomVerifier(): string {
 
 function base64Url(bytes: Uint8Array): string {
   let binary = '';
-  bytes.forEach((byte) => { binary += String.fromCharCode(byte); });
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
   return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
@@ -64,7 +66,11 @@ export async function beginTraktAuthorization(clientId: string): Promise<string>
   return url.href;
 }
 
-export async function finishTraktAuthorization(clientId: string, code: string, returnedState: string): Promise<TraktCredentials> {
+export async function finishTraktAuthorization(
+  clientId: string,
+  code: string,
+  returnedState: string,
+): Promise<TraktCredentials> {
   const verifier = localStorage.getItem(VERIFIER_KEY);
   const expectedState = localStorage.getItem(STATE_KEY);
   localStorage.removeItem(VERIFIER_KEY);
@@ -77,12 +83,15 @@ export async function finishTraktAuthorization(clientId: string, code: string, r
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'trakt-api-version': '2' },
     body: JSON.stringify({
-      code, client_id: clientId, redirect_uri: traktRedirectUri(),
-      grant_type: 'authorization_code', code_verifier: verifier,
+      code,
+      client_id: clientId,
+      redirect_uri: traktRedirectUri(),
+      grant_type: 'authorization_code',
+      code_verifier: verifier,
     }),
   });
   if (!response.ok) throw new Error('Trakt could not connect Frame. Check the Redirect URI and try again.');
-  const payload = await response.json() as { access_token: string; refresh_token?: string; expires_in?: number };
+  const payload = (await response.json()) as { access_token: string; refresh_token?: string; expires_in?: number };
   return {
     clientId,
     accessToken: payload.access_token,
@@ -97,20 +106,26 @@ async function refreshTraktToken(credentials: TraktCredentials): Promise<TraktCr
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'trakt-api-version': '2' },
     body: JSON.stringify({
-      refresh_token: credentials.refreshToken, client_id: credentials.clientId,
-      redirect_uri: traktRedirectUri(), grant_type: 'refresh_token',
+      refresh_token: credentials.refreshToken,
+      client_id: credentials.clientId,
+      redirect_uri: traktRedirectUri(),
+      grant_type: 'refresh_token',
     }),
   });
   if (!response.ok) throw new Error('Trakt access has expired. Connect your account again.');
-  const payload = await response.json() as { access_token: string; refresh_token?: string; expires_in?: number };
+  const payload = (await response.json()) as { access_token: string; refresh_token?: string; expires_in?: number };
   return {
-    ...credentials, accessToken: payload.access_token,
+    ...credentials,
+    accessToken: payload.access_token,
     refreshToken: payload.refresh_token || credentials.refreshToken,
     expiresAt: Date.now() + (payload.expires_in || 0) * 1000,
   };
 }
 
-async function getFreshTraktCredentials(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktCredentials> {
+async function getFreshTraktCredentials(
+  initial: TraktCredentials,
+  onCredentials: (credentials: TraktCredentials) => void,
+): Promise<TraktCredentials> {
   let credentials = initial;
   if (credentials.expiresAt && credentials.expiresAt < Date.now() + 60_000) {
     credentials = await refreshTraktToken(credentials);
@@ -119,7 +134,10 @@ async function getFreshTraktCredentials(initial: TraktCredentials, onCredentials
   return credentials;
 }
 
-export async function getWatchedMovies(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktWatchedMovie[]> {
+export async function getWatchedMovies(
+  initial: TraktCredentials,
+  onCredentials: (credentials: TraktCredentials) => void,
+): Promise<TraktWatchedMovie[]> {
   const credentials = await getFreshTraktCredentials(initial, onCredentials);
 
   const results: TraktWatchedMovie[] = [];
@@ -128,20 +146,25 @@ export async function getWatchedMovies(initial: TraktCredentials, onCredentials:
   do {
     const response = await fetch(`${API_ROOT}/sync/watched/movies?extended=full&page=${page}&limit=100`, {
       headers: {
-        'Content-Type': 'application/json', 'trakt-api-version': '2',
-        'trakt-api-key': credentials.clientId, Authorization: `Bearer ${credentials.accessToken}`,
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        'trakt-api-key': credentials.clientId,
+        Authorization: `Bearer ${credentials.accessToken}`,
       },
     });
     if (response.status === 401) throw new Error('Trakt access has expired. Connect your account again.');
     if (!response.ok) throw new Error('Your Trakt watch history could not be fetched.');
-    results.push(...await response.json() as TraktWatchedMovie[]);
+    results.push(...((await response.json()) as TraktWatchedMovie[]));
     pageCount = Number(response.headers.get('x-pagination-page-count')) || 1;
     page += 1;
   } while (page <= pageCount);
   return results;
 }
 
-export async function getWatchlistMovies(initial: TraktCredentials, onCredentials: (credentials: TraktCredentials) => void): Promise<TraktWatchlistMovie[]> {
+export async function getWatchlistMovies(
+  initial: TraktCredentials,
+  onCredentials: (credentials: TraktCredentials) => void,
+): Promise<TraktWatchlistMovie[]> {
   const credentials = await getFreshTraktCredentials(initial, onCredentials);
 
   const results: TraktWatchlistMovie[] = [];
@@ -150,13 +173,15 @@ export async function getWatchlistMovies(initial: TraktCredentials, onCredential
   do {
     const response = await fetch(`${API_ROOT}/sync/watchlist/movies?extended=full&page=${page}&limit=100`, {
       headers: {
-        'Content-Type': 'application/json', 'trakt-api-version': '2',
-        'trakt-api-key': credentials.clientId, Authorization: `Bearer ${credentials.accessToken}`,
+        'Content-Type': 'application/json',
+        'trakt-api-version': '2',
+        'trakt-api-key': credentials.clientId,
+        Authorization: `Bearer ${credentials.accessToken}`,
       },
     });
     if (response.status === 401) throw new Error('Trakt access has expired. Connect your account again.');
     if (!response.ok) throw new Error('Your Trakt watchlist could not be fetched.');
-    results.push(...await response.json() as TraktWatchlistMovie[]);
+    results.push(...((await response.json()) as TraktWatchlistMovie[]));
     pageCount = Number(response.headers.get('x-pagination-page-count')) || 1;
     page += 1;
   } while (page <= pageCount);

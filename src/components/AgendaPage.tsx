@@ -34,7 +34,9 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    const onCloseEvent = () => { if (open) onClose(); };
+    const onCloseEvent = () => {
+      if (open) onClose();
+    };
     dialog.addEventListener('close', onCloseEvent);
     return () => dialog.removeEventListener('close', onCloseEvent);
   }, [open, onClose]);
@@ -42,17 +44,23 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
   useEffect(() => {
     if (!open) return;
     document.documentElement.classList.add('details-open');
-    return () => { document.documentElement.classList.remove('details-open'); };
+    return () => {
+      document.documentElement.classList.remove('details-open');
+    };
   }, [open]);
 
   const groups = useMemo(() => {
     const today = startOfDay(new Date());
-    const weekEnd = new Date(today); weekEnd.setDate(today.getDate() + 7);
-    const monthEnd = new Date(today); monthEnd.setMonth(today.getMonth() + 1);
+    const weekEnd = new Date(today);
+    weekEnd.setDate(today.getDate() + 7);
+    const monthEnd = new Date(today);
+    monthEnd.setMonth(today.getMonth() + 1);
     const watchlist = movies.filter((m) => m.status === 'watchlist');
     const upcoming = watchlist
       .map((m) => ({ movie: m, date: parseDate(m.releaseDate) }))
-      .filter((item): item is { movie: Movie; date: Date } => Boolean(item.date) && startOfDay(item.date as Date) >= today)
+      .filter(
+        (item): item is { movie: Movie; date: Date } => Boolean(item.date) && startOfDay(item.date as Date) >= today,
+      )
       .sort((a, b) => a.date.getTime() - b.date.getTime() || a.movie.title.localeCompare(b.movie.title));
 
     const buckets = {
@@ -85,11 +93,16 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
       ref={dialogRef}
       className="details-dialog agenda-dialog"
       aria-labelledby="agenda-title"
-      onCancel={(event) => { event.preventDefault(); onClose(); }}
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
       onClose={onClose}
     >
       <button className="details-close" type="button" aria-label="Close agenda" onClick={onClose}>
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
       </button>
       <div className="details-page agenda-page">
         <header className="agenda-header">
@@ -113,12 +126,24 @@ export function AgendaPage({ open, movies, onClose, onOpen }: Props) {
                       <li key={movie.id}>
                         <button type="button" className="agenda-item" onClick={() => onOpen(movie)}>
                           <span className="agenda-poster">
-                            <span className="agenda-poster-fallback" aria-hidden="true">{movie.title.slice(0, 1)}</span>
-                            {poster && <img src={poster} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
+                            <span className="agenda-poster-fallback" aria-hidden="true">
+                              {movie.title.slice(0, 1)}
+                            </span>
+                            {poster && (
+                              <img
+                                src={poster}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                onError={(event) => event.currentTarget.remove()}
+                              />
+                            )}
                           </span>
                           <span className="agenda-item-copy">
                             <span className="agenda-item-title">{movie.title}</span>
-                            <span className="agenda-item-meta"><time dateTime={movie.releaseDate}>{formatDate(date)}</time></span>
+                            <span className="agenda-item-meta">
+                              <time dateTime={movie.releaseDate}>{formatDate(date)}</time>
+                            </span>
                           </span>
                         </button>
                       </li>

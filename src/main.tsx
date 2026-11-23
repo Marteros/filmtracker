@@ -9,10 +9,13 @@ history.scrollRestoration = 'manual';
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     const wasControlled = Boolean(navigator.serviceWorker.controller);
-    navigator.serviceWorker.register(`${import.meta.env.BASE_URL}sw.js`).then((registration) => {
-      // iOS may not check for a new worker promptly when the home-screen app opens.
-      return registration.update();
-    }).catch(() => undefined);
+    navigator.serviceWorker
+      .register(`${import.meta.env.BASE_URL}sw.js`)
+      .then((registration) => {
+        // iOS may not check for a new worker promptly when the home-screen app opens.
+        return registration.update();
+      })
+      .catch(() => undefined);
 
     let refreshed = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {

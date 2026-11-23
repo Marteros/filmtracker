@@ -18,7 +18,7 @@ function corsHeaders(origin) {
   const headers = {
     'Access-Control-Allow-Methods': 'GET, OPTIONS',
     'Access-Control-Allow-Headers': 'Accept, Content-Type',
-    'Vary': 'Origin',
+    Vary: 'Origin',
   };
   if (allowed) headers['Access-Control-Allow-Origin'] = origin;
   return headers;

@@ -1,5 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { getDiscoveryMovies, getRandomDiscoveryMovie, searchMovies, tmdbPoster, type DiscoveryCategory, type RandomMovieCriteria } from '../services/tmdb';
+import {
+  getDiscoveryMovies,
+  getRandomDiscoveryMovie,
+  searchMovies,
+  tmdbPoster,
+  type DiscoveryCategory,
+  type RandomMovieCriteria,
+} from '../services/tmdb';
 import { SearchField } from './SearchField';
 import { MOVIE_GENRES } from '../constants/genres';
 import { LANGUAGE_OPTIONS } from '../constants/languages';
@@ -34,8 +41,11 @@ function periodToYears(preset: PeriodPreset): Pick<RandomMovieCriteria, 'fromYea
 
 function matchingMovie(movie: TmdbMovie, collection: Movie[]) {
   const year = movie.release_date?.slice(0, 4);
-  return collection.find((saved) => saved.tmdbId === movie.id
-    || (saved.title.toLocaleLowerCase() === movie.title.toLocaleLowerCase() && saved.year === year));
+  return collection.find(
+    (saved) =>
+      saved.tmdbId === movie.id ||
+      (saved.title.toLocaleLowerCase() === movie.title.toLocaleLowerCase() && saved.year === year),
+  );
 }
 
 export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, hidden = false }: Props) {
@@ -150,9 +160,15 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     setError('');
     if (debouncedQuery) {
       searchMovies(debouncedQuery, controller.signal)
-        .then((results) => { if (!controller.signal.aborted) setSearchResults(results); })
-        .catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.'); })
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+        .then((results) => {
+          if (!controller.signal.aborted) setSearchResults(results);
+        })
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.');
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
     } else if (selectedSection) {
       setPage(1);
       setHasMore(true);
@@ -162,15 +178,24 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
           setFeeds((current) => ({ ...current, [selectedSection]: results }));
           setHasMore(results.length >= 20);
         })
-        .catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.'); })
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.');
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
     } else {
       Promise.all(SECTIONS.map(async ({ id }) => [id, await getDiscoveryMovies(id, controller.signal)] as const))
         .then((results) => {
-          if (!controller.signal.aborted) setFeeds(Object.fromEntries(results) as Record<DiscoveryCategory, TmdbMovie[]>);
+          if (!controller.signal.aborted)
+            setFeeds(Object.fromEntries(results) as Record<DiscoveryCategory, TmdbMovie[]>);
         })
-        .catch((reason: unknown) => { if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.'); })
-        .finally(() => { if (!controller.signal.aborted) setLoading(false); });
+        .catch((reason: unknown) => {
+          if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.');
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
     }
     return () => controller.abort();
   }, [debouncedQuery, retry, selectedSection]);
@@ -254,7 +279,9 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       if (movie) {
         setRecentRandomIds((current) => [movie.id, ...current.filter((id) => id !== movie.id)].slice(0, 20));
       } else {
-        setRandomError('No movie found with these criteria that is not already in your collection. Try broader filters.');
+        setRandomError(
+          'No movie found with these criteria that is not already in your collection. Try broader filters.',
+        );
       }
     } catch (reason) {
       setRandomMovie(null);
@@ -280,14 +307,38 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       : onWatchlist
         ? `Mark ${movie.title} as seen`
         : `Mark ${movie.title} as seen`;
-    const bookmarkIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>;
-    const eyeIcon = <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" /><circle cx="12" cy="12" r="3" /></svg>;
+    const bookmarkIcon = (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
+      </svg>
+    );
+    const eyeIcon = (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M2 12s3.6-6 10-6 10 6 10 6-3.6 6-10 6-10-6-10-6Z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    );
     return (
       <article className="discover-card" key={movie.id}>
         <div className="discover-poster">
-          <span className="discover-poster-fallback" aria-hidden="true">{movie.title.slice(0, 1)}</span>
-          {poster && <img src={poster} alt="" loading="lazy" decoding="async" onError={(event) => event.currentTarget.remove()} />}
-          <button className="discover-poster-open" type="button" onClick={() => handleOpenMovie(movie)} aria-label={`View details for ${movie.title}`}>
+          <span className="discover-poster-fallback" aria-hidden="true">
+            {movie.title.slice(0, 1)}
+          </span>
+          {poster && (
+            <img
+              src={poster}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              onError={(event) => event.currentTarget.remove()}
+            />
+          )}
+          <button
+            className="discover-poster-open"
+            type="button"
+            onClick={() => handleOpenMovie(movie)}
+            aria-label={`View details for ${movie.title}`}
+          >
             <span className="discover-poster-hint">View details</span>
           </button>
           <div className="discover-poster-actions">
@@ -320,7 +371,9 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
           <div className="discover-card-meta">
             <span>{movie.release_date?.slice(0, 4) || 'Movie'}</span>
             {typeof movie.vote_average === 'number' && movie.vote_average > 0 && (
-              <span className="discover-rating" aria-label={`TMDb score ${vote} out of 10`}>★ {vote}</span>
+              <span className="discover-rating" aria-label={`TMDb score ${vote} out of 10`}>
+                ★ {vote}
+              </span>
             )}
           </div>
         </div>
@@ -330,10 +383,19 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
 
   return (
     <main className="app discover-page" hidden={hidden}>
-      <header className={`discover-header${selectedSection ? ' has-section' : ''}`}><h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Discover'}</h1>
+      <header className={`discover-header${selectedSection ? ' has-section' : ''}`}>
+        <h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Discover'}</h1>
         <div className="discover-header-actions">
-          {!selectedSection && !debouncedQuery && <button className="discover-random-button" type="button" onClick={openRandomDialog}>Surprise me</button>}
-          {selectedSection && <button className="discover-back" type="button" onClick={closeSection}>← Back</button>}
+          {!selectedSection && !debouncedQuery && (
+            <button className="discover-random-button" type="button" onClick={openRandomDialog}>
+              Surprise me
+            </button>
+          )}
+          {selectedSection && (
+            <button className="discover-back" type="button" onClick={closeSection}>
+              ← Back
+            </button>
+          )}
         </div>
       </header>
 
@@ -341,25 +403,48 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         ref={randomDialogRef}
         className="movie-dialog randomizer-dialog"
         aria-labelledby="randomizer-title"
-        onCancel={(event) => { event.preventDefault(); closeRandomDialog(); }}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeRandomDialog();
+        }}
         onClose={closeRandomDialog}
-        onClick={(event) => { if (event.target === randomDialogRef.current) closeRandomDialog(); }}
+        onClick={(event) => {
+          if (event.target === randomDialogRef.current) closeRandomDialog();
+        }}
       >
         <div className="randomizer-shell">
           <div className="dialog-head">
             <h2 id="randomizer-title">Surprise me</h2>
-            <button type="button" className="close-button" aria-label="Close dialog" onClick={closeRandomDialog}>×</button>
+            <button type="button" className="close-button" aria-label="Close dialog" onClick={closeRandomDialog}>
+              ×
+            </button>
           </div>
-          <p className="settings-help randomizer-help">Choose criteria and get a random movie suggestion that is not already in your collection.</p>
+          <p className="settings-help randomizer-help">
+            Choose criteria and get a random movie suggestion that is not already in your collection.
+          </p>
           <div className="discover-random-controls">
-            <label className="select-control" htmlFor="random-genre"><span className="select-label-text">Genre</span>
-              <select id="random-genre" value={String(randomGenre)} onChange={(event) => setRandomGenre(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
+            <label className="select-control" htmlFor="random-genre">
+              <span className="select-label-text">Genre</span>
+              <select
+                id="random-genre"
+                value={String(randomGenre)}
+                onChange={(event) => setRandomGenre(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+              >
                 <option value="all">All genres</option>
-                {MOVIE_GENRES.map((genre) => <option key={genre.id} value={genre.id}>{genre.name}</option>)}
+                {MOVIE_GENRES.map((genre) => (
+                  <option key={genre.id} value={genre.id}>
+                    {genre.name}
+                  </option>
+                ))}
               </select>
             </label>
-            <label className="select-control" htmlFor="random-rating"><span className="select-label-text">Rating</span>
-              <select id="random-rating" value={String(randomRating)} onChange={(event) => setRandomRating(event.target.value === 'all' ? 'all' : Number(event.target.value))}>
+            <label className="select-control" htmlFor="random-rating">
+              <span className="select-label-text">Rating</span>
+              <select
+                id="random-rating"
+                value={String(randomRating)}
+                onChange={(event) => setRandomRating(event.target.value === 'all' ? 'all' : Number(event.target.value))}
+              >
                 <option value="all">Any rating</option>
                 <option value="6">6+ stars</option>
                 <option value="7">7+ stars</option>
@@ -367,8 +452,13 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
                 <option value="8">8+ stars</option>
               </select>
             </label>
-            <label className="select-control" htmlFor="random-period"><span className="select-label-text">Period</span>
-              <select id="random-period" value={randomPeriod} onChange={(event) => setRandomPeriod(event.target.value as PeriodPreset)}>
+            <label className="select-control" htmlFor="random-period">
+              <span className="select-label-text">Period</span>
+              <select
+                id="random-period"
+                value={randomPeriod}
+                onChange={(event) => setRandomPeriod(event.target.value as PeriodPreset)}
+              >
                 <option value="all">All years</option>
                 <option value="classic">Before 1980</option>
                 <option value="80s">1980s</option>
@@ -378,36 +468,100 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
                 <option value="recent">2020–now</option>
               </select>
             </label>
-            <label className="select-control" htmlFor="random-language"><span className="select-label-text">Language</span>
-              <select id="random-language" value={randomLanguage} onChange={(event) => setRandomLanguage(event.target.value)}>
+            <label className="select-control" htmlFor="random-language">
+              <span className="select-label-text">Language</span>
+              <select
+                id="random-language"
+                value={randomLanguage}
+                onChange={(event) => setRandomLanguage(event.target.value)}
+              >
                 <option value="all">All languages</option>
-                {LANGUAGE_OPTIONS.map((language) => <option key={language.code} value={language.code}>{language.name}</option>)}
+                {LANGUAGE_OPTIONS.map((language) => (
+                  <option key={language.code} value={language.code}>
+                    {language.name}
+                  </option>
+                ))}
               </select>
             </label>
-            <button className="discover-primary discover-random-submit" type="button" onClick={pickRandomMovie} disabled={randomLoading}>{randomLoading ? 'Searching…' : randomMovie ? 'Another one' : 'Get suggestion'}</button>
+            <button
+              className="discover-primary discover-random-submit"
+              type="button"
+              onClick={pickRandomMovie}
+              disabled={randomLoading}
+            >
+              {randomLoading ? 'Searching…' : randomMovie ? 'Another one' : 'Get suggestion'}
+            </button>
           </div>
-          {randomError && <p className="discover-inline-error" role="alert">{randomError}</p>}
-          {randomMovie && <div className="discover-random-result" aria-live="polite">{renderCard(randomMovie)}</div>}
+          {randomError && (
+            <p className="discover-inline-error" role="alert">
+              {randomError}
+            </p>
+          )}
+          {randomMovie && (
+            <div className="discover-random-result" aria-live="polite">
+              {renderCard(randomMovie)}
+            </div>
+          )}
         </div>
       </dialog>
 
       <div className="toolbar discover-toolbar">
-        <SearchField value={query} onChange={onQueryChange} label="Search movies to discover" placeholder="Search by movie title…" />
+        <SearchField
+          value={query}
+          onChange={onQueryChange}
+          label="Search movies to discover"
+          placeholder="Search by movie title…"
+        />
       </div>
-      {actionError && <p className="discover-inline-error" role="alert">{actionError}</p>}
-      {error && <div className="discover-inline-error" role="alert">{error} <button type="button" onClick={() => setRetry((value) => value + 1)}>Try again</button></div>}
+      {actionError && (
+        <p className="discover-inline-error" role="alert">
+          {actionError}
+        </p>
+      )}
+      {error && (
+        <div className="discover-inline-error" role="alert">
+          {error}{' '}
+          <button type="button" onClick={() => setRetry((value) => value + 1)}>
+            Try again
+          </button>
+        </div>
+      )}
       {loading ? (
-        <div className="discover-grid" role="status" aria-label="Loading movies">{Array.from({ length: 8 }, (_, index) => <div className="discover-skeleton" key={index}><span /><i /><i /></div>)}</div>
+        <div className="discover-grid" role="status" aria-label="Loading movies">
+          {Array.from({ length: 8 }, (_, index) => (
+            <div className="discover-skeleton" key={index}>
+              <span />
+              <i />
+              <i />
+            </div>
+          ))}
+        </div>
       ) : debouncedQuery ? (
-        searchResults.length
-          ? <section className="discover-all-grid" aria-label="Search results">{searchResults.map(renderCard)}</section>
-          : !error && <div className="discover-message discover-empty"><h2>No movies found</h2><p>Try a different title.</p></div>
+        searchResults.length ? (
+          <section className="discover-all-grid" aria-label="Search results">
+            {searchResults.map(renderCard)}
+          </section>
+        ) : (
+          !error && (
+            <div className="discover-message discover-empty">
+              <h2>No movies found</h2>
+              <p>Try a different title.</p>
+            </div>
+          )
+        )
       ) : selectedSection ? (
         <>
-          <section className="discover-all-grid" aria-label={`${SECTIONS.find((section) => section.id === selectedSection)?.title} movies`}>
+          <section
+            className="discover-all-grid"
+            aria-label={`${SECTIONS.find((section) => section.id === selectedSection)?.title} movies`}
+          >
             {(feeds[selectedSection] || []).map(renderCard)}
           </section>
-          {!error && hasMore && <button className="discover-load-more" type="button" onClick={loadMore} disabled={loadingMore}>{loadingMore ? 'Loading…' : 'Load more movies'}</button>}
+          {!error && hasMore && (
+            <button className="discover-load-more" type="button" onClick={loadMore} disabled={loadingMore}>
+              {loadingMore ? 'Loading…' : 'Load more movies'}
+            </button>
+          )}
         </>
       ) : (
         <div className="discover-sections">
@@ -415,11 +569,21 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
             <section className="discover-section" key={id} aria-labelledby={`discover-${id}`}>
               <div className="discover-section-heading">
                 <h2 id={`discover-${id}`}>{title}</h2>
-                <button type="button" onClick={() => openSection(id)}>View all <span aria-hidden="true">→</span></button>
+                <button type="button" onClick={() => openSection(id)}>
+                  View all <span aria-hidden="true">→</span>
+                </button>
               </div>
-              {feeds[id]?.length ? <div className="discover-rail">{feeds[id].slice(0, 12).map(renderCard)}</div> : (
+              {feeds[id]?.length ? (
+                <div className="discover-rail">{feeds[id].slice(0, 12).map(renderCard)}</div>
+              ) : (
                 <div className="discover-rail discover-rail-skeleton" aria-label={`Loading ${title}`} role="status">
-                  {Array.from({ length: 5 }, (_, index) => <div className="discover-skeleton" key={index}><span /><i /><i /></div>)}
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <div className="discover-skeleton" key={index}>
+                      <span />
+                      <i />
+                      <i />
+                    </div>
+                  ))}
                 </div>
               )}
             </section>

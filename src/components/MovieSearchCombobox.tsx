@@ -27,19 +27,26 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'ArrowDown' && results.length) {
-      event.preventDefault(); setFocused(true); setActiveIndex((index) => (index + 1) % results.length);
+      event.preventDefault();
+      setFocused(true);
+      setActiveIndex((index) => (index + 1) % results.length);
     } else if (event.key === 'ArrowUp' && results.length) {
-      event.preventDefault(); setActiveIndex((index) => index <= 0 ? results.length - 1 : index - 1);
+      event.preventDefault();
+      setActiveIndex((index) => (index <= 0 ? results.length - 1 : index - 1));
     } else if (event.key === 'Enter' && activeIndex >= 0 && results[activeIndex]) {
-      event.preventDefault(); choose(results[activeIndex]);
+      event.preventDefault();
+      choose(results[activeIndex]);
     } else if (event.key === 'Escape') {
-      setFocused(false); setActiveIndex(-1);
+      setFocused(false);
+      setActiveIndex(-1);
     }
   }
 
   return (
     <div className="form-field title-field">
-      <label htmlFor={`${id}-input`}>Movie title <span className="required">*</span></label>
+      <label htmlFor={`${id}-input`}>
+        Movie title <span className="required">*</span>
+      </label>
       <input
         ref={inputRef}
         id={`${id}-input`}
@@ -53,7 +60,12 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
         aria-controls={`${id}-listbox`}
         aria-activedescendant={activeIndex >= 0 ? `${id}-option-${activeIndex}` : undefined}
         value={value}
-        onChange={(event) => { onValueChange(event.target.value); setFocused(true); setTyped(true); setActiveIndex(-1); }}
+        onChange={(event) => {
+          onValueChange(event.target.value);
+          setFocused(true);
+          setTyped(true);
+          setActiveIndex(-1);
+        }}
         onFocus={() => setFocused(true)}
         onBlur={(event) => {
           if (!event.currentTarget.parentElement?.contains(event.relatedTarget as Node)) {
@@ -66,7 +78,11 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
       />
       {expanded && (
         <div id={`${id}-listbox`} className="suggestions" role="listbox" aria-label="Movie suggestions">
-          {state === 'loading' && <div className="suggestion-status"><span className="spinner" aria-hidden="true" /> Searching movies…</div>}
+          {state === 'loading' && (
+            <div className="suggestion-status">
+              <span className="spinner" aria-hidden="true" /> Searching movies…
+            </div>
+          )}
           {state === 'empty' && <div className="suggestion-status">No results</div>}
           {results.map((movie, index) => {
             const year = movie.release_date?.slice(0, 4);
@@ -84,14 +100,27 @@ export function MovieSearchCombobox({ value, inputRef, onValueChange, onSelect }
                 onClick={() => choose(movie)}
                 onMouseEnter={() => setActiveIndex(index)}
               >
-                {poster ? <img className="suggestion-poster" src={poster} alt="" loading="lazy" decoding="async" /> : <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">▧</span>}
-                <span className="suggestion-info"><span className="suggestion-title">{movie.title}</span><span className="suggestion-meta">{year ? `Movie · ${year}` : 'Movie'}</span></span>
+                {poster ? (
+                  <img className="suggestion-poster" src={poster} alt="" loading="lazy" decoding="async" />
+                ) : (
+                  <span className="suggestion-poster suggestion-placeholder" aria-hidden="true">
+                    ▧
+                  </span>
+                )}
+                <span className="suggestion-info">
+                  <span className="suggestion-title">{movie.title}</span>
+                  <span className="suggestion-meta">{year ? `Movie · ${year}` : 'Movie'}</span>
+                </span>
               </button>
             );
           })}
         </div>
       )}
-      {message && <p className={`suggestion-hint ${state}`} aria-live="polite" role={state === 'error' ? 'alert' : 'status'}>{message}</p>}
+      {message && (
+        <p className={`suggestion-hint ${state}`} aria-live="polite" role={state === 'error' ? 'alert' : 'status'}>
+          {message}
+        </p>
+      )}
     </div>
   );
 }

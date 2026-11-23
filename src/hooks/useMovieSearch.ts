@@ -16,14 +16,16 @@ export function useMovieSearch(query: string) {
       return;
     }
     if (!navigator.onLine) {
-      setResults([]); setState('offline');
+      setResults([]);
+      setState('offline');
       setMessage('Offline');
       return;
     }
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
-      setState('loading'); setMessage('Films zoeken…');
+      setState('loading');
+      setMessage('Films zoeken…');
       try {
         const movies = await searchMovies(normalized, controller.signal);
         setResults(movies.slice(0, 7));
@@ -37,7 +39,10 @@ export function useMovieSearch(query: string) {
       }
     }, 320);
 
-    return () => { window.clearTimeout(timeout); controller.abort(); };
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
   }, [query]);
 
   return { results, state, message };

@@ -17,7 +17,18 @@ interface Props {
   onImport(file: File, mode: BackupMode): Promise<string>;
 }
 
-export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconnectTrakt, onSyncTrakt, themeMode, onThemeModeChange, onExport, onImport }: Props) {
+export function SettingsDialog({
+  open,
+  onClose,
+  trakt,
+  onConnectTrakt,
+  onDisconnectTrakt,
+  onSyncTrakt,
+  themeMode,
+  onThemeModeChange,
+  onExport,
+  onImport,
+}: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const [traktMessage, setTraktMessage] = useState('');
   const [busy, setBusy] = useState(false);
@@ -39,23 +50,32 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
   }, [open, trakt]);
 
   async function startTraktLink() {
-    setBusy(true); setTraktMessage('');
+    setBusy(true);
+    setTraktMessage('');
     try {
       await onConnectTrakt();
-    } catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Could not connect Trakt.'); }
-    finally { setBusy(false); }
+    } catch (reason) {
+      setTraktMessage(reason instanceof Error ? reason.message : 'Could not connect Trakt.');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function syncTrakt() {
-    setBusy(true); setTraktMessage('');
+    setBusy(true);
+    setTraktMessage('');
     try {
       const count = await onSyncTrakt();
-      setTraktMessage(count > 0
-        ? `${count} ${count === 1 ? 'movie' : 'movies'} updated from Trakt (watch history and watchlist).`
-        : 'Everything is already in sync (watch history and watchlist).');
+      setTraktMessage(
+        count > 0
+          ? `${count} ${count === 1 ? 'movie' : 'movies'} updated from Trakt (watch history and watchlist).`
+          : 'Everything is already in sync (watch history and watchlist).',
+      );
+    } catch (reason) {
+      setTraktMessage(reason instanceof Error ? reason.message : 'Sync failed.');
+    } finally {
+      setBusy(false);
     }
-    catch (reason) { setTraktMessage(reason instanceof Error ? reason.message : 'Sync failed.'); }
-    finally { setBusy(false); }
   }
 
   function disconnectTrakt() {
@@ -77,11 +97,15 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
   async function handleImportFile() {
     const file = fileRef.current?.files?.[0];
     if (!file) return;
-    if (backupMode === 'replace' && !window.confirm('This will replace your current collection. Do you want to continue?')) {
+    if (
+      backupMode === 'replace' &&
+      !window.confirm('This will replace your current collection. Do you want to continue?')
+    ) {
       if (fileRef.current) fileRef.current.value = '';
       return;
     }
-    setBackupBusy(true); setBackupMessage('');
+    setBackupBusy(true);
+    setBackupMessage('');
     try {
       const message = await onImport(file, backupMode);
       setBackupMessage(message);
@@ -94,19 +118,38 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
   }
 
   return (
-    <dialog ref={dialogRef} className="movie-dialog settings-dialog" aria-labelledby="settings-title" onCancel={(event) => { event.preventDefault(); onClose(); }} onClose={onClose} onClick={(event) => { if (event.target === dialogRef.current) onClose(); }}>
+    <dialog
+      ref={dialogRef}
+      className="movie-dialog settings-dialog"
+      aria-labelledby="settings-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClose={onClose}
+      onClick={(event) => {
+        if (event.target === dialogRef.current) onClose();
+      }}
+    >
       <div className="settings-shell">
-        <div className="dialog-head"><h2 id="settings-title">Settings</h2><button type="button" className="close-button" aria-label="Close dialog" onClick={onClose}>×</button></div>
+        <div className="dialog-head">
+          <h2 id="settings-title">Settings</h2>
+          <button type="button" className="close-button" aria-label="Close dialog" onClick={onClose}>
+            ×
+          </button>
+        </div>
         <div className="settings-scroll">
           <section className="appearance-settings" aria-labelledby="appearance-settings-title">
             <h3 id="appearance-settings-title">Appearance</h3>
             <p className="settings-help">Choose how Frame looks. “Follow system” matches your device setting.</p>
             <div className="theme-switch" role="radiogroup" aria-label="Theme">
-              {([
-                { value: 'system', label: 'Follow system' },
-                { value: 'dark', label: 'On' },
-                { value: 'light', label: 'Off' },
-              ] as const).map((option) => (
+              {(
+                [
+                  { value: 'system', label: 'Follow system' },
+                  { value: 'dark', label: 'On' },
+                  { value: 'light', label: 'Off' },
+                ] as const
+              ).map((option) => (
                 <button
                   key={option.value}
                   type="button"
@@ -122,32 +165,83 @@ export function SettingsDialog({ open, onClose, trakt, onConnectTrakt, onDisconn
           </section>
           <section className="trakt-settings" aria-labelledby="trakt-settings-title">
             <h3 id="trakt-settings-title">Trakt sync</h3>
-            <p className="settings-help">Connect Trakt to import your watch history and watchlist. One-way sync: watched movies are marked as Seen and watchlist movies as Watchlist; notes and ratings are kept.</p>
+            <p className="settings-help">
+              Connect Trakt to import your watch history and watchlist. One-way sync: watched movies are marked as Seen
+              and watchlist movies as Watchlist; notes and ratings are kept.
+            </p>
             <p className="settings-help trakt-notice">Frame uses Trakt but is not endorsed or certified by Trakt.</p>
-            {!trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>{busy ? 'Working…' : 'Sign in with Trakt'}</button>}
-            {trakt.accessToken && <p className="trakt-message" role="status">Trakt is connected.</p>}
-            {trakt.accessToken && <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>{busy ? 'Syncing…' : 'Sync with Trakt'}</button>}
-            {trakt.accessToken && <button className="remove-token trakt-disconnect" type="button" disabled={busy} onClick={disconnectTrakt}>Disconnect</button>}
-            {traktMessage && <p className="trakt-message" role="status">{traktMessage}</p>}
+            {!trakt.accessToken && (
+              <button className="save-button trakt-action" type="button" disabled={busy} onClick={startTraktLink}>
+                {busy ? 'Working…' : 'Sign in with Trakt'}
+              </button>
+            )}
+            {trakt.accessToken && (
+              <p className="trakt-message" role="status">
+                Trakt is connected.
+              </p>
+            )}
+            {trakt.accessToken && (
+              <button className="save-button trakt-action" type="button" disabled={busy} onClick={syncTrakt}>
+                {busy ? 'Syncing…' : 'Sync with Trakt'}
+              </button>
+            )}
+            {trakt.accessToken && (
+              <button className="remove-token trakt-disconnect" type="button" disabled={busy} onClick={disconnectTrakt}>
+                Disconnect
+              </button>
+            )}
+            {traktMessage && (
+              <p className="trakt-message" role="status">
+                {traktMessage}
+              </p>
+            )}
           </section>
           <section className="backup-settings" aria-labelledby="backup-settings-title">
             <h3 id="backup-settings-title">Data &amp; backup</h3>
             <div className="backup-actions">
-              <button className="save-button" type="button" onClick={exportBackup}>Export</button>
-              <button className="save-button" type="button" disabled={backupBusy} onClick={pickImportFile}>{backupBusy ? 'Importing…' : 'Import'}</button>
+              <button className="save-button" type="button" onClick={exportBackup}>
+                Export
+              </button>
+              <button className="save-button" type="button" disabled={backupBusy} onClick={pickImportFile}>
+                {backupBusy ? 'Importing…' : 'Import'}
+              </button>
             </div>
-            <label className="backup-mode-control" htmlFor="backup-mode">On import
-              <select id="backup-mode" value={backupMode} onChange={(event) => setBackupMode(event.target.value as BackupMode)}>
+            <label className="backup-mode-control" htmlFor="backup-mode">
+              On import
+              <select
+                id="backup-mode"
+                value={backupMode}
+                onChange={(event) => setBackupMode(event.target.value as BackupMode)}
+              >
                 <option value="merge">Merge</option>
                 <option value="replace">Replace all</option>
               </select>
             </label>
-            <input id="backup-file" ref={fileRef} type="file" accept="application/json,.json" hidden onChange={handleImportFile} />
-            {backupMessage && <p className="trakt-message" role="status">{backupMessage}</p>}
-            <p className="settings-help"><a href="./privacy.html" target="_blank" rel="noreferrer">Privacy Policy</a></p>
+            <input
+              id="backup-file"
+              ref={fileRef}
+              type="file"
+              accept="application/json,.json"
+              hidden
+              onChange={handleImportFile}
+            />
+            {backupMessage && (
+              <p className="trakt-message" role="status">
+                {backupMessage}
+              </p>
+            )}
+            <p className="settings-help">
+              <a href="./privacy.html" target="_blank" rel="noreferrer">
+                Privacy Policy
+              </a>
+            </p>
           </section>
         </div>
-        <div className="settings-footer"><button className="save-button" type="button" onClick={onClose}>Close</button></div>
+        <div className="settings-footer">
+          <button className="save-button" type="button" onClick={onClose}>
+            Close
+          </button>
+        </div>
       </div>
     </dialog>
   );

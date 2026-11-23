@@ -8,7 +8,15 @@ import { SearchField } from './components/SearchField';
 import { InsightsPage } from './components/InsightsPage';
 import { AgendaPage } from './components/AgendaPage';
 import { movieRepository, settingsRepository } from './services/movieRepository';
-import { beginTraktAuthorization, finishTraktAuthorization, getWatchedMovies, getWatchlistMovies, TRAKT_CLIENT_ID, type TraktCredentials, type TraktMovieRef } from './services/trakt';
+import {
+  beginTraktAuthorization,
+  finishTraktAuthorization,
+  getWatchedMovies,
+  getWatchlistMovies,
+  TRAKT_CLIENT_ID,
+  type TraktCredentials,
+  type TraktMovieRef,
+} from './services/trakt';
 import { getMovieDetails, TmdbError } from './services/tmdb';
 import { downloadBackup, importBackup, type ImportMode } from './services/backup';
 import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from './services/theme';
@@ -32,8 +40,11 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [yearFilter, setYearFilter] = useState('all');
   const [collectionView, setCollectionView] = useState<CollectionView>(() => {
-    try { return localStorage.getItem(COLLECTION_VIEW_KEY) === 'list' ? 'list' : 'grid'; }
-    catch { return 'grid'; }
+    try {
+      return localStorage.getItem(COLLECTION_VIEW_KEY) === 'list' ? 'list' : 'grid';
+    } catch {
+      return 'grid';
+    }
   });
   const [query, setQuery] = useState('');
   const [discoverQuery, setDiscoverQuery] = useState('');
@@ -58,7 +69,9 @@ export default function App() {
   const filtersHistoryRef = useRef(false);
   const moviesRef = useRef(movies);
 
-  useEffect(() => { moviesRef.current = movies; }, [movies]);
+  useEffect(() => {
+    moviesRef.current = movies;
+  }, [movies]);
 
   useEffect(() => {
     applyTheme(themeMode);
@@ -104,9 +117,11 @@ export default function App() {
             await wait(500);
             continue;
           }
-          setShareNotice(network
-            ? 'Could not open the shared movie. Check your connection and try again.'
-            : 'Could not open the shared movie.');
+          setShareNotice(
+            network
+              ? 'Could not open the shared movie. Check your connection and try again.'
+              : 'Could not open the shared movie.',
+          );
           return;
         }
       }
@@ -150,7 +165,10 @@ export default function App() {
   useEffect(() => {
     if (mobileFiltersOpen) {
       if (filtersHistoryRef.current && window.history.state?.frameFilters) window.history.back();
-      else { filtersHistoryRef.current = false; setMobileFiltersOpen(false); }
+      else {
+        filtersHistoryRef.current = false;
+        setMobileFiltersOpen(false);
+      }
     }
     setMobileSearchOpen(false);
   }, [activeTab, selectedMovie, agendaOpen]);
@@ -165,7 +183,9 @@ export default function App() {
   useEffect(() => {
     if (!mobileSearchOpen) return;
     let armed = false;
-    const timer = window.setTimeout(() => { armed = true; }, 300);
+    const timer = window.setTimeout(() => {
+      armed = true;
+    }, 300);
     function closeOnScroll() {
       if (!armed) return;
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
@@ -286,22 +306,32 @@ export default function App() {
 
   const visibleMovies = useMemo(() => {
     const search = query.trim().toLocaleLowerCase();
-    return statusMovies.filter((movie) => {
-      const matchesQuery = !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase().includes(search);
-      const matchesYear = yearFilter === 'all' || movie.year === yearFilter;
-      return matchesQuery && matchesYear;
-    }).sort((a, b) => {
-      if (sortOrder === 'oldest') return a.addedAt - b.addedAt;
-      if (sortOrder === 'title') return a.title.localeCompare(b.title);
-      if (sortOrder === 'year') return (Number(b.year) || 0) - (Number(a.year) || 0) || a.title.localeCompare(b.title);
-      if (sortOrder === 'rating') return (b.rating || 0) - (a.rating || 0) || b.addedAt - a.addedAt;
-      return b.addedAt - a.addedAt;
-    });
+    return statusMovies
+      .filter((movie) => {
+        const matchesQuery =
+          !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase().includes(search);
+        const matchesYear = yearFilter === 'all' || movie.year === yearFilter;
+        return matchesQuery && matchesYear;
+      })
+      .sort((a, b) => {
+        if (sortOrder === 'oldest') return a.addedAt - b.addedAt;
+        if (sortOrder === 'title') return a.title.localeCompare(b.title);
+        if (sortOrder === 'year')
+          return (Number(b.year) || 0) - (Number(a.year) || 0) || a.title.localeCompare(b.title);
+        if (sortOrder === 'rating') return (b.rating || 0) - (a.rating || 0) || b.addedAt - a.addedAt;
+        return b.addedAt - a.addedAt;
+      });
   }, [query, sortOrder, statusMovies, yearFilter]);
 
   const collectionCount = statusMovies.length;
 
-  const years = useMemo(() => [...new Set(statusMovies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort((a, b) => Number(b) - Number(a)), [statusMovies]);
+  const years = useMemo(
+    () =>
+      [...new Set(statusMovies.map((movie) => movie.year).filter((year): year is string => Boolean(year)))].sort(
+        (a, b) => Number(b) - Number(a),
+      ),
+    [statusMovies],
+  );
   function persist(next: Movie[]) {
     try {
       movieRepository.saveAll(next);
@@ -324,13 +354,16 @@ export default function App() {
   function handleSave(draft: MovieDraft): string | null {
     const duplicate = movies.find((movie) => {
       if (movie.id === editingMovie?.id) return false;
-      return (draft.tmdbId && movie.tmdbId === draft.tmdbId)
-        || movie.title.toLocaleLowerCase() === draft.title.toLocaleLowerCase();
+      return (
+        (draft.tmdbId && movie.tmdbId === draft.tmdbId) ||
+        movie.title.toLocaleLowerCase() === draft.title.toLocaleLowerCase()
+      );
     });
     if (duplicate) return `“${duplicate.title}” is already in your collection. You can edit that movie.`;
 
     const old = editingMovie;
-    const watchedAt = draft.status === 'seen' ? (parseWatchedAt(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
+    const watchedAt =
+      draft.status === 'seen' ? (parseWatchedAt(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
     const nextMovie: Movie = {
       id: old?.id || createId(),
       title: draft.title,
@@ -347,7 +380,7 @@ export default function App() {
       runtime: draft.runtime ?? old?.runtime,
       genres: draft.genres ?? old?.genres,
     };
-    const next = old ? movies.map((movie) => movie.id === old.id ? nextMovie : movie) : [...movies, nextMovie];
+    const next = old ? movies.map((movie) => (movie.id === old.id ? nextMovie : movie)) : [...movies, nextMovie];
     if (!persist(next)) return 'Could not save. Check the available storage on this device.';
     if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
     closeMovieDialog();
@@ -405,7 +438,10 @@ export default function App() {
     if (agendaHistoryRef.current && window.history.state?.frameAgenda) {
       agendaHistoryRef.current = false;
       setAgendaOpen(false);
-      window.history.replaceState({ ...(window.history.state || {}), frameAgenda: false, frameDetails: { movieId: movie.id } }, '');
+      window.history.replaceState(
+        { ...(window.history.state || {}), frameAgenda: false, frameDetails: { movieId: movie.id } },
+        '',
+      );
       detailsHistoryRef.current = true;
       setSelectedDiscoveryMovie(undefined);
       setSelectedMovie(movie);
@@ -443,17 +479,42 @@ export default function App() {
 
   function changeCollectionView(view: CollectionView) {
     setCollectionView(view);
-    try { localStorage.setItem(COLLECTION_VIEW_KEY, view); } catch { /* voorkeur lokaal bewaren */ }
+    try {
+      localStorage.setItem(COLLECTION_VIEW_KEY, view);
+    } catch {
+      /* voorkeur lokaal bewaren */
+    }
   }
 
   function ViewToggle({ className = '' }: { className?: string }) {
     return (
       <div className={`view-toggle ${className}`.trim()} role="group" aria-label="View">
-        <button type="button" className={collectionView === 'grid' ? 'active' : ''} aria-pressed={collectionView === 'grid'} aria-label="Grid view" title="Grid view" onClick={() => changeCollectionView('grid')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></svg>
+        <button
+          type="button"
+          className={collectionView === 'grid' ? 'active' : ''}
+          aria-pressed={collectionView === 'grid'}
+          aria-label="Grid view"
+          title="Grid view"
+          onClick={() => changeCollectionView('grid')}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+            <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+            <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+            <rect x="13.5" y="13.5" width="7" height="7" rx="1.5" />
+          </svg>
         </button>
-        <button type="button" className={collectionView === 'list' ? 'active' : ''} aria-pressed={collectionView === 'list'} aria-label="List view" title="List view" onClick={() => changeCollectionView('list')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5h16M4 12h16M4 17.5h16" /></svg>
+        <button
+          type="button"
+          className={collectionView === 'list' ? 'active' : ''}
+          aria-pressed={collectionView === 'list'}
+          aria-label="List view"
+          title="List view"
+          onClick={() => changeCollectionView('list')}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 6.5h16M4 12h16M4 17.5h16" />
+          </svg>
         </button>
       </div>
     );
@@ -461,8 +522,11 @@ export default function App() {
 
   function findSavedMovie(movie: TmdbMovie) {
     const year = movie.release_date?.slice(0, 4);
-    return movies.find((saved) => saved.tmdbId === movie.id
-      || (saved.title.toLocaleLowerCase() === movie.title.toLocaleLowerCase() && saved.year === year));
+    return movies.find(
+      (saved) =>
+        saved.tmdbId === movie.id ||
+        (saved.title.toLocaleLowerCase() === movie.title.toLocaleLowerCase() && saved.year === year),
+    );
   }
 
   function saveDiscoveredMovie(movie: TmdbMovie, status: 'seen' | 'watchlist' = 'watchlist'): Movie | undefined {
@@ -470,7 +534,9 @@ export default function App() {
     if (existing) {
       if (status === 'seen' && existing.status === 'watchlist') {
         const updated: Movie = { ...existing, status: 'seen', watchedAt: existing.watchedAt ?? Date.now() };
-        return persist(movies.map((movieItem) => movieItem.id === existing.id ? updated : movieItem)) ? updated : undefined;
+        return persist(movies.map((movieItem) => (movieItem.id === existing.id ? updated : movieItem)))
+          ? updated
+          : undefined;
       }
       return existing;
     }
@@ -532,7 +598,7 @@ export default function App() {
       watchedAt: status === 'seen' ? (movie.watchedAt ?? Date.now()) : undefined,
       rating: status === 'seen' ? movie.rating : undefined,
     };
-    const next = movies.map((item) => item.id === movie.id ? nextMovie : item);
+    const next = movies.map((item) => (item.id === movie.id ? nextMovie : item));
     if (!persist(next)) return false;
     setSelectedMovie(nextMovie);
     return true;
@@ -541,7 +607,7 @@ export default function App() {
   function setMovieRatingFromDetails(movie: Movie, rating?: Movie['rating']) {
     if (movie.status !== 'seen') return;
     const nextMovie: Movie = { ...movie, rating };
-    const next = movies.map((item) => item.id === movie.id ? nextMovie : item);
+    const next = movies.map((item) => (item.id === movie.id ? nextMovie : item));
     if (persist(next)) setSelectedMovie(nextMovie);
   }
 
@@ -581,14 +647,21 @@ export default function App() {
     return persist(movies.filter((item) => item.id !== id));
   }
 
-  const enrichMovie = useCallback((id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>) => {
-    setMovies((prev) => {
-      const next = prev.map((m) => (m.id === id ? { ...m, ...patch } : m));
-      try { movieRepository.saveAll(next); } catch { /* ignore */ }
-      return next;
-    });
-    setSelectedMovie((current) => (current && current.id === id ? { ...current, ...patch } : current));
-  }, []);
+  const enrichMovie = useCallback(
+    (id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>) => {
+      setMovies((prev) => {
+        const next = prev.map((m) => (m.id === id ? { ...m, ...patch } : m));
+        try {
+          movieRepository.saveAll(next);
+        } catch {
+          /* ignore */
+        }
+        return next;
+      });
+      setSelectedMovie((current) => (current && current.id === id ? { ...current, ...patch } : current));
+    },
+    [],
+  );
 
   async function connectTrakt() {
     if (!TRAKT_CLIENT_ID) throw new Error('Trakt is not configured yet. Add a Trakt Client ID in the app code.');
@@ -638,8 +711,12 @@ export default function App() {
 
     const findMatchIndex = (entry: TraktMovieRef) => {
       const tmdbId = entry.ids?.tmdb;
-      return next.findIndex((movie) => (tmdbId && movie.tmdbId === tmdbId)
-        || (movie.title.toLocaleLowerCase() === entry.title.toLocaleLowerCase() && movie.year === (entry.year ? String(entry.year) : undefined)));
+      return next.findIndex(
+        (movie) =>
+          (tmdbId && movie.tmdbId === tmdbId) ||
+          (movie.title.toLocaleLowerCase() === entry.title.toLocaleLowerCase() &&
+            movie.year === (entry.year ? String(entry.year) : undefined)),
+      );
     };
 
     const enrichFromTmdb = async (movie: Movie, tmdbId?: number): Promise<Movie> => {
@@ -649,7 +726,8 @@ export default function App() {
         let updated = movie;
         if (!updated.posterPath && details.poster_path) updated = { ...updated, posterPath: details.poster_path };
         if (!updated.runtime && details.runtime) updated = { ...updated, runtime: details.runtime };
-        if (!updated.genres?.length && details.genres?.length) updated = { ...updated, genres: details.genres.map((g) => g.name) };
+        if (!updated.genres?.length && details.genres?.length)
+          updated = { ...updated, genres: details.genres.map((g) => g.name) };
         if (!updated.releaseDate && details.release_date) updated = { ...updated, releaseDate: details.release_date };
         return updated;
       } catch {
@@ -733,9 +811,28 @@ export default function App() {
   return (
     <>
       <header className="desktop-appbar">
-        <a className="desktop-brand" href="./" aria-label="Frame">frame<span>.</span></a>
-        <button className="desktop-settings" type="button" aria-label="Settings" title="Settings" onClick={() => { if (!settingsOpen) { setSettingsOpen(true); if (!settingsHistoryRef.current) { window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, ''); settingsHistoryRef.current = true; } } }}>
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+        <a className="desktop-brand" href="./" aria-label="Frame">
+          frame<span>.</span>
+        </a>
+        <button
+          className="desktop-settings"
+          type="button"
+          aria-label="Settings"
+          title="Settings"
+          onClick={() => {
+            if (!settingsOpen) {
+              setSettingsOpen(true);
+              if (!settingsHistoryRef.current) {
+                window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, '');
+                settingsHistoryRef.current = true;
+              }
+            }
+          }}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
         </button>
       </header>
       <header className="mobile-appbar">
@@ -745,7 +842,9 @@ export default function App() {
             id="mobile-search"
             role="search"
             aria-label="Search"
-            onKeyDown={(event) => { if (event.key === 'Escape') setMobileSearchOpen(false); }}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') setMobileSearchOpen(false);
+            }}
           >
             <SearchField
               value={activeTab === 'discover' ? discoverQuery : query}
@@ -761,12 +860,16 @@ export default function App() {
               title="Close search"
               onClick={() => setMobileSearchOpen(false)}
             >
-              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18" /></svg>
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M6 6l12 12M18 6 6 18" />
+              </svg>
             </button>
           </div>
         ) : (
           <>
-            <a className="mobile-brand" href="./" aria-label="Frame — movie collection">frame<span aria-hidden="true">.</span></a>
+            <a className="mobile-brand" href="./" aria-label="Frame — movie collection">
+              frame<span aria-hidden="true">.</span>
+            </a>
             <div className="mobile-appbar-actions">
               <button
                 className="mobile-search-toggle"
@@ -775,36 +878,64 @@ export default function App() {
                 aria-expanded={false}
                 aria-controls="mobile-search"
                 title="Search"
-                onClick={() => { setMobileSearchOpen(true); setMobileFiltersOpen(false); }}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
-              </button>
-              {(activeTab === 'history' || activeTab === 'watchlist') && <button
-                className={`mobile-filter-button${yearFilter !== 'all' || sortOrder !== 'newest' ? ' has-active' : ''}`}
-                type="button"
-                aria-label="Filters"
-                aria-expanded={mobileFiltersOpen}
-                aria-controls="mobile-filters"
-                title="Filters"
                 onClick={() => {
-                  setMobileSearchOpen(false);
-                  if (mobileFiltersOpen) {
-                    if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; }
-                    filtersHistoryRef.current = false;
-                    setMobileFiltersOpen(false);
-                  } else {
-                    setMobileFiltersOpen(true);
-                    if (!filtersHistoryRef.current) {
-                      window.history.pushState({ ...(window.history.state || {}), frameFilters: true }, '');
-                      filtersHistoryRef.current = true;
+                  setMobileSearchOpen(true);
+                  setMobileFiltersOpen(false);
+                }}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-4-4" />
+                </svg>
+              </button>
+              {(activeTab === 'history' || activeTab === 'watchlist') && (
+                <button
+                  className={`mobile-filter-button${yearFilter !== 'all' || sortOrder !== 'newest' ? ' has-active' : ''}`}
+                  type="button"
+                  aria-label="Filters"
+                  aria-expanded={mobileFiltersOpen}
+                  aria-controls="mobile-filters"
+                  title="Filters"
+                  onClick={() => {
+                    setMobileSearchOpen(false);
+                    if (mobileFiltersOpen) {
+                      if (filtersHistoryRef.current && window.history.state?.frameFilters) {
+                        window.history.back();
+                        return;
+                      }
+                      filtersHistoryRef.current = false;
+                      setMobileFiltersOpen(false);
+                    } else {
+                      setMobileFiltersOpen(true);
+                      if (!filtersHistoryRef.current) {
+                        window.history.pushState({ ...(window.history.state || {}), frameFilters: true }, '');
+                        filtersHistoryRef.current = true;
+                      }
                     }
+                  }}
+                >
+                  <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" />
+                  </svg>
+                </button>
+              )}
+              <button
+                className="mobile-settings"
+                type="button"
+                aria-label="Settings"
+                title="Settings"
+                onClick={() => {
+                  setSettingsOpen(true);
+                  if (!settingsHistoryRef.current) {
+                    window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, '');
+                    settingsHistoryRef.current = true;
                   }
                 }}
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3Z" /></svg>
-              </button>}
-              <button className="mobile-settings" type="button" aria-label="Settings" title="Settings" onClick={() => { setSettingsOpen(true); if (!settingsHistoryRef.current) { window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, ''); settingsHistoryRef.current = true; } }}>
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
               </button>
             </div>
           </>
@@ -815,7 +946,9 @@ export default function App() {
           <div className="mobile-collection-heading">
             <div className="mobile-collection-title">
               <h1>{isWatchlist ? 'Watchlist' : 'Seen'}</h1>
-              <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'movie' : 'movies'}`}>{collectionCount}</span>
+              <span aria-label={`${collectionCount} ${collectionCount === 1 ? 'movie' : 'movies'}`}>
+                {collectionCount}
+              </span>
             </div>
             <ViewToggle className="mobile-view-toggle" />
           </div>
@@ -825,14 +958,26 @@ export default function App() {
               <ViewToggle />
               <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>
                 <span className="select-label-text">Year</span>
-                <select aria-label="Filter by year" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
+                <select
+                  aria-label="Filter by year"
+                  value={yearFilter}
+                  onChange={(event) => changeYearFilter(event.target.value)}
+                >
                   <option value="all">All years</option>
-                  {years.map((year) => <option key={year} value={year}>{year}</option>)}
+                  {years.map((year) => (
+                    <option key={year} value={year}>
+                      {year}
+                    </option>
+                  ))}
                 </select>
               </label>
               <label className={`select-control${sortOrder !== 'newest' ? ' active' : ''}`}>
                 <span className="select-label-text">Sort</span>
-                <select aria-label="Sort movies" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
+                <select
+                  aria-label="Sort movies"
+                  value={sortOrder}
+                  onChange={(event) => changeSortOrder(event.target.value as SortOrder)}
+                >
                   <option value="newest">Newest added</option>
                   <option value="oldest">Oldest added</option>
                   <option value="title">Title A–Z</option>
@@ -842,66 +987,156 @@ export default function App() {
               </label>
             </div>
           </div>
-          {storageError && <p className="storage-error" role="alert">{storageError}</p>}
-          {traktNotice && <p className="trakt-message" role="status">{traktNotice}</p>}
-          {shareNotice && <p className="trakt-message" role="status">{shareNotice}</p>}
+          {storageError && (
+            <p className="storage-error" role="alert">
+              {storageError}
+            </p>
+          )}
+          {traktNotice && (
+            <p className="trakt-message" role="status">
+              {traktNotice}
+            </p>
+          )}
+          {shareNotice && (
+            <p className="trakt-message" role="status">
+              {shareNotice}
+            </p>
+          )}
           <MovieGrid
             view={collectionView}
             movies={visibleMovies}
             hasMovies={collectionCount > 0}
             searching={false}
-            emptyMessage={query && !visibleMovies.length ? 'No search results' : !collectionCount ? (isWatchlist ? 'No movies on your watchlist yet' : 'No seen movies yet') : undefined}
+            emptyMessage={
+              query && !visibleMovies.length
+                ? 'No search results'
+                : !collectionCount
+                  ? isWatchlist
+                    ? 'No movies on your watchlist yet'
+                    : 'No seen movies yet'
+                  : undefined
+            }
             onAdd={openAddDialog}
             onDiscover={() => switchTab('discover')}
-            onOpenSettings={() => { if (!settingsOpen) { setSettingsOpen(true); if (!settingsHistoryRef.current) { window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, ''); settingsHistoryRef.current = true; } } }}
+            onOpenSettings={() => {
+              if (!settingsOpen) {
+                setSettingsOpen(true);
+                if (!settingsHistoryRef.current) {
+                  window.history.pushState({ ...(window.history.state || {}), frameSettings: true }, '');
+                  settingsHistoryRef.current = true;
+                }
+              }
+            }}
             onEdit={openEditDialog}
             onDelete={removeMovie}
             onOpen={openMovie}
           />
         </section>
       </main>
-      {discoverMounted && <DiscoverPage
-        hidden={activeTab !== 'discover'}
-        collection={movies}
-        query={discoverQuery}
-        onQueryChange={setDiscoverQuery}
-        onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
-        onOpen={openDiscoveredDetails}
-      />}
+      {discoverMounted && (
+        <DiscoverPage
+          hidden={activeTab !== 'discover'}
+          collection={movies}
+          query={discoverQuery}
+          onQueryChange={setDiscoverQuery}
+          onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
+          onOpen={openDiscoveredDetails}
+        />
+      )}
       {activeTab === 'insights' && <InsightsPage movies={movies} onOpen={openMovie} />}
-      {selectedMovie && <MovieDetailsPage
-        movie={selectedMovie}
-        discoveryPreview={Boolean(selectedDiscoveryMovie)}
-        onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
-        onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
-        onRemove={() => removeMovieFromDetails(selectedMovie.id)}
-        onEdit={selectedDiscoveryMovie ? undefined : openEditDialog}
-        onClose={closeDetails}
-        onEnrich={enrichMovie}
-      />}
+      {selectedMovie && (
+        <MovieDetailsPage
+          movie={selectedMovie}
+          discoveryPreview={Boolean(selectedDiscoveryMovie)}
+          onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
+          onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
+          onRemove={() => removeMovieFromDetails(selectedMovie.id)}
+          onEdit={selectedDiscoveryMovie ? undefined : openEditDialog}
+          onClose={closeDetails}
+          onEnrich={enrichMovie}
+        />
+      )}
       <AgendaPage open={agendaOpen} movies={movies} onClose={closeAgenda} onOpen={openMovieFromAgenda} />
       <dialog
         ref={filterDialogRef}
         className="movie-dialog mobile-filter-dialog"
         id="mobile-filters"
         aria-labelledby="mobile-filters-title"
-        onCancel={(event) => { event.preventDefault(); if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}
-        onClose={() => { filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}
-        onClick={(event) => { if (event.target === filterDialogRef.current) { if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); } }}
+        onCancel={(event) => {
+          event.preventDefault();
+          if (filtersHistoryRef.current && window.history.state?.frameFilters) {
+            window.history.back();
+            return;
+          }
+          filtersHistoryRef.current = false;
+          setMobileFiltersOpen(false);
+        }}
+        onClose={() => {
+          filtersHistoryRef.current = false;
+          setMobileFiltersOpen(false);
+        }}
+        onClick={(event) => {
+          if (event.target === filterDialogRef.current) {
+            if (filtersHistoryRef.current && window.history.state?.frameFilters) {
+              window.history.back();
+              return;
+            }
+            filtersHistoryRef.current = false;
+            setMobileFiltersOpen(false);
+          }
+        }}
       >
-        <form onSubmit={(event) => { event.preventDefault(); if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}>
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (filtersHistoryRef.current && window.history.state?.frameFilters) {
+              window.history.back();
+              return;
+            }
+            filtersHistoryRef.current = false;
+            setMobileFiltersOpen(false);
+          }}
+        >
           <div className="dialog-head">
             <h2 id="mobile-filters-title">Filters</h2>
-            <button type="button" className="close-button" aria-label="Close filters" onClick={() => { if (filtersHistoryRef.current && window.history.state?.frameFilters) { window.history.back(); return; } filtersHistoryRef.current = false; setMobileFiltersOpen(false); }}>×</button>
+            <button
+              type="button"
+              className="close-button"
+              aria-label="Close filters"
+              onClick={() => {
+                if (filtersHistoryRef.current && window.history.state?.frameFilters) {
+                  window.history.back();
+                  return;
+                }
+                filtersHistoryRef.current = false;
+                setMobileFiltersOpen(false);
+              }}
+            >
+              ×
+            </button>
           </div>
-          <label className="form-field">Year
-            <select aria-label="Filter by year" value={yearFilter} onChange={(event) => changeYearFilter(event.target.value)}>
+          <label className="form-field">
+            Year
+            <select
+              aria-label="Filter by year"
+              value={yearFilter}
+              onChange={(event) => changeYearFilter(event.target.value)}
+            >
               <option value="all">All years</option>
-              {years.map((year) => <option key={year} value={year}>{year}</option>)}
+              {years.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
             </select>
           </label>
-          <label className="form-field">Sort
-            <select aria-label="Sort movies" value={sortOrder} onChange={(event) => changeSortOrder(event.target.value as SortOrder)}>
+          <label className="form-field">
+            Sort
+            <select
+              aria-label="Sort movies"
+              value={sortOrder}
+              onChange={(event) => changeSortOrder(event.target.value as SortOrder)}
+            >
               <option value="newest">Newest added</option>
               <option value="oldest">Oldest added</option>
               <option value="title">Title A–Z</option>
@@ -909,46 +1144,121 @@ export default function App() {
               <option value="rating">Highest rated</option>
             </select>
           </label>
-          <button className="save-button" type="submit">Done</button>
-          <button className="remove-token" type="button" onClick={resetFilters}>Clear filters</button>
+          <button className="save-button" type="submit">
+            Done
+          </button>
+          <button className="remove-token" type="button" onClick={resetFilters}>
+            Clear filters
+          </button>
         </form>
       </dialog>
       <div className="mobile-bottom-actions">
-      <div className="bottom-bar-side left">
-        <button className="mobile-add-button agenda-button" type="button" aria-label="Agenda" title="Agenda" onClick={openAgenda}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M16 3v4M8 3v4M3 10h18" /></svg>
-        </button>
-      </div>
-      <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
-        <button type="button" className={activeTab === 'history' ? 'active' : ''} aria-label="Seen" aria-current={activeTab === 'history' ? 'page' : undefined} onClick={() => switchTab('history')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5" /><path d="M5.5 9v11h13V9" /><path d="M10 20v-5h4v5" /></svg>
-          <span className="tab-label">Seen</span>
-        </button>
-        <button type="button" className={activeTab === 'watchlist' ? 'active' : ''} aria-label="Watchlist" aria-current={activeTab === 'watchlist' ? 'page' : undefined} onClick={() => switchTab('watchlist')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" /></svg>
-          <span className="tab-label">Watchlist</span>
-        </button>
-        <button type="button" className={activeTab === 'discover' ? 'active' : ''} aria-label="Discover" aria-current={activeTab === 'discover' ? 'page' : undefined} onClick={() => switchTab('discover')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" /></svg>
-          <span className="tab-label">Discover</span>
-        </button>
-        <button type="button" className={activeTab === 'insights' ? 'active' : ''} aria-label="Insights" aria-current={activeTab === 'insights' ? 'page' : undefined} onClick={() => switchTab('insights')}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19V5" /><path d="M8 19v-6" /><path d="M12 19V9" /><path d="M16 19V7" /><path d="M20 19v-9" /></svg>
-          <span className="tab-label">Insights</span>
-        </button>
-      </nav>
-      <div className="bottom-bar-side">
-        <button className="mobile-add-button" type="button" aria-label="Add movie" title="Add movie" onClick={openAddDialog}>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
-        </button>
-      </div>
+        <div className="bottom-bar-side left">
+          <button
+            className="mobile-add-button agenda-button"
+            type="button"
+            aria-label="Agenda"
+            title="Agenda"
+            onClick={openAgenda}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M16 3v4M8 3v4M3 10h18" />
+            </svg>
+          </button>
+        </div>
+        <nav className="mobile-bottom-tabs" aria-label="Hoofdnavigatie">
+          <button
+            type="button"
+            className={activeTab === 'history' ? 'active' : ''}
+            aria-label="Seen"
+            aria-current={activeTab === 'history' ? 'page' : undefined}
+            onClick={() => switchTab('history')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5.5 9v11h13V9" />
+              <path d="M10 20v-5h4v5" />
+            </svg>
+            <span className="tab-label">Seen</span>
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'watchlist' ? 'active' : ''}
+            aria-label="Watchlist"
+            aria-current={activeTab === 'watchlist' ? 'page' : undefined}
+            onClick={() => switchTab('watchlist')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m19 21-7-4-7 4V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16Z" />
+            </svg>
+            <span className="tab-label">Watchlist</span>
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'discover' ? 'active' : ''}
+            aria-label="Discover"
+            aria-current={activeTab === 'discover' ? 'page' : undefined}
+            onClick={() => switchTab('discover')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" />
+              <path d="m15.8 8.2-2.5 5.1-5.1 2.5 2.5-5.1 5.1-2.5Z" />
+            </svg>
+            <span className="tab-label">Discover</span>
+          </button>
+          <button
+            type="button"
+            className={activeTab === 'insights' ? 'active' : ''}
+            aria-label="Insights"
+            aria-current={activeTab === 'insights' ? 'page' : undefined}
+            onClick={() => switchTab('insights')}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M4 19V5" />
+              <path d="M8 19v-6" />
+              <path d="M12 19V9" />
+              <path d="M16 19V7" />
+              <path d="M20 19v-9" />
+            </svg>
+            <span className="tab-label">Insights</span>
+          </button>
+        </nav>
+        <div className="bottom-bar-side">
+          <button
+            className="mobile-add-button"
+            type="button"
+            aria-label="Add movie"
+            title="Add movie"
+            onClick={openAddDialog}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </button>
+        </div>
       </div>
       <p className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</p>
       <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
-      <SettingsDialog open={settingsOpen} onClose={() => { if (settingsHistoryRef.current && window.history.state?.frameSettings) { window.history.back(); return; } settingsHistoryRef.current = false; setSettingsOpen(false); }}
-        trakt={trakt} onConnectTrakt={connectTrakt} onDisconnectTrakt={disconnectTrakt} onSyncTrakt={syncTraktMovies}
-        themeMode={themeMode} onThemeModeChange={changeThemeMode}
-        onExport={exportCollection} onImport={importCollection} />
+      <SettingsDialog
+        open={settingsOpen}
+        onClose={() => {
+          if (settingsHistoryRef.current && window.history.state?.frameSettings) {
+            window.history.back();
+            return;
+          }
+          settingsHistoryRef.current = false;
+          setSettingsOpen(false);
+        }}
+        trakt={trakt}
+        onConnectTrakt={connectTrakt}
+        onDisconnectTrakt={disconnectTrakt}
+        onSyncTrakt={syncTraktMovies}
+        themeMode={themeMode}
+        onThemeModeChange={changeThemeMode}
+        onExport={exportCollection}
+        onImport={importCollection}
+      />
     </>
   );
 }

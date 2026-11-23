@@ -27,7 +27,8 @@ function toMovie(value: unknown): Movie | null {
   };
   if (typeof raw.tmdbId === 'number' && Number.isFinite(raw.tmdbId)) movie.tmdbId = raw.tmdbId;
   if (typeof raw.year === 'string' && raw.year) movie.year = raw.year;
-  if (typeof raw.rating === 'number' && raw.rating >= 1 && raw.rating <= 5) movie.rating = raw.rating as Movie['rating'];
+  if (typeof raw.rating === 'number' && raw.rating >= 1 && raw.rating <= 5)
+    movie.rating = raw.rating as Movie['rating'];
   if (typeof raw.note === 'string' && raw.note) movie.note = raw.note;
   if (typeof raw.posterPath === 'string' && raw.posterPath) movie.posterPath = raw.posterPath;
   if (typeof raw.watchedAt === 'number' && Number.isFinite(raw.watchedAt)) movie.watchedAt = raw.watchedAt;
@@ -84,10 +85,14 @@ function movieKey(movie: Movie): string {
 export async function importBackup(file: File, existing: Movie[], mode: ImportMode): Promise<ImportResult> {
   const text = await file.text();
   let parsed: unknown;
-  try { parsed = JSON.parse(text); } catch { throw new Error('This is not a valid JSON file.'); }
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error('This is not a valid JSON file.');
+  }
   const rawMovies = Array.isArray(parsed)
     ? parsed
-    : (parsed && typeof parsed === 'object' && Array.isArray((parsed as { movies?: unknown }).movies))
+    : parsed && typeof parsed === 'object' && Array.isArray((parsed as { movies?: unknown }).movies)
       ? (parsed as { movies: unknown[] }).movies
       : null;
   if (!rawMovies) throw new Error('No movies found in this backup file.');
@@ -96,7 +101,8 @@ export async function importBackup(file: File, existing: Movie[], mode: ImportMo
   let invalid = 0;
   for (const item of rawMovies) {
     const movie = toMovie(item);
-    if (movie) incoming.push(movie); else invalid += 1;
+    if (movie) incoming.push(movie);
+    else invalid += 1;
   }
   if (!incoming.length) throw new Error('No valid movies found in this backup file.');
 
@@ -111,7 +117,10 @@ export async function importBackup(file: File, existing: Movie[], mode: ImportMo
   let skipped = 0;
   for (const movie of incoming) {
     const key = movieKey(movie);
-    if (ids.has(movie.id) || keys.has(key)) { skipped += 1; continue; }
+    if (ids.has(movie.id) || keys.has(key)) {
+      skipped += 1;
+      continue;
+    }
     let id = movie.id;
     while (ids.has(id)) id = `${id}-${Math.random().toString(16).slice(2, 6)}`;
     const merged = id === movie.id ? movie : { ...movie, id };

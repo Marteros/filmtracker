@@ -1,7 +1,11 @@
 import { useId, type KeyboardEvent } from 'react';
 import type { MovieRating } from '../types';
 
-interface Props { value?: MovieRating; onChange(value?: MovieRating): void; idPrefix?: string }
+interface Props {
+  value?: MovieRating;
+  onChange(value?: MovieRating): void;
+  idPrefix?: string;
+}
 
 export function RatingInput({ value, onChange, idPrefix }: Props) {
   const uid = useId();
@@ -31,9 +35,15 @@ export function RatingInput({ value, onChange, idPrefix }: Props) {
             tabIndex={value === rating || (!value && rating === 1) ? 0 : -1}
             onClick={() => onChange(rating as MovieRating)}
             onKeyDown={(event) => handleKeyDown(event, rating)}
-          >★</button>
+          >
+            ★
+          </button>
         ))}
-        {value && <button className="clear-rating" type="button" onClick={() => onChange(undefined)}>Clear</button>}
+        {value && (
+          <button className="clear-rating" type="button" onClick={() => onChange(undefined)}>
+            Clear
+          </button>
+        )}
       </div>
     </fieldset>
   );
