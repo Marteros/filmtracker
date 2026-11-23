@@ -1,10 +1,10 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
+import { useState } from 'react';
 import { findMovie } from '@/lib/movie';
-import { getDiscoveryMovies, searchMovies, type DiscoveryCategory } from '@/services/tmdb';
+/* discover fetch logic lives in useDiscovery */
 import { DiscoverCard } from './DiscoverCard';
 import { RandomizerDialog } from './RandomizerDialog';
 import { useRandomizer } from './useRandomizer';
+import { DISCOVER_SECTIONS, useDiscovery } from './useDiscovery';
 import { SearchField } from '@/components/ui/SearchField';
 import type { Movie, TmdbMovie } from '@/types';
 
@@ -17,138 +17,23 @@ interface Props {
   hidden?: boolean;
 }
 
-const SECTIONS: Array<{ id: DiscoveryCategory; title: string }> = [
-  { id: 'trending', title: 'Trending' },
-  { id: 'popular', title: 'Popular' },
-  { id: 'top_rated', title: 'Top rated' },
-];
-
 export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, hidden = false }: Props) {
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<TmdbMovie[]>([]);
-  const [feeds, setFeeds] = useState<Partial<Record<DiscoveryCategory, TmdbMovie[]>>>({});
-  const [selectedSection, setSelectedSection] = useState<DiscoveryCategory>();
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
-  const [retry, setRetry] = useState(0);
   const randomizer = useRandomizer(collection);
-  const overviewScrollRef = useRef(0);
-  const restoreOverviewScrollRef = useRef<number | null>(null);
-
-  const sectionOverlay = useHistoryOverlay<DiscoveryCategory>({
-    key: 'frameSection',
-    onChange: (section) => {
-      if (section) {
-        if (!selectedSection) overviewScrollRef.current = window.scrollY;
-        setSelectedSection(section);
-        setError('');
-      } else {
-        restoreOverviewScrollRef.current = overviewScrollRef.current;
-        setSelectedSection(undefined);
-        setError('');
-      }
-    },
-  });
-
-  useLayoutEffect(() => {
-    if (selectedSection) {
-      window.scrollTo(0, 0);
-      return;
-    }
-    if (restoreOverviewScrollRef.current !== null) {
-      const top = restoreOverviewScrollRef.current;
-      restoreOverviewScrollRef.current = null;
-      window.scrollTo(0, top);
-    }
-  }, [selectedSection]);
-
-  function openSection(section: DiscoveryCategory) {
-    overviewScrollRef.current = window.scrollY;
-    setSelectedSection(section);
-    setError('');
-    sectionOverlay.open(section);
-  }
-
-  function closeSection() {
-    sectionOverlay.close();
-  }
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedQuery(query.trim()), 280);
-    return () => window.clearTimeout(timer);
-  }, [query]);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setLoading(true);
-    setError('');
-    if (debouncedQuery) {
-      searchMovies(debouncedQuery, controller.signal)
-        .then((results) => {
-          if (!controller.signal.aborted) setSearchResults(results);
-        })
-        .catch((reason: unknown) => {
-          if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.');
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
-        });
-    } else if (selectedSection) {
-      setPage(1);
-      setHasMore(true);
-      getDiscoveryMovies(selectedSection, controller.signal)
-        .then((results) => {
-          if (controller.signal.aborted) return;
-          setFeeds((current) => ({ ...current, [selectedSection]: results }));
-          setHasMore(results.length >= 20);
-        })
-        .catch((reason: unknown) => {
-          if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.');
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
-        });
-    } else {
-      Promise.all(SECTIONS.map(async ({ id }) => [id, await getDiscoveryMovies(id, controller.signal)] as const))
-        .then((results) => {
-          if (!controller.signal.aborted)
-            setFeeds(Object.fromEntries(results) as Record<DiscoveryCategory, TmdbMovie[]>);
-        })
-        .catch((reason: unknown) => {
-          if (!controller.signal.aborted) setError(reason instanceof Error ? reason.message : 'Could not load movies.');
-        })
-        .finally(() => {
-          if (!controller.signal.aborted) setLoading(false);
-        });
-    }
-    return () => controller.abort();
-  }, [debouncedQuery, retry, selectedSection]);
-
-  async function loadMore() {
-    if (!selectedSection || loadingMore || !hasMore) return;
-    const nextPage = page + 1;
-    setLoadingMore(true);
-    setError('');
-    try {
-      const results = await getDiscoveryMovies(selectedSection, new AbortController().signal, undefined, nextPage);
-      setFeeds((current) => {
-        const existing = current[selectedSection] || [];
-        const seen = new Set(existing.map((m) => m.id));
-        const appended = results.filter((m) => !seen.has(m.id));
-        return { ...current, [selectedSection]: [...existing, ...appended] };
-      });
-      setPage(nextPage);
-      setHasMore(results.length >= 20);
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Could not load more movies.');
-    } finally {
-      setLoadingMore(false);
-    }
-  }
+  const {
+    debouncedQuery,
+    searchResults,
+    feeds,
+    selectedSection,
+    loading,
+    loadingMore,
+    hasMore,
+    error,
+    retry,
+    openSection,
+    closeSection,
+    loadMore,
+  } = useDiscovery(query);
 
   function handleAdd(movie: TmdbMovie, status: 'seen' | 'watchlist') {
     setActionError('');
@@ -162,7 +47,9 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   return (
     <main className="app discover-page" hidden={hidden}>
       <header className={`discover-header${selectedSection ? ' has-section' : ''}`}>
-        <h1>{selectedSection ? SECTIONS.find((section) => section.id === selectedSection)?.title : 'Discover'}</h1>
+        <h1>
+          {selectedSection ? DISCOVER_SECTIONS.find((section) => section.id === selectedSection)?.title : 'Discover'}
+        </h1>
         <div className="discover-header-actions">
           {!selectedSection && !debouncedQuery && (
             <button className="discover-random-button" type="button" onClick={randomizer.openDialog}>
@@ -214,7 +101,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       {error && (
         <div className="discover-inline-error" role="alert">
           {error}{' '}
-          <button type="button" onClick={() => setRetry((value) => value + 1)}>
+          <button type="button" onClick={retry}>
             Try again
           </button>
         </div>
@@ -258,7 +145,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         <>
           <section
             className="discover-all-grid"
-            aria-label={`${SECTIONS.find((section) => section.id === selectedSection)?.title} movies`}
+            aria-label={`${DISCOVER_SECTIONS.find((section) => section.id === selectedSection)?.title} movies`}
           >
             {(feeds[selectedSection] || []).map((movie) => (
               <DiscoverCard
@@ -282,7 +169,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         </>
       ) : (
         <div className="discover-sections">
-          {SECTIONS.map(({ id, title }) => (
+          {DISCOVER_SECTIONS.map(({ id, title }) => (
             <section className="discover-section" key={id} aria-labelledby={`discover-${id}`}>
               <div className="discover-section-heading">
                 <h2 id={`discover-${id}`}>{title}</h2>
