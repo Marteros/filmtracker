@@ -8,7 +8,10 @@ import { SearchField } from './components/SearchField';
 import { ViewToggle } from './components/ViewToggle';
 import { InsightsPage } from './components/InsightsPage';
 import { AgendaPage } from './components/AgendaPage';
-import { movieRepository, settingsRepository } from './services/movieRepository';
+import { useCollection } from './app/useCollection';
+import { migrateSettings, getTraktSettings, saveTraktSettings, clearTraktSettings } from './services/settingsStore';
+import { parseDateOnly } from './lib/dates';
+import { findMovie } from './lib/movie';
 import {
   beginTraktAuthorization,
   finishTraktAuthorization,
@@ -33,8 +36,10 @@ function createId() {
 }
 
 export default function App() {
-  const [movies, setMovies] = useState<Movie[]>(() => movieRepository.getAll());
-  const [trakt, setTrakt] = useState<TraktCredentials>(() => settingsRepository.getTrakt());
+  const collection = useCollection();
+  const movies = collection.movies;
+  const storageError = collection.storageError;
+  const [trakt, setTrakt] = useState<TraktCredentials>(() => getTraktSettings());
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
   const [activeTab, setActiveTab] = useState<AppTab>('history');
   const [discoverMounted, setDiscoverMounted] = useState(false);
@@ -57,7 +62,6 @@ export default function App() {
   const [editingMovie, setEditingMovie] = useState<Movie>();
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [selectedDiscoveryMovie, setSelectedDiscoveryMovie] = useState<TmdbMovie>();
-  const [storageError, setStorageError] = useState('');
   const [traktNotice, setTraktNotice] = useState('');
   const [shareNotice, setShareNotice] = useState('');
   const traktCallbackHandled = useRef(false);
@@ -68,11 +72,10 @@ export default function App() {
   const settingsHistoryRef = useRef(false);
   const movieDialogHistoryRef = useRef(false);
   const filtersHistoryRef = useRef(false);
-  const moviesRef = useRef(movies);
 
   useEffect(() => {
-    moviesRef.current = movies;
-  }, [movies]);
+    migrateSettings();
+  }, []);
 
   useEffect(() => {
     applyTheme(themeMode);
@@ -154,7 +157,7 @@ export default function App() {
     }
     finishTraktAuthorization(clientId, code, returnedState)
       .then((credentials) => {
-        settingsRepository.saveTrakt(credentials);
+        saveTraktSettings(credentials);
         setTrakt(credentials);
         setTraktNotice('Trakt is connected. You can now sync your watch history and watchlist.');
       })
@@ -228,7 +231,7 @@ export default function App() {
         return true;
       }
       if (typeof details.movieId === 'string') {
-        const saved = moviesRef.current.find((m) => m.id === details.movieId);
+        const saved = collection.findById(details.movieId);
         if (saved) {
           setSelectedDiscoveryMovie(undefined);
           setSelectedMovie(saved);
@@ -333,25 +336,6 @@ export default function App() {
       ),
     [movies],
   );
-  function persist(next: Movie[]) {
-    try {
-      movieRepository.saveAll(next);
-      setMovies(next);
-      setStorageError('');
-      return true;
-    } catch {
-      setStorageError('Could not save. Check the available storage on this device.');
-      return false;
-    }
-  }
-
-  function parseWatchedAt(value?: string): number | undefined {
-    if (!value) return undefined;
-    const [y, m, d] = value.split('-').map(Number);
-    if (!y || !m || !d) return undefined;
-    return new Date(y, m - 1, d).getTime();
-  }
-
   function handleSave(draft: MovieDraft): string | null {
     const duplicate = movies.find((movie) => {
       if (movie.id === editingMovie?.id) return false;
@@ -364,7 +348,7 @@ export default function App() {
 
     const old = editingMovie;
     const watchedAt =
-      draft.status === 'seen' ? (parseWatchedAt(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
+      draft.status === 'seen' ? (parseDateOnly(draft.watchedAt) ?? old?.watchedAt ?? Date.now()) : undefined;
     const nextMovie: Movie = {
       id: old?.id || createId(),
       title: draft.title,
@@ -381,8 +365,8 @@ export default function App() {
       runtime: draft.runtime ?? old?.runtime,
       genres: draft.genres ?? old?.genres,
     };
-    const next = old ? movies.map((movie) => (movie.id === old.id ? nextMovie : movie)) : [...movies, nextMovie];
-    if (!persist(next)) return 'Could not save. Check the available storage on this device.';
+    const saved = old ? collection.updateMovie(old.id, nextMovie) : collection.addMovie(nextMovie);
+    if (!saved) return 'Could not save. Check the available storage on this device.';
     if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
     closeMovieDialog();
     return null;
@@ -489,11 +473,7 @@ export default function App() {
 
   function findSavedMovie(movie: TmdbMovie) {
     const year = movie.release_date?.slice(0, 4);
-    return movies.find(
-      (saved) =>
-        saved.tmdbId === movie.id ||
-        (saved.title.toLocaleLowerCase() === movie.title.toLocaleLowerCase() && saved.year === year),
-    );
+    return findMovie(movies, { tmdbId: movie.id, title: movie.title, year });
   }
 
   function saveDiscoveredMovie(movie: TmdbMovie, status: 'seen' | 'watchlist' = 'watchlist'): Movie | undefined {
@@ -501,9 +481,7 @@ export default function App() {
     if (existing) {
       if (status === 'seen' && existing.status === 'watchlist') {
         const updated: Movie = { ...existing, status: 'seen', watchedAt: existing.watchedAt ?? Date.now() };
-        return persist(movies.map((movieItem) => (movieItem.id === existing.id ? updated : movieItem)))
-          ? updated
-          : undefined;
+        return collection.updateMovie(existing.id, updated) ? updated : undefined;
       }
       return existing;
     }
@@ -519,7 +497,7 @@ export default function App() {
       addedAt: Date.now(),
       watchedAt: status === 'seen' ? Date.now() : undefined,
     };
-    return persist([...movies, saved]) ? saved : undefined;
+    return collection.addMovie(saved) ? saved : undefined;
   }
 
   function openDiscoveredDetails(movie: TmdbMovie) {
@@ -565,8 +543,7 @@ export default function App() {
       watchedAt: status === 'seen' ? (movie.watchedAt ?? Date.now()) : undefined,
       rating: status === 'seen' ? movie.rating : undefined,
     };
-    const next = movies.map((item) => (item.id === movie.id ? nextMovie : item));
-    if (!persist(next)) return false;
+    if (!collection.updateMovie(movie.id, nextMovie)) return false;
     setSelectedMovie(nextMovie);
     return true;
   }
@@ -574,18 +551,12 @@ export default function App() {
   function setMovieRatingFromDetails(movie: Movie, rating?: Movie['rating']) {
     if (movie.status !== 'seen') return;
     const nextMovie: Movie = { ...movie, rating };
-    const next = movies.map((item) => (item.id === movie.id ? nextMovie : item));
-    if (persist(next)) setSelectedMovie(nextMovie);
+    if (collection.updateMovie(movie.id, nextMovie)) setSelectedMovie(nextMovie);
   }
 
   function removeMovieFromDetails(id: string): boolean {
-    const movie = movies.find((item) => item.id === id);
-    if (!movie) return false;
-    if (!persist(movies.filter((item) => item.id !== id))) {
-      setStorageError('Could not save. Check the available storage on this device.');
-      return false;
-    }
-    return true;
+    if (!collection.findById(id)) return false;
+    return collection.removeMovie(id);
   }
 
   function openEditDialog(movie: Movie) {
@@ -611,36 +582,28 @@ export default function App() {
   function removeMovie(id: string): boolean {
     const movie = movies.find((item) => item.id === id);
     if (!movie || !window.confirm(`Remove “${movie.title}” from your collection?`)) return false;
-    return persist(movies.filter((item) => item.id !== id));
+    return collection.removeMovie(id);
   }
 
   const enrichMovie = useCallback(
     (id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>) => {
-      setMovies((prev) => {
-        const next = prev.map((m) => (m.id === id ? { ...m, ...patch } : m));
-        try {
-          movieRepository.saveAll(next);
-        } catch {
-          /* ignore */
-        }
-        return next;
-      });
+      collection.enrichMovie(id, patch);
       setSelectedMovie((current) => (current && current.id === id ? { ...current, ...patch } : current));
     },
-    [],
+    [collection],
   );
 
   async function connectTrakt() {
     if (!TRAKT_CLIENT_ID) throw new Error('Trakt is not configured yet. Add a Trakt Client ID in the app code.');
     const next = { clientId: TRAKT_CLIENT_ID, accessToken: '', refreshToken: '', expiresAt: 0 };
-    settingsRepository.saveTrakt(next);
+    saveTraktSettings(next);
     setTrakt(next);
     const authorizationUrl = await beginTraktAuthorization(TRAKT_CLIENT_ID);
     window.location.assign(authorizationUrl);
   }
 
   function disconnectTrakt() {
-    settingsRepository.clearTrakt();
+    clearTraktSettings();
     setTrakt({ clientId: '', accessToken: '', refreshToken: '', expiresAt: 0 });
   }
 
@@ -650,7 +613,8 @@ export default function App() {
 
   async function importCollection(file: File, mode: ImportMode): Promise<string> {
     const result = await importBackup(file, movies, mode);
-    if (!persist(result.movies)) throw new Error('Import failed. Check the available storage on this device.');
+    if (!collection.replaceAll(result.movies))
+      throw new Error('Import failed. Check the available storage on this device.');
     if (mode === 'replace') {
       return `${result.added} ${result.added === 1 ? 'movie' : 'movies'} imported (collection replaced).`;
     }
@@ -667,7 +631,7 @@ export default function App() {
     let refreshed: TraktCredentials | null = null;
     const onCredentials = (updated: TraktCredentials) => {
       refreshed = updated;
-      settingsRepository.saveTrakt(updated);
+      saveTraktSettings(updated);
       setTrakt(updated);
     };
     const watched = await getWatchedMovies(effective, onCredentials);
@@ -771,7 +735,8 @@ export default function App() {
       changed += 1;
     }
 
-    if (changed && !persist(next)) throw new Error('Sync failed. Check the available storage on this device.');
+    if (changed && !collection.replaceAll(next))
+      throw new Error('Sync failed. Check the available storage on this device.');
     return changed;
   }
 

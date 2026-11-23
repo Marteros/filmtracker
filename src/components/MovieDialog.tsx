@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { Movie, MovieDraft, MovieRating, TmdbMovie } from '../types';
+import { toDateInput } from '../lib/dates';
 import { MovieSearchCombobox } from './MovieSearchCombobox';
 import { RatingInput } from './RatingInput';
 
@@ -23,14 +24,6 @@ export function MovieDialog({ open, movie, onClose, onSave }: Props) {
   const [selected, setSelected] = useState<TmdbMovie>();
   const [error, setError] = useState('');
 
-  function toDateInput(value?: number) {
-    if (!value) return '';
-    const d = new Date(value);
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${y}-${m}-${day}`;
-  }
   function todayInput() {
     return toDateInput(Date.now());
   }

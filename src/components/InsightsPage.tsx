@@ -1,14 +1,10 @@
 import { useMemo } from 'react';
 import type { Movie } from '../types';
+import { monthKey } from '../lib/dates';
 
 interface Props {
   movies: Movie[];
   onOpen(movie: Movie): void;
-}
-
-function monthKey(ts: number) {
-  const d = new Date(ts);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
 export function InsightsPage({ movies, onOpen }: Props) {

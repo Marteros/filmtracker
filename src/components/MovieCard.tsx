@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import type { Movie } from '../types';
+import { formatReleaseLabel } from '../lib/dates';
 import { tmdbPoster } from '../services/tmdb';
 
 const PALETTES = [
@@ -14,11 +15,7 @@ const PALETTES = [
 ];
 
 function releaseLabel(value?: string) {
-  if (!value) return '';
-  const date = new Date(`${value.slice(0, 10)}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return '';
-  if (date.getTime() <= Date.now()) return 'Available';
-  return `From ${date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}`;
+  return formatReleaseLabel(value);
 }
 
 interface Props {

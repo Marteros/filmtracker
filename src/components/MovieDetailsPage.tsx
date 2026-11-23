@@ -59,6 +59,16 @@ export function MovieDetailsPage({
 
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
+  const movieRef = useRef(movie);
+  useEffect(() => {
+    movieRef.current = movie;
+  }, [movie]);
+
+  const onEnrichRef = useRef(onEnrich);
+  useEffect(() => {
+    onEnrichRef.current = onEnrich;
+  }, [onEnrich]);
+
   useEffect(() => {
     if (!movie.tmdbId) return;
     const controller = new AbortController();
@@ -67,12 +77,13 @@ export function MovieDetailsPage({
     getMovieDetails(movie.tmdbId, controller.signal)
       .then((data) => {
         setDetails(data);
+        const current = movieRef.current;
         const patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>> = {};
-        if (!movie.runtime && data.runtime) patch.runtime = data.runtime;
-        if (!movie.genres?.length && data.genres?.length) patch.genres = data.genres.map((g) => g.name);
-        if (!movie.posterPath && data.poster_path) patch.posterPath = data.poster_path;
-        if (!movie.releaseDate && data.release_date) patch.releaseDate = data.release_date;
-        if (Object.keys(patch).length) onEnrich?.(movie.id, patch);
+        if (!current.runtime && data.runtime) patch.runtime = data.runtime;
+        if (!current.genres?.length && data.genres?.length) patch.genres = data.genres.map((g) => g.name);
+        if (!current.posterPath && data.poster_path) patch.posterPath = data.poster_path;
+        if (!current.releaseDate && data.release_date) patch.releaseDate = data.release_date;
+        if (Object.keys(patch).length) onEnrichRef.current?.(current.id, patch);
       })
       .catch((reason: unknown) => {
         if (reason instanceof Error && reason.name !== 'AbortError') setError(reason.message);
@@ -86,7 +97,7 @@ export function MovieDetailsPage({
         if (!controller.signal.aborted) setCastLoading(false);
       });
     return () => controller.abort();
-  }, [movie.tmdbId, movie.id, movie.runtime, movie.genres, movie.posterPath, movie.releaseDate, onEnrich]);
+  }, [movie.tmdbId]);
 
   useEffect(() => {
     if (!selectedActor) return;

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { Movie } from '../types';
+import { parseDate, startOfDay } from '../lib/dates';
 import { tmdbPoster } from '../services/tmdb';
 
 interface Props {
@@ -7,18 +8,6 @@ interface Props {
   movies: Movie[];
   onClose(): void;
   onOpen(movie: Movie): void;
-}
-
-function parseDate(value?: string) {
-  if (!value) return undefined;
-  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
-  if (!match) return undefined;
-  const d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-  return Number.isNaN(d.getTime()) ? undefined : d;
-}
-
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
 export function AgendaPage({ open, movies, onClose, onOpen }: Props) {

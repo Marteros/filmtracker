@@ -18,6 +18,11 @@ export interface Movie {
   genres?: string[];
 }
 
+export interface StoredCollectionV2 {
+  schemaVersion: 2;
+  movies: Movie[];
+}
+
 export interface TmdbMovie {
   id: number;
   title: string;

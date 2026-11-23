@@ -1,4 +1,6 @@
-import type { Movie, MovieStatus } from '../types';
+import type { Movie } from '../types';
+import { mergeMovies } from '../lib/movie';
+import { normalizeMovie } from '../lib/validation';
 
 const SCHEMA_VERSION = 1;
 
@@ -7,41 +9,6 @@ interface BackupFile {
   app: 'frame';
   exportedAt: string;
   movies: Movie[];
-}
-
-function isStatus(value: unknown): value is MovieStatus {
-  return value === 'seen' || value === 'watchlist';
-}
-
-function toMovie(value: unknown): Movie | null {
-  if (!value || typeof value !== 'object') return null;
-  const raw = value as Partial<Movie> & Record<string, unknown>;
-  if (typeof raw.id !== 'string' || typeof raw.title !== 'string' || !isStatus(raw.status)) return null;
-  const addedAt = typeof raw.addedAt === 'number' && Number.isFinite(raw.addedAt) ? raw.addedAt : Date.now();
-  const movie: Movie = {
-    id: raw.id,
-    title: raw.title,
-    status: raw.status,
-    palette: typeof raw.palette === 'number' && Number.isFinite(raw.palette) ? raw.palette : 0,
-    addedAt,
-  };
-  if (typeof raw.tmdbId === 'number' && Number.isFinite(raw.tmdbId)) movie.tmdbId = raw.tmdbId;
-  if (typeof raw.year === 'string' && raw.year) movie.year = raw.year;
-  if (typeof raw.rating === 'number' && raw.rating >= 1 && raw.rating <= 5)
-    movie.rating = raw.rating as Movie['rating'];
-  if (typeof raw.note === 'string' && raw.note) movie.note = raw.note;
-  if (typeof raw.posterPath === 'string' && raw.posterPath) movie.posterPath = raw.posterPath;
-  if (typeof raw.watchedAt === 'number' && Number.isFinite(raw.watchedAt)) movie.watchedAt = raw.watchedAt;
-  if (typeof raw.runtime === 'number' && Number.isFinite(raw.runtime) && raw.runtime > 0) movie.runtime = raw.runtime;
-  if (Array.isArray(raw.genres)) {
-    const genres = raw.genres.filter((g): g is string => typeof g === 'string' && g.trim().length > 0);
-    if (genres.length) movie.genres = genres;
-  }
-  if (movie.status === 'watchlist') {
-    delete movie.rating;
-    delete movie.watchedAt;
-  }
-  return movie;
 }
 
 export function createBackup(movies: Movie[]): string {
@@ -77,11 +44,6 @@ export interface ImportResult {
   invalid: number;
 }
 
-function movieKey(movie: Movie): string {
-  if (typeof movie.tmdbId === 'number') return `tmdb:${movie.tmdbId}`;
-  return `title:${movie.title.toLocaleLowerCase()}::${movie.year || ''}`;
-}
-
 export async function importBackup(file: File, existing: Movie[], mode: ImportMode): Promise<ImportResult> {
   const text = await file.text();
   let parsed: unknown;
@@ -100,7 +62,7 @@ export async function importBackup(file: File, existing: Movie[], mode: ImportMo
   const incoming: Movie[] = [];
   let invalid = 0;
   for (const item of rawMovies) {
-    const movie = toMovie(item);
+    const movie = normalizeMovie(item);
     if (movie) incoming.push(movie);
     else invalid += 1;
   }
@@ -110,24 +72,6 @@ export async function importBackup(file: File, existing: Movie[], mode: ImportMo
     return { movies: incoming, added: incoming.length, replaced: existing.length, skipped: 0, invalid };
   }
 
-  const next = [...existing];
-  const ids = new Set(existing.map((m) => m.id));
-  const keys = new Set(existing.map(movieKey));
-  let added = 0;
-  let skipped = 0;
-  for (const movie of incoming) {
-    const key = movieKey(movie);
-    if (ids.has(movie.id) || keys.has(key)) {
-      skipped += 1;
-      continue;
-    }
-    let id = movie.id;
-    while (ids.has(id)) id = `${id}-${Math.random().toString(16).slice(2, 6)}`;
-    const merged = id === movie.id ? movie : { ...movie, id };
-    next.push(merged);
-    ids.add(merged.id);
-    keys.add(key);
-    added += 1;
-  }
-  return { movies: next, added, replaced: 0, skipped, invalid };
+  const merged = mergeMovies(existing, incoming);
+  return { movies: merged.movies, added: merged.added, replaced: 0, skipped: merged.skipped, invalid };
 }
