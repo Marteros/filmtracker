@@ -179,16 +179,10 @@ export default function App() {
     setSettingsOpen(true);
     settingsOverlay.open(true);
   }
-  function closeSettings() {
-    settingsOverlay.close();
-  }
   function openAgenda() {
     if (agendaOpen) return;
     setAgendaOpen(true);
     agendaOverlay.open(true);
-  }
-  function closeAgenda() {
-    agendaOverlay.close();
   }
   function openFilters() {
     if (filters.mobileFiltersOpen) return;
@@ -196,17 +190,11 @@ export default function App() {
     filters.setMobileFiltersOpen(true);
     filtersOverlay.open(true);
   }
-  function closeFilters() {
-    filtersOverlay.close();
-  }
   function openMovieDialog(movie?: Movie) {
     setEditingMovie(movie);
     if (movieDialogOpen) return;
     setMovieDialogOpen(true);
     movieDialogOverlay.open(true);
-  }
-  function closeMovieDialog() {
-    movieDialogOverlay.close();
   }
 
   function handleSave(draft: MovieDraft): string | null {
@@ -240,7 +228,7 @@ export default function App() {
     const saved = old ? collection.updateMovie(old.id, nextMovie) : collection.addMovie(nextMovie);
     if (!saved) return 'Could not save. Check the available storage on this device.';
     if (old && selectedMovie?.id === old.id) setSelectedMovie(nextMovie);
-    closeMovieDialog();
+    movieDialogOverlay.close();
     return null;
   }
 
@@ -289,7 +277,7 @@ export default function App() {
       showMobileFilter={nav.activeTab === 'history' || nav.activeTab === 'watchlist'}
       mobileFilterActive={filters.yearFilter !== 'all' || filters.sortOrder !== 'newest'}
       mobileFiltersOpen={filters.mobileFiltersOpen}
-      onMobileFilterToggle={() => (filters.mobileFiltersOpen ? closeFilters() : openFilters())}
+      onMobileFilterToggle={() => (filters.mobileFiltersOpen ? filtersOverlay.close() : openFilters())}
       storageError={storageError}
       traktNotice={traktNotice}
       shareNotice={shareNotice}
@@ -349,7 +337,7 @@ export default function App() {
         />
       )}
 
-      <AgendaPage open={agendaOpen} movies={movies} onClose={closeAgenda} onOpen={openMovie} />
+      <AgendaPage open={agendaOpen} movies={movies} onClose={agendaOverlay.close} onOpen={openMovie} />
       <FilterDialog
         open={filters.mobileFiltersOpen}
         years={filters.years}
@@ -358,12 +346,12 @@ export default function App() {
         sortOrder={filters.sortOrder}
         onSortOrderChange={filters.changeSortOrder}
         onReset={filters.resetFilters}
-        onClose={closeFilters}
+        onClose={filtersOverlay.close}
       />
-      <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={closeMovieDialog} onSave={handleSave} />
+      <MovieDialog open={movieDialogOpen} movie={editingMovie} onClose={movieDialogOverlay.close} onSave={handleSave} />
       <SettingsDialog
         open={settingsOpen}
-        onClose={closeSettings}
+        onClose={settingsOverlay.close}
         trakt={trakt}
         onConnectTrakt={connectTrakt}
         onDisconnectTrakt={disconnectTrakt}

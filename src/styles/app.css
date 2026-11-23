@@ -159,9 +159,10 @@ button {
 .storage-error {
   margin: 0 0 14px;
   padding: 10px 12px;
+  border-left: 3px solid var(--storage-error-border);
   border-radius: 7px;
-  background: #fff0ee;
-  color: #9d2e25;
+  background: var(--storage-error-bg);
+  color: var(--storage-error-color);
   font-size: 13px;
 }
 .movie-dialog {
@@ -584,7 +585,7 @@ select:focus-visible {
   cursor: pointer;
 }
 .select-control.active select {
-  border-color: var(--link);
+  border-color: var(--accent);
   background: var(--accent-soft);
   color: var(--accent-strong);
 }
@@ -1238,7 +1239,7 @@ html.modal-open body {
 }
 .details-status-error {
   margin: 0;
-  color: #f0b9ad;
+  color: var(--inline-error);
   font-size: 13px;
 }
 .details-edit-link {
@@ -1962,7 +1963,7 @@ html.modal-open body {
   padding: 8px 9px;
   border-radius: 3px;
   background: #102b3be6;
-  color: var(--btn-fg);
+  color: #fff;
   font-size: 11px;
   opacity: 0;
   transform: translateY(3px);
@@ -2070,7 +2071,7 @@ html.modal-open body {
 }
 .discover-inline-error {
   margin: 12px 0 0;
-  color: var(--danger);
+  color: var(--inline-error);
   font-size: 13px;
 }
 .discover-skeleton {
@@ -2278,7 +2279,7 @@ html.modal-open body {
   border: 2px solid var(--line-2);
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface) 95%, transparent);
-  box-shadow: 0 8px 28px #142a3b20;
+  box-shadow: var(--mobile-tabs-shadow);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
   pointer-events: auto;
@@ -2313,8 +2314,8 @@ html.modal-open body {
   color: var(--ink);
 }
 .mobile-bottom-tabs button.active {
-  background: var(--accent-soft-3);
-  color: var(--accent-strong);
+  background: var(--tab-active-bg);
+  color: var(--tab-active-fg);
 }
 .mobile-bottom-tabs .tab-label {
   white-space: nowrap;
@@ -2332,7 +2333,7 @@ html.modal-open body {
   background: var(--btn-bg);
   color: var(--btn-fg);
   line-height: 0;
-  box-shadow: 0 8px 28px #142a3b30;
+  box-shadow: var(--mobile-float-shadow);
   cursor: pointer;
   appearance: none;
   -webkit-appearance: none;
@@ -2403,8 +2404,8 @@ html.modal-open body {
     stroke-linejoin: round;
   }
   .mobile-filter-button.has-active {
-    border-color: var(--link);
-    background: var(--accent-soft-3);
+    border-color: var(--filter-active-border);
+    background: var(--filter-active-bg);
     color: var(--accent-strong);
   }
   .collection-controls {
@@ -2803,8 +2804,8 @@ html.modal-open body {
   background: var(--surface-2);
 }
 .insight-card.highlight {
-  background: var(--btn-bg);
-  border-color: var(--ink-strong);
+  background: var(--insight-highlight-bg);
+  border-color: var(--insight-highlight-border);
 }
 .insight-card h2 {
   margin: 0;
@@ -2815,7 +2816,7 @@ html.modal-open body {
   letter-spacing: 0.04em;
 }
 .insight-card.highlight h2 {
-  color: #bcd0d8;
+  color: var(--insight-highlight-h2);
 }
 .insight-value {
   margin: 8px 0 2px;
@@ -2825,7 +2826,7 @@ html.modal-open body {
   line-height: 1;
 }
 .insight-card.highlight .insight-value {
-  color: var(--btn-fg);
+  color: var(--insight-highlight-value);
 }
 .insight-sub {
   margin: 0;
@@ -2833,7 +2834,7 @@ html.modal-open body {
   font-size: 12px;
 }
 .insight-card.highlight .insight-sub {
-  color: #c7d7dd;
+  color: var(--insight-highlight-sub);
 }
 .insight-section {
   padding: 16px;
@@ -2893,7 +2894,7 @@ html.modal-open body {
   font-size: 13px;
 }
 .insight-chip strong {
-  color: var(--link);
+  color: var(--accent-strong);
 }
 .insight-list {
   list-style: none;
@@ -3346,7 +3347,7 @@ html.modal-open body {
   place-items: center;
   border-radius: 10px;
   background: var(--accent-soft);
-  color: var(--link);
+  color: var(--accent-strong);
 }
 .onboarding-icon svg {
   display: block;
@@ -3418,7 +3419,7 @@ html.modal-open body {
   cursor: pointer;
 }
 .onboarding-secondary:hover {
-  background: var(--chip-bg);
+  background: var(--onboarding-secondary-hover-bg);
 }
 
 @media (max-width: 650px) {
@@ -3483,81 +3484,3 @@ html.modal-open body {
 }
 
 /* --- Dark theme adjustments --- */
-:root[data-theme='dark'] .poster-details-hint,
-:root[data-theme='dark'] .discover-poster-hint {
-  color: #fff;
-}
-:root[data-theme='dark'] .discover-random-button {
-  background: var(--btn-bg);
-  border-color: var(--btn-bg);
-  color: var(--btn-fg);
-}
-:root[data-theme='dark'] .discover-random-button:hover {
-  background: var(--btn-hover);
-  border-color: var(--btn-hover);
-}
-:root[data-theme='dark'] .mobile-bottom-tabs button.active {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .mobile-filter-button.has-active {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .insight-card.highlight {
-  background: #1a3a40;
-  border-color: #2a5a61;
-}
-:root[data-theme='dark'] .insight-card.highlight h2 {
-  color: #9fd7dc;
-}
-:root[data-theme='dark'] .insight-card.highlight .insight-value {
-  color: #f4f8fa;
-}
-:root[data-theme='dark'] .insight-card.highlight .insight-sub {
-  color: #b8d0d4;
-}
-:root[data-theme='dark'] .rating-bar i {
-  background: var(--accent);
-}
-:root[data-theme='dark'] .insight-chip strong {
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .select-control.active select {
-  border-color: var(--accent);
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .storage-error {
-  border-left-color: var(--danger);
-}
-:root[data-theme='dark'] .discover-inline-error {
-  color: #ffb3a8;
-}
-:root[data-theme='dark'] .details-status-error {
-  color: #ffb3a8;
-}
-:root[data-theme='dark'] .mobile-add-button {
-  border-color: var(--bg);
-  box-shadow: 0 8px 28px #00000040;
-}
-:root[data-theme='dark'] .mobile-bottom-tabs {
-  box-shadow: 0 8px 28px #00000040;
-}
-:root[data-theme='dark'] .inline-icon {
-  background: var(--chip-bg);
-  color: var(--ink-strong);
-}
-:root[data-theme='dark'] .onboarding-icon {
-  background: var(--accent-soft);
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .onboarding-secondary {
-  background: var(--control-bg);
-  border-color: var(--line-2);
-  color: var(--ink-strong);
-}
-:root[data-theme='dark'] .onboarding-secondary:hover {
-  background: var(--surface-muted);
-}
