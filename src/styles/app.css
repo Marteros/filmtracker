@@ -95,19 +95,23 @@ button {
   height: 30px;
   display: grid;
   place-items: center;
-  border: 1px solid #ffffff80;
+  border: 1px solid var(--overlay-action-border);
   border-radius: 50%;
-  background: #ffffffdf;
-  color: #222;
+  background: var(--overlay-action-bg);
+  color: var(--overlay-action-ink);
   font-size: 15px;
   cursor: pointer;
   backdrop-filter: blur(10px);
 }
 .card-action:hover {
-  background: #fff;
+  background: var(--overlay-action-hover-bg);
+  color: var(--overlay-action-hover-ink);
+}
+.card-action.delete {
+  color: var(--overlay-action-delete-ink);
 }
 .card-action.delete:hover {
-  color: var(--red);
+  color: var(--overlay-action-delete-hover-ink);
 }
 .card-content {
   padding: 9px 1px 0;
@@ -727,16 +731,6 @@ select:focus-visible {
   stroke-width: 1.7;
   stroke-linecap: round;
   stroke-linejoin: round;
-}
-.card-action.delete {
-  color: #f0b9ad;
-}
-.card-action:hover {
-  background: var(--cinema-surface-hover);
-  color: var(--cinema-gold-soft);
-}
-.card-action.delete:hover {
-  color: #ffc2b5;
 }
 .card-content {
   padding: 11px 2px 0;
@@ -3547,21 +3541,6 @@ html.modal-open body {
 :root[data-theme='dark'] .discover-poster-action:disabled {
   color: color-mix(in srgb, var(--cinema-ink) 60%, transparent);
 }
-:root[data-theme='dark'] .card-action {
-  color: var(--cinema-ink);
-  border-color: var(--cinema-border);
-  background: var(--cinema-surface);
-}
-:root[data-theme='dark'] .card-action:hover {
-  background: var(--cinema-surface-hover);
-  color: var(--cinema-gold-soft);
-}
-:root[data-theme='dark'] .card-action.delete {
-  color: #f0b9ad;
-}
-:root[data-theme='dark'] .card-action.delete:hover {
-  color: #ffc2b5;
-}
 :root[data-theme='dark'] .discover-random-button {
   background: var(--btn-bg);
   border-color: var(--btn-bg);
@@ -3602,22 +3581,6 @@ html.modal-open body {
 :root[data-theme='dark'] .view-toggle button.active svg rect {
   fill: currentColor;
 }
-:root[data-theme='dark'] .movie-list-actions .card-action {
-  border-color: var(--line-3);
-  background: var(--control-bg);
-  color: var(--muted-2);
-}
-:root[data-theme='dark'] .movie-list-actions .card-action:hover {
-  background: var(--surface-muted);
-  color: var(--ink-strong);
-}
-:root[data-theme='dark'] .movie-list-actions .card-action.delete {
-  color: var(--danger);
-}
-:root[data-theme='dark'] .movie-list-actions .card-action.delete:hover {
-  color: var(--danger-hover);
-  background: var(--danger-soft);
-}
 :root[data-theme='dark'] .select-control.active select {
   border-color: var(--accent);
   background: var(--accent-soft);
@@ -3639,45 +3602,14 @@ html.modal-open body {
 :root[data-theme='dark'] .mobile-bottom-tabs {
   box-shadow: 0 8px 28px #00000040;
 }
-:root[data-theme='dark'] .agenda-dialog {
-  background: var(--cinema-bg);
-}
-:root[data-theme='dark'] .details-dialog,
-:root[data-theme='dark'] .details-page {
-  background: var(--cinema-bg);
-  color: var(--cinema-ink);
-}
-:root[data-theme='dark'] .details-copy h1,
-:root[data-theme='dark'] .details-description p,
-:root[data-theme='dark'] .details-watched {
-  color: var(--cinema-ink);
-}
-:root[data-theme='dark'] .agenda-item-title {
-  color: var(--cinema-ink);
-}
-:root[data-theme='dark'] .agenda-header h1 {
-  color: var(--cinema-ink);
-}
 :root[data-theme='dark'] .close-button:hover {
   background: var(--surface-muted);
 }
 :root[data-theme='dark'] .star-choice.selected {
   color: var(--star);
 }
-:root[data-theme='dark'] .details-inline-rating .star-choice.selected {
-  color: var(--cinema-gold-soft);
-}
-:root[data-theme='dark'] .discover-rating {
-  color: var(--cinema-gold-soft);
-}
 :root[data-theme='dark'] .mobile-bottom-tabs button:hover {
   color: var(--ink);
-}
-:root[data-theme='dark'] .trakt-message {
-  color: var(--accent-strong);
-}
-:root[data-theme='dark'] .discover-inline-error button {
-  color: var(--accent-strong);
 }
 :root[data-theme='dark'] .inline-icon {
   background: var(--chip-bg);

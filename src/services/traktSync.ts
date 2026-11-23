@@ -13,6 +13,8 @@ export interface TraktSyncDeps {
   signal?: AbortSignal;
   limit?: number;
   onProgress?(done: number, total: number): void;
+  onBatch?(movies: Movie[]): void;
+  batchSize?: number;
 }
 
 function createId() {
@@ -123,6 +125,7 @@ export async function buildSyncedCollection(
   }
 
   const limit = deps.limit ?? 4;
+  const batchSize = deps.batchSize ?? 25;
   let done = 0;
   await mapLimit(
     enrichJobs,
@@ -131,6 +134,7 @@ export async function buildSyncedCollection(
       await job();
       done += 1;
       deps.onProgress?.(done, enrichJobs.length);
+      if (deps.onBatch && done % batchSize === 0) deps.onBatch([...next]);
     },
     deps.signal,
   );

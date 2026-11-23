@@ -9,6 +9,7 @@ import { useCollectionFilters, type SortOrder } from '@/features/collection/useC
 import { MovieDetailsPage } from '@/features/details/MovieDetailsPage';
 import { AgendaPage } from '@/features/agenda/AgendaPage';
 import { SettingsDialog } from '@/features/settings/SettingsDialog';
+import { useTraktSync } from '@/features/settings/useTraktSync';
 
 const DiscoverPage = lazy(() => import('@/features/discover/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
 const InsightsPage = lazy(() => import('@/features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })));
@@ -18,18 +19,8 @@ import { parseDateOnly } from '@/lib/dates';
 import { findMovie } from '@/lib/movie';
 import { downloadBackup, importBackup, type ImportMode } from '@/services/backup';
 import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from '@/services/theme';
-import { clearTraktSettings, getTraktSettings, migrateSettings, saveTraktSettings } from '@/services/settingsStore';
-import {
-  beginTraktAuthorization,
-  finishTraktAuthorization,
-  getWatchedMovies,
-  getWatchlistMovies,
-  TRAKT_CLIENT_ID,
-  type TraktCredentials,
-} from '@/services/trakt';
-import { buildSyncedCollection } from '@/services/traktSync';
+import { migrateSettings } from '@/services/settingsStore';
 import { getMovieDetails, TmdbError } from '@/services/tmdb';
-import { getMovieDetailsCached } from '@/lib/tmdbCache';
 import type { Movie, MovieDraft, TmdbMovie } from '@/types';
 
 function createId() {
@@ -45,7 +36,6 @@ export default function App() {
   const isWatchlist = nav.activeTab === 'watchlist';
   const filters = useCollectionFilters(movies, isWatchlist);
 
-  const [trakt, setTrakt] = useState<TraktCredentials>(() => getTraktSettings());
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
   const [discoverQuery, setDiscoverQuery] = useState('');
   const [movieDialogOpen, setMovieDialogOpen] = useState(false);
@@ -54,10 +44,9 @@ export default function App() {
   const [editingMovie, setEditingMovie] = useState<Movie>();
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [selectedDiscoveryMovie, setSelectedDiscoveryMovie] = useState<TmdbMovie>();
-  const [traktNotice, setTraktNotice] = useState('');
   const [shareNotice, setShareNotice] = useState('');
-  const traktCallbackHandled = useRef(false);
   const sharedMovieHandled = useRef(false);
+  const { trakt, traktNotice, connectTrakt, disconnectTrakt, syncTraktMovies } = useTraktSync(collection);
 
   useEffect(() => {
     migrateSettings();
@@ -211,34 +200,6 @@ export default function App() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const returnedState = params.get('state');
-    const authError = params.get('error');
-    if ((!code && !authError) || traktCallbackHandled.current) return;
-    traktCallbackHandled.current = true;
-    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
-    if (authError) {
-      setTraktNotice('Trakt sign-in was cancelled. You can start connecting again via Settings.');
-      return;
-    }
-    const clientId = trakt.clientId || TRAKT_CLIENT_ID;
-    if (!code || !returnedState || !clientId) {
-      setTraktNotice('The Trakt callback is incomplete. Check the Trakt Client ID in the app and try again.');
-      return;
-    }
-    finishTraktAuthorization(clientId, code, returnedState)
-      .then((credentials) => {
-        saveTraktSettings(credentials);
-        setTrakt(credentials);
-        setTraktNotice('Trakt is connected. You can now sync your watch history and watchlist.');
-      })
-      .catch((reason: unknown) => {
-        setTraktNotice(reason instanceof Error ? reason.message : 'Could not connect Trakt.');
-      });
-  }, [trakt.clientId]);
 
   useEffect(() => {
     filters.closeMobilePanels();
@@ -442,18 +403,6 @@ export default function App() {
     [collection],
   );
 
-  async function connectTrakt() {
-    if (!TRAKT_CLIENT_ID) throw new Error('Trakt is not configured yet. Add a Trakt Client ID in the app code.');
-    const next = { clientId: TRAKT_CLIENT_ID, accessToken: '', refreshToken: '', expiresAt: 0 };
-    saveTraktSettings(next);
-    setTrakt(next);
-    const authorizationUrl = await beginTraktAuthorization(TRAKT_CLIENT_ID);
-    window.location.assign(authorizationUrl);
-  }
-  function disconnectTrakt() {
-    clearTraktSettings();
-    setTrakt({ clientId: '', accessToken: '', refreshToken: '', expiresAt: 0 });
-  }
   function exportCollection() {
     downloadBackup(movies);
   }
@@ -467,31 +416,6 @@ export default function App() {
     if (result.skipped) parts.push(`${result.skipped} skipped`);
     if (result.invalid) parts.push(`${result.invalid} invalid`);
     return `${parts.join(', ')}.`;
-  }
-
-  async function syncTraktMovies(
-    onProgress?: (done: number, total: number) => void,
-    signal?: AbortSignal,
-  ): Promise<number> {
-    const clientId = trakt.clientId || TRAKT_CLIENT_ID;
-    if (!clientId || !trakt.accessToken) throw new Error('Sign in with Trakt first.');
-    const effective = { ...trakt, clientId };
-    let refreshed: TraktCredentials | null = null;
-    const onCredentials = (updated: TraktCredentials) => {
-      refreshed = updated;
-      saveTraktSettings(updated);
-      setTrakt(updated);
-    };
-    const watched = await getWatchedMovies(effective, onCredentials, signal);
-    const watchlist = await getWatchlistMovies(refreshed || effective, onCredentials, signal);
-    const result = await buildSyncedCollection(
-      { watched, watchlist, current: movies },
-      { getDetails: getMovieDetailsCached, limit: 4, onProgress, signal },
-    );
-    if (result.changed && !collection.replaceAll(result.movies)) {
-      throw new Error('Sync failed. Check the available storage on this device.');
-    }
-    return result.changed;
   }
 
   const mobileSearchValue = nav.activeTab === 'discover' ? discoverQuery : filters.query;
