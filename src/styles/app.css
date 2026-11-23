@@ -14,12 +14,6 @@ body {
   color: var(--ink);
   font-family: var(--sans);
 }
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
 button {
   color: inherit;
 }
@@ -480,9 +474,6 @@ button {
   .movie-card .card-actions {
     opacity: 1;
   }
-  .movie-dialog {
-    width: calc(100% - 20px);
-  }
   .movie-dialog > form {
     padding: 18px;
   }
@@ -627,9 +618,6 @@ select:focus-visible {
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
-  }
-  .collection-controls {
-    gap: 8px;
   }
 }
 
@@ -1431,9 +1419,6 @@ html.modal-open body {
 }
 
 @media (max-width: 650px) {
-  .app {
-    width: calc(100% - 32px);
-  }
   .collection {
     padding-top: 18px;
   }
@@ -1455,10 +1440,6 @@ html.modal-open body {
     max-width: none;
     min-height: 40px;
     font-size: 13px;
-  }
-  .movie-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px 14px;
   }
   .movie-dialog {
     width: calc(100% - 20px);
@@ -1724,9 +1705,6 @@ html.modal-open body {
     flex-direction: column;
     gap: 12px;
     margin-bottom: 20px;
-  }
-  .collection-controls {
-    display: none;
   }
   .select-control {
     min-width: 0;
@@ -2149,17 +2127,6 @@ html.modal-open body {
     flex-wrap: nowrap;
     align-items: center;
     gap: 10px;
-  }
-  .discover-header h1 {
-    flex: 1 1 auto;
-    min-width: 0;
-    font-size: 31px;
-  }
-  .discover-header-actions {
-    width: auto;
-    flex: 0 0 auto;
-    margin-left: auto;
-    justify-content: flex-end;
   }
   .discover-random-button {
     min-height: 36px;
