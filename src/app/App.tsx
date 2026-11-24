@@ -13,7 +13,8 @@ import { useTraktSync } from '@/features/settings/useTraktSync';
 import { useDetailsFlow } from './useDetailsFlow';
 import { useSharedMovieLink } from './useSharedMovieLink';
 import { useMovieDialog } from './useMovieDialog';
-import { PageSkeleton } from '@/components/ui/PageSkeleton';
+import { DiscoverPageSkeleton } from '@/components/ui/DiscoverPageSkeleton';
+import { InsightsPageSkeleton } from '@/components/ui/InsightsPageSkeleton';
 
 const DiscoverPage = lazy(() => import('@/features/discover/DiscoverPage').then((m) => ({ default: m.DiscoverPage })));
 const InsightsPage = lazy(() => import('@/features/insights/InsightsPage').then((m) => ({ default: m.InsightsPage })));
@@ -184,7 +185,7 @@ export default function App() {
       )}
 
       {nav.discoverMounted && (
-        <Suspense fallback={<PageSkeleton label="Loading discover" />}>
+        <Suspense fallback={<DiscoverPageSkeleton />}>
           <DiscoverPage
             hidden={nav.activeTab !== 'discover'}
             collection={movies}
@@ -197,7 +198,7 @@ export default function App() {
       )}
 
       {nav.activeTab === 'insights' && (
-        <Suspense fallback={<PageSkeleton label="Loading insights" />}>
+        <Suspense fallback={<InsightsPageSkeleton />}>
           <InsightsPage movies={movies} onOpen={openMovie} />
         </Suspense>
       )}
