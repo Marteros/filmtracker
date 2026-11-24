@@ -122,7 +122,7 @@ export default function App() {
     if (value.trim().length >= 2) prefetchDiscover();
     const destination = resolveSearchDestination(movies, value);
     if (destination && destination !== nav.activeTab) {
-      filters.keepSearchOpenOnScroll();
+      filters.suppressSearchBlurOnScroll();
       nav.switchTab(destination);
     }
   }
