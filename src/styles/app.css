@@ -574,7 +574,8 @@ select:focus-visible {
   white-space: nowrap;
 }
 .select-control select {
-  min-height: 38px;
+  min-height: 44px;
+  height: 44px;
   max-width: 190px;
   padding: 0 28px 0 10px;
   border: 1px solid var(--line-2);
@@ -1909,7 +1910,7 @@ html.modal-open body {
 .discover-search {
   display: flex;
   width: min(100%, 540px);
-  min-height: 38px;
+  min-height: 44px;
   align-items: center;
   gap: 12px;
   padding: 0 14px;
