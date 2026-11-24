@@ -31,6 +31,8 @@ export default function App() {
   const nav = useAppNavigation();
   const isWatchlist = nav.activeTab === 'watchlist';
   const [searchQuery, setSearchQuery] = useState('');
+  /** Bumped on search-driven page switches so the destination search field keeps focus. */
+  const [searchFocusRequest, setSearchFocusRequest] = useState(0);
   const filters = useCollectionFilters(movies, isWatchlist, searchQuery);
 
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
@@ -124,6 +126,7 @@ export default function App() {
     if (destination && destination !== nav.activeTab) {
       filters.suppressSearchBlurOnScroll();
       nav.switchTab(destination);
+      setSearchFocusRequest((request) => request + 1);
     }
   }
 
@@ -189,6 +192,9 @@ export default function App() {
           movies={movies}
           visibleMovies={filters.visibleMovies}
           query={searchQuery}
+          onQueryChange={changeSearchQuery}
+          focusRequest={searchFocusRequest}
+          onSearchFocus={prefetchDiscover}
           years={filters.years}
           yearFilter={filters.yearFilter}
           onYearFilterChange={filters.changeYearFilter}
@@ -211,6 +217,9 @@ export default function App() {
             hidden={nav.activeTab !== 'discover'}
             collection={movies}
             query={searchQuery}
+            onQueryChange={changeSearchQuery}
+            focusRequest={searchFocusRequest}
+            onSearchFocus={prefetchDiscover}
             onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
             onOpen={openDiscoveredDetails}
           />

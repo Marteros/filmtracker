@@ -6,15 +6,29 @@ interface Props {
   label: string;
   placeholder?: string;
   autoFocus?: boolean;
+  /** Focus the field whenever this value changes, e.g. after a search-driven page switch. */
+  focusRequest?: number;
   onFocus?(): void;
 }
 
-export function SearchField({ value, onChange, label, placeholder, autoFocus = false, onFocus }: Props) {
+export function SearchField({
+  value,
+  onChange,
+  label,
+  placeholder,
+  autoFocus = false,
+  focusRequest = 0,
+  onFocus,
+}: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useLayoutEffect(() => {
     if (autoFocus) inputRef.current?.focus({ preventScroll: true });
   }, [autoFocus]);
+
+  useLayoutEffect(() => {
+    if (focusRequest) inputRef.current?.focus({ preventScroll: true });
+  }, [focusRequest]);
 
   return (
     <label className="discover-search">

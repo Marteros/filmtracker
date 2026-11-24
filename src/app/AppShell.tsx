@@ -51,13 +51,6 @@ export function AppShell({
         <a className="desktop-brand" href="./" aria-label="Frame">
           frame<span>.</span>
         </a>
-        <SearchField
-          value={searchValue}
-          onChange={onSearchChange}
-          onFocus={onSearchFocus}
-          label="Search movies"
-          placeholder="Search by movie title…"
-        />
         <button
           className="desktop-settings"
           type="button"
