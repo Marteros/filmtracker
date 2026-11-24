@@ -33,7 +33,16 @@ export function CastSection({
           {castError}
         </p>
       )}
-      {castLoading && <p className="cast-help">Loading cast…</p>}
+      {castLoading && (
+        <div className="cast-skeleton" role="status" aria-label="Loading cast">
+          {Array.from({ length: 6 }, (_, index) => (
+            <div className="cast-skeleton-person" key={index}>
+              <span />
+              <i />
+            </div>
+          ))}
+        </div>
+      )}
       {!castLoading && !cast.length && !castError && (
         <p className="cast-help">{hasTmdbId ? 'No cast found.' : 'No cast information available.'}</p>
       )}
