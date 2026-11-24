@@ -9,6 +9,9 @@ interface Props {
   movies: Movie[];
   visibleMovies: Movie[];
   query: string;
+  onQueryChange(value: string): void;
+  focusRequest?: number;
+  onSearchFocus?(): void;
   years: string[];
   yearFilter: string;
   onYearFilterChange(value: string): void;
@@ -29,6 +32,9 @@ export function CollectionPage({
   movies,
   visibleMovies,
   query,
+  onQueryChange,
+  focusRequest,
+  onSearchFocus,
   years,
   yearFilter,
   onYearFilterChange,
@@ -71,6 +77,10 @@ export function CollectionPage({
           <ViewToggle view={collectionView} onChange={onCollectionViewChange} className="mobile-view-toggle" />
         </div>
         <CollectionToolbar
+          query={query}
+          onQueryChange={onQueryChange}
+          focusRequest={focusRequest}
+          onSearchFocus={onSearchFocus}
           years={years}
           yearFilter={yearFilter}
           onYearFilterChange={onYearFilterChange}

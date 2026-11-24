@@ -20,6 +20,9 @@ export function DiscoverPageSkeleton({ variant = 'overview' }: Props) {
         <div className="skeleton-block discover-skeleton-title" />
         {!searching && <div className="skeleton-block discover-skeleton-action" />}
       </header>
+      <div className="toolbar discover-toolbar">
+        <div className="skeleton-block discover-skeleton-search" />
+      </div>
       {searching ? (
         <div className="discover-all-grid" aria-hidden="true">
           {Array.from({ length: SEARCH_ITEMS }, (_, index) => (
