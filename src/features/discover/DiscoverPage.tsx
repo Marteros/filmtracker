@@ -40,14 +40,35 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     if (!selectedSection || !hasMore || loadingMore || error) return;
     const node = loadMoreRef.current;
     if (!node) return;
+
+    let ticking = false;
+    const check = () => {
+      ticking = false;
+      const rect = node.getBoundingClientRect();
+      if (rect.top <= window.innerHeight + 400) void loadMore();
+    };
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(check);
+    };
+
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) void loadMore();
       },
-      { rootMargin: '400px 0px' },
+      { rootMargin: '400px 0px', threshold: 0 },
     );
     observer.observe(node);
-    return () => observer.disconnect();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    check();
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
   }, [selectedSection, hasMore, loadingMore, error, loadMore]);
 
   function handleAdd(movie: TmdbMovie, status: 'seen' | 'watchlist') {
