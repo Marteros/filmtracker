@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
 import { getDiscoveryMovies, searchMovies, type DiscoveryCategory } from '@/services/tmdb';
 import type { TmdbMovie } from '@/types';
@@ -114,7 +114,7 @@ export function useDiscovery(query: string) {
     sectionOverlay.close();
   }
 
-  async function loadMore() {
+  const loadMore = useCallback(async () => {
     if (!selectedSection || loadingMore || !hasMore) return;
     const nextPage = page + 1;
     setLoadingMore(true);
@@ -134,7 +134,7 @@ export function useDiscovery(query: string) {
     } finally {
       setLoadingMore(false);
     }
-  }
+  }, [selectedSection, loadingMore, hasMore, page]);
 
   return {
     debouncedQuery,

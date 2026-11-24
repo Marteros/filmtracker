@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { findMovie } from '@/lib/movie';
 /* discover fetch logic lives in useDiscovery */
 import { DiscoverCard } from './DiscoverCard';
@@ -19,6 +19,7 @@ interface Props {
 
 export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, hidden = false }: Props) {
   const [actionError, setActionError] = useState('');
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   const randomizer = useRandomizer(collection);
   const {
     debouncedQuery,
@@ -34,6 +35,20 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     closeSection,
     loadMore,
   } = useDiscovery(query);
+
+  useEffect(() => {
+    if (!selectedSection || !hasMore || loadingMore || error) return;
+    const node = loadMoreRef.current;
+    if (!node) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) void loadMore();
+      },
+      { rootMargin: '400px 0px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [selectedSection, hasMore, loadingMore, error, loadMore]);
 
   function handleAdd(movie: TmdbMovie, status: 'seen' | 'watchlist') {
     setActionError('');
@@ -161,10 +176,11 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
               />
             ))}
           </section>
-          {!error && hasMore && (
-            <button className="discover-load-more" type="button" onClick={loadMore} disabled={loadingMore}>
-              {loadingMore ? 'Loading…' : 'Load more movies'}
-            </button>
+          {!error && hasMore && <div ref={loadMoreRef} className="discover-load-sentinel" aria-hidden="true" />}
+          {loadingMore && (
+            <p className="discover-loading-more" role="status" aria-live="polite">
+              Loading more movies…
+            </p>
           )}
         </>
       ) : (
