@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useLayoutEffect, useState } from 'react';
 import { AppShell } from './AppShell';
-import { useAppNavigation } from './useAppNavigation';
+import { useAppNavigation, type AppTab } from './useAppNavigation';
 import { useCollection } from './useCollection';
 import { CollectionPage } from '@/features/collection/CollectionPage';
 import { FilterDialog } from '@/features/collection/FilterDialog';
@@ -13,6 +13,7 @@ import { useTraktSync } from '@/features/settings/useTraktSync';
 import { useDetailsFlow } from './useDetailsFlow';
 import { useSharedMovieLink } from './useSharedMovieLink';
 import { useMovieDialog } from './useMovieDialog';
+import { resolveSearchDestination } from './useGlobalSearch';
 import { DiscoverPageSkeleton } from '@/components/ui/DiscoverPageSkeleton';
 import { InsightsPageSkeleton } from '@/components/ui/InsightsPageSkeleton';
 
@@ -29,10 +30,10 @@ export default function App() {
   const { movies, storageError } = collection;
   const nav = useAppNavigation();
   const isWatchlist = nav.activeTab === 'watchlist';
-  const filters = useCollectionFilters(movies, isWatchlist);
+  const [searchQuery, setSearchQuery] = useState('');
+  const filters = useCollectionFilters(movies, isWatchlist, searchQuery);
 
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
-  const [discoverQuery, setDiscoverQuery] = useState('');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
   const { trakt, traktNotice, connectTrakt, disconnectTrakt, syncTraktMovies } = useTraktSync(collection);
@@ -99,9 +100,23 @@ export default function App() {
     if (readOverlay(state, 'frameFilters')) filters.setMobileFiltersOpen(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
+  function switchTab(tab: AppTab) {
     filters.closeMobilePanels();
-  }, [nav.activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+    nav.switchTab(tab);
+  }
+
+  /**
+   * One search box for the whole app. Each keystroke decides where the query
+   * belongs: Seen, then Watchlist, otherwise Discover.
+   */
+  function changeSearchQuery(value: string) {
+    setSearchQuery(value);
+    const destination = resolveSearchDestination(movies, value);
+    if (destination && destination !== nav.activeTab) {
+      filters.keepSearchOpenOnScroll();
+      nav.switchTab(destination);
+    }
+  }
 
   function openSimple(isOpen: boolean, setOpen: (v: boolean) => void, overlay: { open: (v: boolean) => void }) {
     if (isOpen) return;
@@ -138,10 +153,7 @@ export default function App() {
   return (
     <AppShell
       activeTab={nav.activeTab}
-      onSwitchTab={(tab) => {
-        filters.closeMobilePanels();
-        nav.switchTab(tab);
-      }}
+      onSwitchTab={switchTab}
       onOpenSettings={() => openSimple(settingsOpen, setSettingsOpen, settingsOverlay)}
       onOpenAgenda={() => openSimple(agendaOpen, setAgendaOpen, agendaOverlay)}
       onAdd={() => movieDialog.openDialog()}
@@ -151,8 +163,8 @@ export default function App() {
         filters.setMobileFiltersOpen(false);
       }}
       onMobileSearchClose={() => filters.setMobileSearchOpen(false)}
-      mobileSearchValue={nav.activeTab === 'discover' ? discoverQuery : filters.query}
-      onMobileSearchChange={nav.activeTab === 'discover' ? setDiscoverQuery : filters.setQuery}
+      searchValue={searchQuery}
+      onSearchChange={changeSearchQuery}
       showMobileFilter={nav.activeTab === 'history' || nav.activeTab === 'watchlist'}
       mobileFilterActive={filters.yearFilter !== 'all' || filters.sortOrder !== 'newest'}
       mobileFiltersOpen={filters.mobileFiltersOpen}
@@ -166,8 +178,7 @@ export default function App() {
           isWatchlist={isWatchlist}
           movies={movies}
           visibleMovies={filters.visibleMovies}
-          query={filters.query}
-          onQueryChange={filters.setQuery}
+          query={searchQuery}
           years={filters.years}
           yearFilter={filters.yearFilter}
           onYearFilterChange={filters.changeYearFilter}
@@ -176,7 +187,7 @@ export default function App() {
           collectionView={filters.collectionView}
           onCollectionViewChange={filters.changeCollectionView}
           onAdd={() => movieDialog.openDialog()}
-          onDiscover={() => nav.switchTab('discover')}
+          onDiscover={() => switchTab('discover')}
           onOpenSettings={() => openSimple(settingsOpen, setSettingsOpen, settingsOverlay)}
           onEdit={movieDialog.openDialog}
           onDelete={removeMovie}
@@ -189,8 +200,7 @@ export default function App() {
           <DiscoverPage
             hidden={nav.activeTab !== 'discover'}
             collection={movies}
-            query={discoverQuery}
-            onQueryChange={setDiscoverQuery}
+            query={searchQuery}
             onAdd={(movie, status) => Boolean(saveDiscoveredMovie(movie, status))}
             onOpen={openDiscoveredDetails}
           />

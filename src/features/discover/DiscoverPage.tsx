@@ -5,19 +5,17 @@ import { DiscoverCard } from './DiscoverCard';
 import { RandomizerDialog } from './RandomizerDialog';
 import { useRandomizer } from './useRandomizer';
 import { DISCOVER_SECTIONS, useDiscovery } from './useDiscovery';
-import { SearchField } from '@/components/ui/SearchField';
 import type { Movie, TmdbMovie } from '@/types';
 
 interface Props {
   collection: Movie[];
   query: string;
-  onQueryChange(value: string): void;
   onAdd(movie: TmdbMovie, status: 'seen' | 'watchlist'): boolean;
   onOpen(movie: TmdbMovie): void;
   hidden?: boolean;
 }
 
-export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, hidden = false }: Props) {
+export function DiscoverPage({ collection, query, onAdd, onOpen, hidden = false }: Props) {
   const [actionError, setActionError] = useState('');
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const randomizer = useRandomizer(collection);
@@ -34,10 +32,10 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
     openSection,
     closeSection,
     loadMore,
-  } = useDiscovery(query);
+  } = useDiscovery(query, !hidden);
 
   useEffect(() => {
-    if (!selectedSection || !hasMore || loading || loadingMore || error) return;
+    if (hidden || !selectedSection || !hasMore || loading || loadingMore || error) return;
     const node = loadMoreRef.current;
     if (!node) return;
 
@@ -70,7 +68,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [selectedSection, hasMore, loading, loadingMore, error, loadMore]);
+  }, [hidden, selectedSection, hasMore, loading, loadingMore, error, loadMore]);
 
   function handleAdd(movie: TmdbMovie, status: 'seen' | 'watchlist') {
     setActionError('');
@@ -122,14 +120,6 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
         onAddMovie={handleAdd}
       />
 
-      <div className="toolbar discover-toolbar">
-        <SearchField
-          value={query}
-          onChange={onQueryChange}
-          label="Search movies to discover"
-          placeholder="Search by movie title…"
-        />
-      </div>
       {actionError && (
         <p className="discover-inline-error" role="alert">
           {actionError}

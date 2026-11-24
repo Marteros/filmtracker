@@ -9,8 +9,8 @@ export const DISCOVER_SECTIONS: Array<{ id: DiscoveryCategory; title: string }> 
   { id: 'top_rated', title: 'Top rated' },
 ];
 
-export function useDiscovery(query: string) {
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+export function useDiscovery(query: string, enabled = true) {
+  const [debouncedQuery, setDebouncedQuery] = useState(() => query.trim());
   const [searchResults, setSearchResults] = useState<TmdbMovie[]>([]);
   const [feeds, setFeeds] = useState<Partial<Record<DiscoveryCategory, TmdbMovie[]>>>({});
   const [selectedSection, setSelectedSection] = useState<DiscoveryCategory>();
@@ -56,6 +56,7 @@ export function useDiscovery(query: string) {
   }, [query]);
 
   useEffect(() => {
+    if (!enabled) return;
     const controller = new AbortController();
     setLoading(true);
     setError('');
@@ -101,7 +102,7 @@ export function useDiscovery(query: string) {
         });
     }
     return () => controller.abort();
-  }, [debouncedQuery, retry, selectedSection]);
+  }, [debouncedQuery, retry, selectedSection, enabled]);
 
   function openSection(section: DiscoveryCategory) {
     overviewScrollRef.current = window.scrollY;

@@ -17,6 +17,13 @@ export function findMovieById(movies: Movie[], id: string): Movie | undefined {
   return movies.find((movie) => movie.id === id);
 }
 
+/** Shared search matcher: title, year and note, case-insensitive. */
+export function matchesSearchQuery(movie: Pick<Movie, 'title' | 'year' | 'note'>, query: string): boolean {
+  const search = query.trim().toLocaleLowerCase();
+  if (!search) return true;
+  return `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase().includes(search);
+}
+
 export interface MergeResult {
   movies: Movie[];
   added: number;
