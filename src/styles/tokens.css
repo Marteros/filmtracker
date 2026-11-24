@@ -48,6 +48,8 @@
   --empty-border: #aebdc5;
   --skeleton-1: #dce2e5;
   --skeleton-2: #edf0f1;
+  /* Resolved at use time, so dark mode picks up its own skeleton colours. */
+  --skeleton-shimmer: linear-gradient(100deg, var(--skeleton-1) 20%, var(--skeleton-2) 38%, var(--skeleton-1) 56%);
   --bar-track: #e4ebed;
   --card-list-bg: #ffffff;
   --shadow-color: #132b3b;

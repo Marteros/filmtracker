@@ -2125,7 +2125,7 @@ html.modal-open body {
   width: 100%;
   aspect-ratio: 2 / 3;
   border-radius: 5px;
-  background: linear-gradient(100deg, #dce2e5 20%, #edf0f1 38%, #dce2e5 56%);
+  background: var(--skeleton-shimmer);
   background-size: 200% 100%;
   animation: discover-shimmer 1.5s ease infinite;
 }
@@ -2143,7 +2143,7 @@ html.modal-open body {
   margin-top: 8px;
 }
 .skeleton-block {
-  background: linear-gradient(100deg, var(--skeleton-1) 20%, var(--skeleton-2) 38%, var(--skeleton-1) 56%);
+  background: var(--skeleton-shimmer);
   background-size: 200% 100%;
   animation: discover-shimmer 1.5s ease infinite;
   border-radius: 8px;
