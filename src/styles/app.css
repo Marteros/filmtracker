@@ -1640,6 +1640,10 @@ html.modal-open body {
     background: var(--bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    /* Own compositing layer: scrolling posters must never paint over the header. */
+    transform: translateZ(0);
+    will-change: transform;
+    isolation: isolate;
   }
   .mobile-brand {
     color: var(--ink);
