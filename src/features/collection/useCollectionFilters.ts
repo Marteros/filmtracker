@@ -21,7 +21,7 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean, quer
   const [collectionView, setCollectionView] = useState<CollectionView>(readCollectionView);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
-  const suppressScrollCloseUntil = useRef(0);
+  const suppressScrollBlurUntil = useRef(0);
 
   const statusMovies = useMemo(
     () => movies.filter((movie) => movie.status === (isWatchlist ? 'watchlist' : 'seen')),
@@ -83,9 +83,9 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean, quer
     setMobileFiltersOpen(false);
   }, []);
 
-  /** Keep the mobile search open when a search-driven tab switch scrolls to the top. */
-  const keepSearchOpenOnScroll = useCallback(() => {
-    suppressScrollCloseUntil.current = Date.now() + 600;
+  /** Keep focus in the mobile search when a search-driven tab switch scrolls to the top. */
+  const suppressSearchBlurOnScroll = useCallback(() => {
+    suppressScrollBlurUntil.current = Date.now() + 600;
   }, []);
 
   useEffect(() => {
@@ -94,16 +94,16 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean, quer
     const timer = window.setTimeout(() => {
       armed = true;
     }, 300);
-    function closeOnScroll() {
+    function dismissKeyboardOnScroll() {
       if (!armed) return;
-      if (Date.now() < suppressScrollCloseUntil.current) return;
-      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
-      setMobileSearchOpen(false);
+      if (Date.now() < suppressScrollBlurUntil.current) return;
+      const active = document.activeElement;
+      if (active instanceof HTMLInputElement && active.type === 'search') active.blur();
     }
-    window.addEventListener('scroll', closeOnScroll, { passive: true });
+    window.addEventListener('scroll', dismissKeyboardOnScroll, { passive: true });
     return () => {
       window.clearTimeout(timer);
-      window.removeEventListener('scroll', closeOnScroll);
+      window.removeEventListener('scroll', dismissKeyboardOnScroll);
     };
   }, [mobileSearchOpen]);
 
@@ -120,7 +120,7 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean, quer
     mobileFiltersOpen,
     setMobileFiltersOpen,
     closeMobilePanels,
-    keepSearchOpenOnScroll,
+    suppressSearchBlurOnScroll,
     years,
     statusMovies,
     visibleMovies,

@@ -3607,4 +3607,12 @@ html.modal-open body {
   outline-offset: 2px;
 }
 
+/* iOS Safari flickers content-visibility cards in and out while scrolling. */
+@supports (-webkit-touch-callout: none) {
+  .movie-card,
+  .discover-all-grid .discover-card {
+    content-visibility: visible;
+  }
+}
+
 /* --- Dark theme adjustments --- */
