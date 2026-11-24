@@ -13,6 +13,7 @@ interface Props {
   onMobileSearchClose(): void;
   searchValue: string;
   onSearchChange(value: string): void;
+  onSearchFocus?(): void;
   showMobileFilter: boolean;
   mobileFilterActive: boolean;
   mobileFiltersOpen: boolean;
@@ -34,6 +35,7 @@ export function AppShell({
   onMobileSearchClose,
   searchValue,
   onSearchChange,
+  onSearchFocus,
   showMobileFilter,
   mobileFilterActive,
   mobileFiltersOpen,
@@ -52,6 +54,7 @@ export function AppShell({
         <SearchField
           value={searchValue}
           onChange={onSearchChange}
+          onFocus={onSearchFocus}
           label="Search movies"
           placeholder="Search by movie title…"
         />
@@ -82,6 +85,7 @@ export function AppShell({
             <SearchField
               value={searchValue}
               onChange={onSearchChange}
+              onFocus={onSearchFocus}
               label="Search movies"
               placeholder="Search by movie title…"
               autoFocus

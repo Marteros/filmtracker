@@ -6,9 +6,10 @@ interface Props {
   label: string;
   placeholder?: string;
   autoFocus?: boolean;
+  onFocus?(): void;
 }
 
-export function SearchField({ value, onChange, label, placeholder, autoFocus = false }: Props) {
+export function SearchField({ value, onChange, label, placeholder, autoFocus = false, onFocus }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useLayoutEffect(() => {
@@ -29,6 +30,7 @@ export function SearchField({ value, onChange, label, placeholder, autoFocus = f
         enterKeyHint="search"
         value={value}
         onChange={(event) => onChange(event.target.value)}
+        onFocus={onFocus}
       />
       {value && (
         <button type="button" aria-label="Clear search" onClick={() => onChange('')}>

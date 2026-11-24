@@ -133,8 +133,12 @@ export function DiscoverPage({ collection, query, onAdd, onOpen, hidden = false 
           </button>
         </div>
       )}
-      {loading ? (
-        <div className="discover-grid" role="status" aria-label="Loading movies">
+      {loading && !searchResults.length ? (
+        <div
+          className="discover-grid"
+          role="status"
+          aria-label={debouncedQuery ? 'Searching movies' : 'Loading movies'}
+        >
           {Array.from({ length: 8 }, (_, index) => (
             <div className="discover-skeleton" key={index}>
               <span />
@@ -144,30 +148,39 @@ export function DiscoverPage({ collection, query, onAdd, onOpen, hidden = false 
           ))}
         </div>
       ) : debouncedQuery ? (
-        searchResults.length ? (
-          <section className="discover-all-grid" aria-label="Search results">
-            {searchResults.map((movie) => (
-              <DiscoverCard
-                key={movie.id}
-                movie={movie}
-                saved={findMovie(collection, {
-                  tmdbId: movie.id,
-                  title: movie.title,
-                  year: movie.release_date?.slice(0, 4),
-                })}
-                onOpen={handleOpenMovie}
-                onAdd={handleAdd}
-              />
-            ))}
-          </section>
-        ) : (
-          !error && (
-            <div className="discover-message discover-empty">
-              <h2>No movies found</h2>
-              <p>Try a different title.</p>
-            </div>
-          )
-        )
+        <>
+          {searchResults.length ? (
+            <>
+              <section className="discover-all-grid" aria-label="Search results" aria-busy={loading}>
+                {searchResults.map((movie) => (
+                  <DiscoverCard
+                    key={movie.id}
+                    movie={movie}
+                    saved={findMovie(collection, {
+                      tmdbId: movie.id,
+                      title: movie.title,
+                      year: movie.release_date?.slice(0, 4),
+                    })}
+                    onOpen={handleOpenMovie}
+                    onAdd={handleAdd}
+                  />
+                ))}
+              </section>
+              {loading && (
+                <p className="discover-loading-more" role="status" aria-live="polite">
+                  Searching…
+                </p>
+              )}
+            </>
+          ) : (
+            !error && (
+              <div className="discover-message discover-empty">
+                <h2>No movies found</h2>
+                <p>Try a different title.</p>
+              </div>
+            )
+          )}
+        </>
       ) : selectedSection ? (
         <>
           <section
