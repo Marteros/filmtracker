@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useLayoutEffect, useState } from 'react';
+import { Suspense, lazy, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { AppShell } from './AppShell';
 import { useAppNavigation, type AppTab } from './useAppNavigation';
 import { useCollection } from './useCollection';
@@ -34,6 +34,7 @@ export default function App() {
   const filters = useCollectionFilters(movies, isWatchlist, searchQuery);
 
   const [themeMode, setThemeMode] = useState<ThemeMode>(() => getStoredThemeMode());
+  const discoverPrefetched = useRef(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [agendaOpen, setAgendaOpen] = useState(false);
   const { trakt, traktNotice, connectTrakt, disconnectTrakt, syncTraktMovies } = useTraktSync(collection);
@@ -105,12 +106,20 @@ export default function App() {
     nav.switchTab(tab);
   }
 
+  /** Load the Discover chunk before a search can route there. */
+  function prefetchDiscover() {
+    if (discoverPrefetched.current) return;
+    discoverPrefetched.current = true;
+    void import('@/features/discover/DiscoverPage');
+  }
+
   /**
    * One search box for the whole app. Each keystroke decides where the query
    * belongs: Seen, then Watchlist, otherwise Discover.
    */
   function changeSearchQuery(value: string) {
     setSearchQuery(value);
+    if (value.trim().length >= 2) prefetchDiscover();
     const destination = resolveSearchDestination(movies, value);
     if (destination && destination !== nav.activeTab) {
       filters.keepSearchOpenOnScroll();
@@ -165,6 +174,7 @@ export default function App() {
       onMobileSearchClose={() => filters.setMobileSearchOpen(false)}
       searchValue={searchQuery}
       onSearchChange={changeSearchQuery}
+      onSearchFocus={prefetchDiscover}
       showMobileFilter={nav.activeTab === 'history' || nav.activeTab === 'watchlist'}
       mobileFilterActive={filters.yearFilter !== 'all' || filters.sortOrder !== 'newest'}
       mobileFiltersOpen={filters.mobileFiltersOpen}
@@ -196,7 +206,7 @@ export default function App() {
       )}
 
       {nav.discoverMounted && (
-        <Suspense fallback={<DiscoverPageSkeleton />}>
+        <Suspense fallback={<DiscoverPageSkeleton variant={searchQuery.trim() ? 'search' : 'overview'} />}>
           <DiscoverPage
             hidden={nav.activeTab !== 'discover'}
             collection={movies}
