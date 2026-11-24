@@ -330,7 +330,7 @@ button {
   padding: 4px;
   border: 1px solid var(--line);
   border-radius: 9px;
-  background: #fff;
+  background: var(--surface-2);
   box-shadow: 0 8px 24px #0002;
 }
 .suggestions[hidden] {
@@ -360,12 +360,12 @@ button {
   flex: none;
   object-fit: cover;
   border-radius: 3px;
-  background: #e7e7eb;
+  background: var(--skeleton-1);
 }
 .suggestion-placeholder {
   display: grid;
   place-items: center;
-  color: #8b8b90;
+  color: var(--muted);
   font-size: 15px;
 }
 .suggestion-info {
@@ -398,17 +398,17 @@ button {
   font-weight: 400;
 }
 .suggestion-hint.error {
-  color: var(--red);
+  color: var(--danger);
 }
 .suggestion-hint.offline {
-  color: #805f16;
+  color: var(--amber);
 }
 .spinner {
   display: inline-block;
   width: 14px;
   height: 14px;
-  border: 2px solid #d2d2d7;
-  border-top-color: var(--blue);
+  border: 2px solid var(--line-3);
+  border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
   vertical-align: middle;
@@ -574,7 +574,8 @@ select:focus-visible {
   white-space: nowrap;
 }
 .select-control select {
-  min-height: 38px;
+  min-height: 44px;
+  height: 44px;
   max-width: 190px;
   padding: 0 28px 0 10px;
   border: 1px solid var(--line-2);
@@ -878,7 +879,7 @@ select:focus-visible {
   -webkit-appearance: none;
 }
 .suggestions {
-  border-color: #c5d0d5;
+  border-color: var(--line);
   border-radius: 7px;
 }
 .suggestion-item:hover,
@@ -1909,7 +1910,7 @@ html.modal-open body {
 .discover-search {
   display: flex;
   width: min(100%, 540px);
-  min-height: 38px;
+  min-height: 44px;
   align-items: center;
   gap: 12px;
   padding: 0 14px;
