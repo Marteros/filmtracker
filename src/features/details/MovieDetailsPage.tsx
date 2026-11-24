@@ -45,6 +45,7 @@ export function MovieDetailsPage({
     actorMoviesLoading,
     actorMoviesError,
   } = useMovieDetails(movie, onEnrich);
+  const detailsLoading = Boolean(movie.tmdbId) && !details && !error;
 
   useModalScrollLock(true);
 
@@ -235,14 +236,22 @@ export function MovieDetailsPage({
         </section>
         <section className="details-description">
           <h2>About this movie</h2>
-          <p>
-            {details?.overview ||
-              (error
-                ? 'Description unavailable.'
-                : movie.tmdbId
-                  ? 'Loading movie details…'
-                  : 'No description available for this movie.')}
-          </p>
+          {detailsLoading ? (
+            <div className="details-skeleton" role="status" aria-label="Loading movie details">
+              <span />
+              <span />
+              <span />
+            </div>
+          ) : (
+            <p>
+              {details?.overview ||
+                (error
+                  ? 'Description unavailable.'
+                  : movie.tmdbId
+                    ? 'Loading movie details…'
+                    : 'No description available for this movie.')}
+            </p>
+          )}
           {error && (
             <p className="details-error" role="status">
               {error}
