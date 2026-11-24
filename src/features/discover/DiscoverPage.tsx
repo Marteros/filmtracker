@@ -37,13 +37,14 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
   } = useDiscovery(query);
 
   useEffect(() => {
-    if (!selectedSection || !hasMore || loadingMore || error) return;
+    if (!selectedSection || !hasMore || loading || loadingMore || error) return;
     const node = loadMoreRef.current;
     if (!node) return;
 
     let ticking = false;
     const check = () => {
       ticking = false;
+      if (loading || loadingMore || !hasMore) return;
       const rect = node.getBoundingClientRect();
       if (rect.top <= window.innerHeight + 400) void loadMore();
     };
@@ -69,7 +70,7 @@ export function DiscoverPage({ collection, query, onQueryChange, onAdd, onOpen, 
       window.removeEventListener('scroll', onScroll);
       window.removeEventListener('resize', onScroll);
     };
-  }, [selectedSection, hasMore, loadingMore, error, loadMore]);
+  }, [selectedSection, hasMore, loading, loadingMore, error, loadMore]);
 
   function handleAdd(movie: TmdbMovie, status: 'seen' | 'watchlist') {
     setActionError('');
