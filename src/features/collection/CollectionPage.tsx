@@ -9,7 +9,6 @@ interface Props {
   movies: Movie[];
   visibleMovies: Movie[];
   query: string;
-  onQueryChange(value: string): void;
   years: string[];
   yearFilter: string;
   onYearFilterChange(value: string): void;
@@ -30,7 +29,6 @@ export function CollectionPage({
   movies,
   visibleMovies,
   query,
-  onQueryChange,
   years,
   yearFilter,
   onYearFilterChange,
@@ -73,8 +71,6 @@ export function CollectionPage({
           <ViewToggle view={collectionView} onChange={onCollectionViewChange} className="mobile-view-toggle" />
         </div>
         <CollectionToolbar
-          query={query}
-          onQueryChange={onQueryChange}
           years={years}
           yearFilter={yearFilter}
           onYearFilterChange={onYearFilterChange}

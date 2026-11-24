@@ -11,8 +11,8 @@ interface Props {
   mobileSearchOpen: boolean;
   onMobileSearchOpen(): void;
   onMobileSearchClose(): void;
-  mobileSearchValue: string;
-  onMobileSearchChange(value: string): void;
+  searchValue: string;
+  onSearchChange(value: string): void;
   showMobileFilter: boolean;
   mobileFilterActive: boolean;
   mobileFiltersOpen: boolean;
@@ -32,8 +32,8 @@ export function AppShell({
   mobileSearchOpen,
   onMobileSearchOpen,
   onMobileSearchClose,
-  mobileSearchValue,
-  onMobileSearchChange,
+  searchValue,
+  onSearchChange,
   showMobileFilter,
   mobileFilterActive,
   mobileFiltersOpen,
@@ -49,6 +49,12 @@ export function AppShell({
         <a className="desktop-brand" href="./" aria-label="Frame">
           frame<span>.</span>
         </a>
+        <SearchField
+          value={searchValue}
+          onChange={onSearchChange}
+          label="Search movies"
+          placeholder="Search by movie title…"
+        />
         <button
           className="desktop-settings"
           type="button"
@@ -74,8 +80,8 @@ export function AppShell({
             }}
           >
             <SearchField
-              value={mobileSearchValue}
-              onChange={onMobileSearchChange}
+              value={searchValue}
+              onChange={onSearchChange}
               label="Search movies"
               placeholder="Search by movie title…"
               autoFocus

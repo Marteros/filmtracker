@@ -1,10 +1,7 @@
-import { SearchField } from '@/components/ui/SearchField';
 import { ViewToggle } from './ViewToggle';
 import type { CollectionView, SortOrder } from './useCollectionFilters';
 
 interface Props {
-  query: string;
-  onQueryChange(value: string): void;
   years: string[];
   yearFilter: string;
   onYearFilterChange(value: string): void;
@@ -15,8 +12,6 @@ interface Props {
 }
 
 export function CollectionToolbar({
-  query,
-  onQueryChange,
   years,
   yearFilter,
   onYearFilterChange,
@@ -27,7 +22,6 @@ export function CollectionToolbar({
 }: Props) {
   return (
     <div className="toolbar">
-      <SearchField value={query} onChange={onQueryChange} label="Search movies" placeholder="Search by movie title…" />
       <div className="collection-controls">
         <ViewToggle view={collectionView} onChange={onCollectionViewChange} />
         <label className={`select-control${yearFilter !== 'all' ? ' active' : ''}`}>

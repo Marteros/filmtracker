@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { matchesSearchQuery } from '@/lib/movie';
 import type { Movie } from '@/types';
 
 export type SortOrder = 'newest' | 'oldest' | 'title' | 'year' | 'rating';
@@ -14,13 +15,13 @@ function readCollectionView(): CollectionView {
   }
 }
 
-export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
-  const [query, setQuery] = useState('');
+export function useCollectionFilters(movies: Movie[], isWatchlist: boolean, query: string) {
   const [yearFilter, setYearFilter] = useState('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
   const [collectionView, setCollectionView] = useState<CollectionView>(readCollectionView);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const suppressScrollCloseUntil = useRef(0);
 
   const statusMovies = useMemo(
     () => movies.filter((movie) => movie.status === (isWatchlist ? 'watchlist' : 'seen')),
@@ -36,11 +37,9 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
   );
 
   const visibleMovies = useMemo(() => {
-    const search = query.trim().toLocaleLowerCase();
     return statusMovies
       .filter((movie) => {
-        const matchesQuery =
-          !search || `${movie.title} ${movie.year || ''} ${movie.note || ''}`.toLocaleLowerCase().includes(search);
+        const matchesQuery = matchesSearchQuery(movie, query);
         const matchesYear = yearFilter === 'all' || movie.year === yearFilter;
         return matchesQuery && matchesYear;
       })
@@ -84,6 +83,11 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
     setMobileFiltersOpen(false);
   }, []);
 
+  /** Keep the mobile search open when a search-driven tab switch scrolls to the top. */
+  const keepSearchOpenOnScroll = useCallback(() => {
+    suppressScrollCloseUntil.current = Date.now() + 600;
+  }, []);
+
   useEffect(() => {
     if (!mobileSearchOpen) return;
     let armed = false;
@@ -92,6 +96,7 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
     }, 300);
     function closeOnScroll() {
       if (!armed) return;
+      if (Date.now() < suppressScrollCloseUntil.current) return;
       if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
       setMobileSearchOpen(false);
     }
@@ -103,8 +108,6 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
   }, [mobileSearchOpen]);
 
   return {
-    query,
-    setQuery,
     yearFilter,
     changeYearFilter,
     sortOrder,
@@ -117,6 +120,7 @@ export function useCollectionFilters(movies: Movie[], isWatchlist: boolean) {
     mobileFiltersOpen,
     setMobileFiltersOpen,
     closeMobilePanels,
+    keepSearchOpenOnScroll,
     years,
     statusMovies,
     visibleMovies,

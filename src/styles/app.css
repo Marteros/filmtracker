@@ -29,7 +29,7 @@ button {
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 16px;
   margin-bottom: 20px;
 }
@@ -556,7 +556,7 @@ select:focus-visible {
 .toolbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -608,10 +608,6 @@ select:focus-visible {
     background: var(--bg);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-  }
-  .toolbar .discover-search {
-    flex: 1;
-    max-width: 420px;
   }
   .select-label-text {
     position: absolute;
@@ -1922,9 +1918,6 @@ html.modal-open body {
   border-color: var(--link);
   box-shadow: 0 0 0 3px var(--accent-focus);
 }
-.discover-toolbar {
-  margin-top: 0;
-}
 .discover-search > svg {
   width: 18px;
   height: 18px;
@@ -2285,9 +2278,6 @@ html.modal-open body {
   .discover-search {
     min-height: 46px;
   }
-  .discover-page .discover-toolbar {
-    display: none;
-  }
   .discover-search input {
     font-size: 16px;
   }
@@ -2331,7 +2321,14 @@ html.modal-open body {
   justify-content: space-between;
   margin: 14px auto 24px;
 }
+.desktop-appbar .discover-search {
+  flex: 1;
+  min-width: 0;
+  max-width: 520px;
+  margin: 0 28px;
+}
 .desktop-brand {
+  flex: none;
   color: var(--ink);
   font-size: 25px;
   font-weight: 800;
