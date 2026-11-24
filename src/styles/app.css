@@ -1636,9 +1636,10 @@ html.modal-open body {
     margin: 0;
     padding: env(safe-area-inset-top) 16px 0;
     border-bottom: 1px solid var(--line);
-    background: color-mix(in srgb, var(--bg) 93%, transparent);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    /* Solid instead of blur: iOS repaints the backdrop layer while scrolling. */
+    background: var(--bg);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
   .mobile-brand {
     color: var(--ink);
