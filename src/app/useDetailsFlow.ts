@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useHistoryOverlay } from '@/hooks/useHistoryOverlay';
 import { readOverlay } from '@/lib/overlayState';
 import { findMovie } from '@/lib/movie';
-import type { Movie, TmdbMovie } from '@/types';
+import type { Movie, TmdbCastMember, TmdbMovie } from '@/types';
 
 function createId() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -17,11 +17,12 @@ interface CollectionApi {
   enrichMovie(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
 }
 
-type DetailsPayload = { movieId?: string; discovery?: TmdbMovie };
+type DetailsPayload = { movieId?: string; discovery?: TmdbMovie; actor?: TmdbCastMember };
 
 export function useDetailsFlow(collection: CollectionApi) {
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
   const [selectedDiscoveryMovie, setSelectedDiscoveryMovie] = useState<TmdbMovie>();
+  const [historyActor, setHistoryActor] = useState<TmdbCastMember>();
 
   const detailsOverlay = useHistoryOverlay<DetailsPayload>({
     key: 'frameDetails',
@@ -29,8 +30,10 @@ export function useDetailsFlow(collection: CollectionApi) {
       if (!payload) {
         setSelectedMovie(undefined);
         setSelectedDiscoveryMovie(undefined);
+        setHistoryActor(undefined);
         return;
       }
+      setHistoryActor(payload.actor);
       if (payload.discovery) {
         setSelectedDiscoveryMovie(payload.discovery);
         setSelectedMovie({
@@ -58,6 +61,7 @@ export function useDetailsFlow(collection: CollectionApi) {
 
   useEffect(() => {
     const details = readOverlay(window.history.state, 'frameDetails') as DetailsPayload | undefined;
+    setHistoryActor(details?.actor);
     if (details?.discovery) {
       setSelectedDiscoveryMovie(details.discovery);
       setSelectedMovie({
@@ -88,16 +92,19 @@ export function useDetailsFlow(collection: CollectionApi) {
 
   function openMovie(movie: Movie) {
     setSelectedDiscoveryMovie(undefined);
+    setHistoryActor(undefined);
     setSelectedMovie(movie);
     detailsOverlay.open({ movieId: movie.id });
   }
 
-  function openDiscoveredDetails(movie: TmdbMovie) {
+  function openDiscoveredDetails(movie: TmdbMovie, pushHistory = false) {
+    setHistoryActor(undefined);
+    const updateHistory = pushHistory ? detailsOverlay.push : detailsOverlay.open;
     const saved = findSavedMovie(movie);
     if (saved) {
       setSelectedDiscoveryMovie(undefined);
       setSelectedMovie(saved);
-      detailsOverlay.open({ movieId: saved.id });
+      updateHistory({ movieId: saved.id });
     } else {
       setSelectedDiscoveryMovie(movie);
       setSelectedMovie({
@@ -111,7 +118,16 @@ export function useDetailsFlow(collection: CollectionApi) {
         palette: 0,
         addedAt: Date.now(),
       });
-      detailsOverlay.open({ discovery: movie });
+      updateHistory({ discovery: movie });
+    }
+  }
+
+  function selectDetailsActor(actor?: TmdbCastMember) {
+    setHistoryActor(actor);
+    if (selectedDiscoveryMovie) {
+      detailsOverlay.open({ discovery: selectedDiscoveryMovie, actor });
+    } else if (selectedMovie) {
+      detailsOverlay.open({ movieId: selectedMovie.id, actor });
     }
   }
 
@@ -185,10 +201,12 @@ export function useDetailsFlow(collection: CollectionApi) {
   return {
     selectedMovie,
     selectedDiscoveryMovie,
+    historyActor,
     setSelectedMovie,
     setSelectedDiscoveryMovie,
     openMovie,
     openDiscoveredDetails,
+    selectDetailsActor,
     closeDetails,
     findSavedMovie,
     saveDiscoveredMovie,

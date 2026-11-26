@@ -45,6 +45,14 @@ export function useHistoryOverlay<T>({ key, onChange, deserialize }: Options<T>)
     onChangeRef.current(null);
   }, [key]);
 
+  const push = useCallback(
+    (value: T) => {
+      const state = writeOverlay(window.history.state, key, value);
+      window.history.pushState(state, '', window.location.href);
+    },
+    [key],
+  );
+
   useEffect(() => {
     function onPopState(event: PopStateEvent) {
       const raw = readOverlay(event.state, key);
@@ -59,5 +67,5 @@ export function useHistoryOverlay<T>({ key, onChange, deserialize }: Options<T>)
     return () => window.removeEventListener('popstate', onPopState);
   }, [key]);
 
-  return { open, close };
+  return { open, push, close };
 }

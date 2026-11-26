@@ -7,9 +7,10 @@ interface Props {
   loading: boolean;
   error: string;
   onClose(): void;
+  onOpen(movie: TmdbMovie): void;
 }
 
-export function ActorFilmography({ actor, movies, loading, error, onClose }: Props) {
+export function ActorFilmography({ actor, movies, loading, error, onClose, onOpen }: Props) {
   return (
     <div className="actor-filmography" aria-live="polite">
       <div className="actor-filmography-heading">
@@ -29,7 +30,13 @@ export function ActorFilmography({ actor, movies, loading, error, onClose }: Pro
           {movies.slice(0, 20).map((film) => {
             const filmPoster = tmdbPoster(film.poster_path, 'w185');
             return (
-              <article className="actor-movie" key={film.id}>
+              <button
+                className="actor-movie"
+                key={film.id}
+                type="button"
+                aria-label={`Open ${film.title} details`}
+                onClick={() => onOpen(film)}
+              >
                 {filmPoster ? (
                   <img src={filmPoster} alt={`Poster for ${film.title}`} loading="lazy" decoding="async" />
                 ) : (
@@ -37,8 +44,9 @@ export function ActorFilmography({ actor, movies, loading, error, onClose }: Pro
                     {film.title.slice(0, 1)}
                   </div>
                 )}
+                <span>{film.title}</span>
                 {film.release_date && <span>{film.release_date.slice(0, 4)}</span>}
-              </article>
+              </button>
             );
           })}
           {!movies.length && <p className="cast-help">No other movies found.</p>}

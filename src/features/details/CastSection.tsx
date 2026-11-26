@@ -12,6 +12,7 @@ interface Props {
   actorMovies: TmdbMovie[];
   actorMoviesLoading: boolean;
   actorMoviesError: string;
+  onOpenMovie(movie: TmdbMovie): void;
 }
 
 export function CastSection({
@@ -24,6 +25,7 @@ export function CastSection({
   actorMovies,
   actorMoviesLoading,
   actorMoviesError,
+  onOpenMovie,
 }: Props) {
   return (
     <section className="cast-section" aria-labelledby="cast-heading">
@@ -83,6 +85,7 @@ export function CastSection({
           loading={actorMoviesLoading}
           error={actorMoviesError}
           onClose={() => onSelectActor(undefined)}
+          onOpen={onOpenMovie}
         />
       )}
     </section>

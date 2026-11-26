@@ -1452,7 +1452,17 @@ html.modal-open body {
   flex: 0 0 112px;
   flex-direction: column;
   gap: 5px;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #eef2ef;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.actor-movie:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 .actor-movie img,
 .actor-movie-placeholder {
@@ -1470,6 +1480,12 @@ html.modal-open body {
   min-height: 1.3em;
   color: #b9c8cb;
   font-size: 11px;
+}
+.actor-movie > span:first-of-type {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 @media (max-width: 650px) {

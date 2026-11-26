@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { Movie, MovieRating } from '@/types';
+import type { Movie, MovieRating, TmdbCastMember, TmdbMovie } from '@/types';
 import { tmdbPoster } from '@/services/tmdb';
 import { shareOrCopyMovie } from '@/services/share';
 import { useModalScrollLock } from '@/hooks/useModalScrollLock';
@@ -16,6 +16,9 @@ interface Props {
   onRemove(): boolean;
   onEdit?(movie: Movie): void;
   onEnrich?(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
+  historyActor?: TmdbCastMember;
+  onSelectActor(actor?: TmdbCastMember): void;
+  onOpenMovie(movie: TmdbMovie): void;
 }
 
 export function MovieDetailsPage({
@@ -27,6 +30,9 @@ export function MovieDetailsPage({
   onRemove,
   onEdit,
   onEnrich,
+  historyActor,
+  onSelectActor,
+  onOpenMovie,
 }: Props) {
   const [statusMessage, setStatusMessage] = useState('');
   const [toast, setToast] = useState('');
@@ -46,6 +52,8 @@ export function MovieDetailsPage({
     actorMoviesError,
   } = useMovieDetails(movie, onEnrich);
   const detailsLoading = Boolean(movie.tmdbId) && !details && !error;
+
+  useEffect(() => setSelectedActor(historyActor), [historyActor, setSelectedActor]);
 
   useModalScrollLock(true);
 
@@ -99,6 +107,11 @@ export function MovieDetailsPage({
     window.clearTimeout(toastTimer.current);
     setToast(message);
     toastTimer.current = window.setTimeout(() => setToast(''), 2500);
+  }
+
+  function selectActor(actor?: TmdbCastMember) {
+    setSelectedActor(actor);
+    onSelectActor(actor);
   }
 
   async function onShare() {
@@ -270,10 +283,11 @@ export function MovieDetailsPage({
           castLoading={castLoading}
           hasTmdbId={Boolean(movie.tmdbId)}
           selectedActor={selectedActor}
-          onSelectActor={setSelectedActor}
+          onSelectActor={selectActor}
           actorMovies={actorMovies}
           actorMoviesLoading={actorMoviesLoading}
           actorMoviesError={actorMoviesError}
+          onOpenMovie={onOpenMovie}
         />
       </div>
       {toast && (

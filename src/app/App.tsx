@@ -44,9 +44,11 @@ export default function App() {
   const {
     selectedMovie,
     selectedDiscoveryMovie,
+    historyActor,
     setSelectedMovie,
     openMovie,
     openDiscoveredDetails,
+    selectDetailsActor,
     closeDetails,
     saveDiscoveredMovie,
     setMovieStatusFromDetails,
@@ -238,6 +240,9 @@ export default function App() {
       {selectedMovie && (
         <MovieDetailsPage
           movie={selectedMovie}
+          historyActor={historyActor}
+          onSelectActor={selectDetailsActor}
+          onOpenMovie={(movie) => openDiscoveredDetails(movie, true)}
           discoveryPreview={Boolean(selectedDiscoveryMovie)}
           onSetStatus={(status) => setMovieStatusFromDetails(selectedMovie, status)}
           onSetRating={(rating) => setMovieRatingFromDetails(selectedMovie, rating)}
