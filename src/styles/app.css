@@ -1733,6 +1733,10 @@ html.modal-open body {
     min-height: 46px;
     flex: 1;
   }
+  /* The round button next to the field is the single cancel control on mobile. */
+  .mobile-search-inline .discover-search > button {
+    display: none;
+  }
   .mobile-collection-heading {
     display: flex;
     align-items: center;
@@ -1951,6 +1955,12 @@ html.modal-open body {
 .discover-search input::placeholder {
   color: var(--muted);
   opacity: 1;
+}
+/* One clear/cancel control only: hide Safari's native search clear button. */
+.discover-search input::-webkit-search-cancel-button,
+.discover-search input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
 }
 .discover-search > button {
   display: grid;
