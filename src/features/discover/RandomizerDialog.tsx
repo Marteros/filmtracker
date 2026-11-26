@@ -78,14 +78,11 @@ export function RandomizerDialog({
             ×
           </button>
         </div>
-        <p className="settings-help randomizer-help">
-          Choose criteria and get a random movie suggestion that is not already in your collection.
-        </p>
         <div className="discover-random-controls">
           <label className="select-control" htmlFor="random-genre">
-            <span className="select-label-text">Genre</span>
             <select
               id="random-genre"
+              aria-label="Genre"
               value={String(genre)}
               onChange={(event) => onGenreChange(event.target.value === 'all' ? 'all' : Number(event.target.value))}
             >
@@ -98,9 +95,9 @@ export function RandomizerDialog({
             </select>
           </label>
           <label className="select-control" htmlFor="random-rating">
-            <span className="select-label-text">Rating</span>
             <select
               id="random-rating"
+              aria-label="Rating"
               value={String(rating)}
               onChange={(event) => onRatingChange(event.target.value === 'all' ? 'all' : Number(event.target.value))}
             >
@@ -112,9 +109,9 @@ export function RandomizerDialog({
             </select>
           </label>
           <label className="select-control" htmlFor="random-period">
-            <span className="select-label-text">Period</span>
             <select
               id="random-period"
+              aria-label="Period"
               value={period}
               onChange={(event) => onPeriodChange(event.target.value as PeriodPreset)}
             >
@@ -128,8 +125,7 @@ export function RandomizerDialog({
             </select>
           </label>
           <label className="select-control" htmlFor="random-language">
-            <span className="select-label-text">Language</span>
-            <select id="random-language" value={language} onChange={(event) => onLanguageChange(event.target.value)}>
+            <select id="random-language" aria-label="Language" value={language} onChange={(event) => onLanguageChange(event.target.value)}>
               <option value="all">All languages</option>
               {LANGUAGE_OPTIONS.map((l) => (
                 <option key={l.code} value={l.code}>

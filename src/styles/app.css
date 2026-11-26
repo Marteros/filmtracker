@@ -1872,7 +1872,7 @@ html.modal-open body {
 }
 .discover-random-controls {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   align-items: stretch;
 }
@@ -1881,6 +1881,7 @@ html.modal-open body {
   min-width: 0;
 }
 .discover-random-submit {
+  grid-column: 1 / -1;
   width: 100%;
   min-height: 40px;
   justify-self: stretch;
