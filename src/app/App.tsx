@@ -174,7 +174,10 @@ export default function App() {
         filters.setMobileSearchOpen(true);
         filters.setMobileFiltersOpen(false);
       }}
-      onMobileSearchClose={() => filters.setMobileSearchOpen(false)}
+      onMobileSearchClose={() => {
+        filters.setMobileSearchOpen(false);
+        changeSearchQuery('');
+      }}
       searchValue={searchQuery}
       onSearchChange={changeSearchQuery}
       onSearchFocus={prefetchDiscover}

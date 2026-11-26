@@ -86,8 +86,8 @@ export function AppShell({
             <button
               className="mobile-search-close"
               type="button"
-              aria-label="Close search"
-              title="Close search"
+              aria-label="Cancel search"
+              title="Cancel search"
               onClick={onMobileSearchClose}
             >
               <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
