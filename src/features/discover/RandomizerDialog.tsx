@@ -78,6 +78,7 @@ export function RandomizerDialog({
             ×
           </button>
         </div>
+        <p className="settings-help randomizer-help">Choose a few filters and find your next movie.</p>
         <div className="discover-random-controls">
           <label className="select-control" htmlFor="random-genre">
             <select
