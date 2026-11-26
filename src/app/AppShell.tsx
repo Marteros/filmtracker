@@ -131,18 +131,6 @@ export function AppShell({
                 </button>
               )}
               <button
-                className="mobile-agenda-button"
-                type="button"
-                aria-label="Agenda"
-                title="Agenda"
-                onClick={onOpenAgenda}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <rect x="3" y="5" width="18" height="16" rx="2" />
-                  <path d="M16 3v4M8 3v4M3 10h18" />
-                </svg>
-              </button>
-              <button
                 className="mobile-settings"
                 type="button"
                 aria-label="Settings"
@@ -245,12 +233,6 @@ export function AppShell({
               <rect x="16" y="5" width="3" height="12" rx="1" />
             </svg>
             <span className="tab-label">Insights</span>
-          </button>
-          <button className="mobile-add-button mobile-add-tab" type="button" aria-label="Add movie" onClick={onAdd}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            <span className="tab-label">Add</span>
           </button>
         </nav>
         <div className="bottom-bar-side right">
