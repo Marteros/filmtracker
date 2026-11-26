@@ -78,9 +78,6 @@ export function RandomizerDialog({
             ×
           </button>
         </div>
-        <p className="settings-help randomizer-help">
-          Choose criteria and get a random movie suggestion that is not already in your collection.
-        </p>
         <div className="discover-random-controls">
           <label className="select-control" htmlFor="random-genre">
             <span className="select-label-text">Genre</span>
