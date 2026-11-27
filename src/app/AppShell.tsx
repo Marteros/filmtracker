@@ -49,18 +49,26 @@ export function AppShell({
         <a className="desktop-brand" href="./" aria-label="Frame">
           frame<span>.</span>
         </a>
-        <button
-          className="desktop-settings"
-          type="button"
-          aria-label="Settings"
-          title="Settings"
-          onClick={onOpenSettings}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
-            <circle cx="12" cy="12" r="3" />
-          </svg>
-        </button>
+        <div className="desktop-appbar-actions">
+          <button className="desktop-settings" type="button" aria-label="Agenda" title="Agenda" onClick={onOpenAgenda}>
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M16 3v4M8 3v4M3 10h18" />
+            </svg>
+          </button>
+          <button
+            className="desktop-settings"
+            type="button"
+            aria-label="Settings"
+            title="Settings"
+            onClick={onOpenSettings}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915" />
+              <circle cx="12" cy="12" r="3" />
+            </svg>
+          </button>
+        </div>
       </header>
       <header className="mobile-appbar">
         {mobileSearchOpen ? (
@@ -177,13 +185,7 @@ export function AppShell({
 
       <div className="mobile-bottom-actions">
         <div className="bottom-bar-side left">
-          <button
-            className="agenda-button"
-            type="button"
-            aria-label="Agenda"
-            title="Agenda"
-            onClick={onOpenAgenda}
-          >
+          <button className="agenda-button" type="button" aria-label="Agenda" title="Agenda" onClick={onOpenAgenda}>
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <rect x="3" y="5" width="18" height="16" rx="2" />
               <path d="M16 3v4M8 3v4M3 10h18" />
