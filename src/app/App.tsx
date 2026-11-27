@@ -107,7 +107,8 @@ export default function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function switchTab(tab: AppTab) {
-    filters.closeMobilePanels();
+    filters.setMobileFiltersOpen(false);
+    if (!searchQuery.trim()) filters.setMobileSearchOpen(false);
     nav.switchTab(tab);
   }
 
