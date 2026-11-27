@@ -170,7 +170,6 @@ export default function App() {
       onSwitchTab={switchTab}
       onOpenSettings={() => openSimple(settingsOpen, setSettingsOpen, settingsOverlay)}
       onOpenAgenda={() => openSimple(agendaOpen, setAgendaOpen, agendaOverlay)}
-      onAdd={() => movieDialog.openDialog()}
       mobileSearchOpen={filters.mobileSearchOpen}
       onMobileSearchOpen={() => {
         filters.setMobileSearchOpen(true);
@@ -207,7 +206,6 @@ export default function App() {
           onSortOrderChange={(value: SortOrder) => filters.changeSortOrder(value)}
           collectionView={filters.collectionView}
           onCollectionViewChange={filters.changeCollectionView}
-          onAdd={() => movieDialog.openDialog()}
           onDiscover={() => switchTab('discover')}
           onOpenSettings={() => openSimple(settingsOpen, setSettingsOpen, settingsOverlay)}
           onEdit={movieDialog.openDialog}

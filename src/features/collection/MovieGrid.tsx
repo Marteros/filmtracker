@@ -7,7 +7,6 @@ interface Props {
   collectionHasMovies: boolean;
   emptyMessage?: string;
   view?: 'grid' | 'list';
-  onAdd?(): void;
   onDiscover?(): void;
   onOpenSettings?(): void;
   onEdit(movie: Movie): void;
@@ -20,7 +19,6 @@ export function MovieGrid({
   collectionHasMovies,
   emptyMessage,
   view = 'grid',
-  onAdd,
   onDiscover,
   onOpenSettings,
   onEdit,
@@ -29,7 +27,7 @@ export function MovieGrid({
 }: Props) {
   if (!movies.length) {
     if (!collectionHasMovies)
-      return <CollectionEmpty onAdd={onAdd} onDiscover={onDiscover} onOpenSettings={onOpenSettings} />;
+      return <CollectionEmpty onDiscover={onDiscover} onOpenSettings={onOpenSettings} />;
     return (
       <div className="empty-state">
         <p>{emptyMessage || 'No movies'}</p>

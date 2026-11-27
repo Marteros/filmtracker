@@ -1,10 +1,9 @@
 interface Props {
-  onAdd?(): void;
   onDiscover?(): void;
   onOpenSettings?(): void;
 }
 
-export function CollectionEmpty({ onAdd, onDiscover, onOpenSettings }: Props) {
+export function CollectionEmpty({ onDiscover, onOpenSettings }: Props) {
   const compassIcon = (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <circle cx="12" cy="12" r="9" />
@@ -22,9 +21,10 @@ export function CollectionEmpty({ onAdd, onDiscover, onOpenSettings }: Props) {
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
-  const plusIcon = (
+  const searchIcon = (
     <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M12 5v14M5 12h14" />
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4-4" />
     </svg>
   );
   const settingsIcon = (
@@ -51,11 +51,11 @@ export function CollectionEmpty({ onAdd, onDiscover, onOpenSettings }: Props) {
           </div>
         </li>
         <li>
-          <span className="onboarding-icon">{plusIcon}</span>
+          <span className="onboarding-icon">{searchIcon}</span>
           <div className="onboarding-copy">
-            <strong>Add manually</strong>
+            <strong>Search for a movie</strong>
             <p>
-              Use <span className="inline-icon">{plusIcon}</span> to search for a movie title yourself and save it.
+              Use Search in the top bar to find a movie, then add it to your watchlist or mark it as seen.
             </p>
           </div>
         </li>
@@ -74,11 +74,6 @@ export function CollectionEmpty({ onAdd, onDiscover, onOpenSettings }: Props) {
         {onDiscover && (
           <button className="onboarding-secondary" type="button" onClick={onDiscover}>
             Go to Discover
-          </button>
-        )}
-        {onAdd && (
-          <button className="onboarding-secondary" type="button" onClick={onAdd}>
-            Add movie
           </button>
         )}
         {onOpenSettings && (

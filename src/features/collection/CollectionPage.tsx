@@ -19,7 +19,6 @@ interface Props {
   onSortOrderChange(value: SortOrder): void;
   collectionView: CollectionView;
   onCollectionViewChange(view: CollectionView): void;
-  onAdd(): void;
   onDiscover(): void;
   onOpenSettings(): void;
   onEdit(movie: Movie): void;
@@ -42,7 +41,6 @@ export function CollectionPage({
   onSortOrderChange,
   collectionView,
   onCollectionViewChange,
-  onAdd,
   onDiscover,
   onOpenSettings,
   onEdit,
@@ -94,7 +92,6 @@ export function CollectionPage({
           movies={visibleMovies}
           collectionHasMovies={movies.length > 0}
           emptyMessage={emptyMessage}
-          onAdd={onAdd}
           onDiscover={onDiscover}
           onOpenSettings={onOpenSettings}
           onEdit={onEdit}

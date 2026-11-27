@@ -7,7 +7,6 @@ interface Props {
   onSwitchTab(tab: AppTab): void;
   onOpenSettings(): void;
   onOpenAgenda(): void;
-  onAdd(): void;
   mobileSearchOpen: boolean;
   onMobileSearchOpen(): void;
   onMobileSearchClose(): void;
@@ -29,7 +28,6 @@ export function AppShell({
   onSwitchTab,
   onOpenSettings,
   onOpenAgenda,
-  onAdd,
   mobileSearchOpen,
   onMobileSearchOpen,
   onMobileSearchClose,
@@ -131,6 +129,18 @@ export function AppShell({
                 </button>
               )}
               <button
+                className="mobile-agenda-button"
+                type="button"
+                aria-label="Agenda"
+                title="Agenda"
+                onClick={onOpenAgenda}
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <rect x="3" y="5" width="18" height="16" rx="2" />
+                  <path d="M16 3v4M8 3v4M3 10h18" />
+                </svg>
+              </button>
+              <button
                 className="mobile-settings"
                 type="button"
                 aria-label="Settings"
@@ -168,7 +178,7 @@ export function AppShell({
       <div className="mobile-bottom-actions">
         <div className="bottom-bar-side left">
           <button
-            className="mobile-add-button agenda-button"
+            className="agenda-button"
             type="button"
             aria-label="Agenda"
             title="Agenda"
@@ -235,13 +245,6 @@ export function AppShell({
             <span className="tab-label">Insights</span>
           </button>
         </nav>
-        <div className="bottom-bar-side right">
-          <button className="mobile-add-button" type="button" aria-label="Add movie" title="Add movie" onClick={onAdd}>
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-          </button>
-        </div>
       </div>
       <footer className="tmdb-credit">This product uses the TMDB API but is not endorsed or certified by TMDB.</footer>
     </>
