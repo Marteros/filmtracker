@@ -17,7 +17,7 @@ interface CollectionApi {
   enrichMovie(id: string, patch: Partial<Pick<Movie, 'runtime' | 'genres' | 'posterPath' | 'releaseDate'>>): void;
 }
 
-type DetailsPayload = { movieId?: string; discovery?: TmdbMovie; actor?: TmdbCastMember };
+type DetailsPayload = { movieId?: string; discovery?: TmdbMovie; actor?: TmdbCastMember; depth?: number };
 
 export function useDetailsFlow(collection: CollectionApi) {
   const [selectedMovie, setSelectedMovie] = useState<Movie>();
@@ -94,17 +94,19 @@ export function useDetailsFlow(collection: CollectionApi) {
     setSelectedDiscoveryMovie(undefined);
     setHistoryActor(undefined);
     setSelectedMovie(movie);
-    detailsOverlay.open({ movieId: movie.id });
+    detailsOverlay.open({ movieId: movie.id, depth: 1 });
   }
 
   function openDiscoveredDetails(movie: TmdbMovie, pushHistory = false) {
     setHistoryActor(undefined);
     const updateHistory = pushHistory ? detailsOverlay.push : detailsOverlay.open;
+    const currentPayload = readOverlay(window.history.state, 'frameDetails') as DetailsPayload | undefined;
+    const depth = pushHistory ? (currentPayload?.depth ?? 1) + 1 : 1;
     const saved = findSavedMovie(movie);
     if (saved) {
       setSelectedDiscoveryMovie(undefined);
       setSelectedMovie(saved);
-      updateHistory({ movieId: saved.id });
+      updateHistory({ movieId: saved.id, depth });
     } else {
       setSelectedDiscoveryMovie(movie);
       setSelectedMovie({
@@ -118,21 +120,34 @@ export function useDetailsFlow(collection: CollectionApi) {
         palette: 0,
         addedAt: Date.now(),
       });
-      updateHistory({ discovery: movie });
+      updateHistory({ discovery: movie, depth });
     }
   }
 
   function selectDetailsActor(actor?: TmdbCastMember) {
     setHistoryActor(actor);
+    const currentPayload = readOverlay(window.history.state, 'frameDetails') as DetailsPayload | undefined;
+    const depth = currentPayload?.depth ?? 1;
     if (selectedDiscoveryMovie) {
-      detailsOverlay.open({ discovery: selectedDiscoveryMovie, actor });
+      detailsOverlay.open({ discovery: selectedDiscoveryMovie, actor, depth });
     } else if (selectedMovie) {
-      detailsOverlay.open({ movieId: selectedMovie.id, actor });
+      detailsOverlay.open({ movieId: selectedMovie.id, actor, depth });
     }
   }
 
   function closeDetails() {
     detailsOverlay.close();
+  }
+
+  function closeAllDetails() {
+    const payload = readOverlay(window.history.state, 'frameDetails') as DetailsPayload | undefined;
+    if (!payload) {
+      detailsOverlay.close();
+      return;
+    }
+    const storedDepth = payload.depth;
+    const depth = typeof storedDepth === 'number' && Number.isInteger(storedDepth) && storedDepth > 0 ? storedDepth : 1;
+    window.history.go(-depth);
   }
 
   function saveDiscoveredMovie(movie: TmdbMovie, status: 'seen' | 'watchlist' = 'watchlist'): Movie | undefined {
@@ -208,6 +223,7 @@ export function useDetailsFlow(collection: CollectionApi) {
     openDiscoveredDetails,
     selectDetailsActor,
     closeDetails,
+    closeAllDetails,
     findSavedMovie,
     saveDiscoveredMovie,
     setMovieStatusFromDetails,

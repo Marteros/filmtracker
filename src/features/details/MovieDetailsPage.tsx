@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { Movie, MovieRating, TmdbCastMember, TmdbMovie } from '@/types';
 import { tmdbPoster } from '@/services/tmdb';
 import { shareOrCopyMovie } from '@/services/share';
@@ -10,6 +10,7 @@ import { CastSection } from './CastSection';
 interface Props {
   movie: Movie;
   onClose(): void;
+  onCloseAll(): void;
   discoveryPreview?: boolean;
   onSetStatus(status: 'seen' | 'watchlist'): boolean;
   onSetRating(rating?: MovieRating): void;
@@ -24,6 +25,7 @@ interface Props {
 export function MovieDetailsPage({
   movie,
   onClose,
+  onCloseAll,
   discoveryPreview = false,
   onSetStatus,
   onSetRating,
@@ -54,6 +56,10 @@ export function MovieDetailsPage({
   const detailsLoading = Boolean(movie.tmdbId) && !details && !error;
 
   useEffect(() => setSelectedActor(historyActor), [historyActor, setSelectedActor]);
+
+  useLayoutEffect(() => {
+    if (dialogRef.current) dialogRef.current.scrollTop = 0;
+  }, [movie.id]);
 
   useModalScrollLock(true);
 
@@ -160,7 +166,7 @@ export function MovieDetailsPage({
           </svg>
         </button>
       )}
-      <button className="details-close" type="button" aria-label="Close details" onClick={onClose}>
+      <button className="details-close" type="button" aria-label="Close details" onClick={onCloseAll}>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M6 6l12 12M18 6 6 18" />
         </svg>

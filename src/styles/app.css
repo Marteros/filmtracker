@@ -2352,9 +2352,7 @@ html.modal-open body {
 
 /* Shared top bar and bottom navigation. */
 .desktop-appbar {
-  position: sticky;
-  z-index: 22;
-  top: 0;
+  position: relative;
   display: grid;
   grid-template-columns: auto 1fr;
   width: 100%;
@@ -2578,6 +2576,24 @@ html.modal-open body {
 @media (min-width: 651px) {
   .mobile-appbar {
     display: none;
+  }
+  .mobile-bottom-actions {
+    right: auto;
+    bottom: 18px;
+    left: 50%;
+    width: min(calc(100% - 48px), 520px);
+    padding: 6px 10px;
+    transform: translateX(-50%);
+    border: 1px solid var(--line-2);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 94%, transparent);
+    box-shadow: 0 10px 30px #152a3b20;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+  .mobile-bottom-tabs {
+    width: 100%;
+    max-width: none;
   }
 }
 
