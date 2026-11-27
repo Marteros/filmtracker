@@ -13,6 +13,7 @@ import { useTraktSync } from '@/features/settings/useTraktSync';
 import { useDetailsFlow } from './useDetailsFlow';
 import { useSharedMovieLink } from './useSharedMovieLink';
 import { useMovieDialog } from './useMovieDialog';
+import { useTrackpadBackGesture } from '@/hooks/useTrackpadBackGesture';
 import { resolveSearchDestination } from './useGlobalSearch';
 import { DiscoverPageSkeleton } from '@/components/ui/DiscoverPageSkeleton';
 import { InsightsPageSkeleton } from '@/components/ui/InsightsPageSkeleton';
@@ -26,6 +27,7 @@ import { applyTheme, getStoredThemeMode, saveThemeMode, type ThemeMode } from '@
 import { migrateSettings } from '@/services/settingsStore';
 
 export default function App() {
+  useTrackpadBackGesture();
   const collection = useCollection();
   const { movies, storageError } = collection;
   const nav = useAppNavigation();
