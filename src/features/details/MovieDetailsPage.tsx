@@ -65,13 +65,11 @@ export function MovieDetailsPage({
   useLayoutEffect(() => {
     if (!selectedActorId) return;
     const frame = window.requestAnimationFrame(() => {
-      dialogRef.current?.querySelector('.actor-filmography')?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
+      const dialog = dialogRef.current;
+      if (dialog) dialog.scrollTo({ top: dialog.scrollHeight, behavior: 'smooth' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [selectedActorId]);
+  }, [selectedActorId, actorMoviesLoading, actorMovies.length]);
 
   useModalScrollLock(true);
 
