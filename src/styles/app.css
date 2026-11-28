@@ -2581,8 +2581,8 @@ html.modal-open body {
     right: auto;
     bottom: 18px;
     left: 50%;
-    width: min(calc(100% - 48px), 440px);
-    padding: 6px 10px;
+    width: min(calc(100% - 48px), 520px);
+    padding: 4px 10px;
     transform: translateX(-50%);
     border: 1px solid var(--line-2);
     border-radius: 999px;
@@ -2594,6 +2594,9 @@ html.modal-open body {
   .mobile-bottom-tabs {
     width: 100%;
     max-width: none;
+  }
+  .mobile-bottom-tabs button {
+    min-height: 42px;
   }
 }
 
