@@ -40,6 +40,15 @@ export interface TmdbMovieDetails extends TmdbMovie {
   genres?: Array<{ id: number; name: string }>;
   vote_average?: number;
   backdrop_path?: string | null;
+  videos?: { results?: TmdbVideo[] };
+}
+
+export interface TmdbVideo {
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+  official?: boolean;
 }
 
 export interface TmdbCastMember {

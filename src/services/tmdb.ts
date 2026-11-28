@@ -174,6 +174,7 @@ export async function getRandomDiscoveryMovie(
 export async function getMovieDetails(id: number, signal: AbortSignal): Promise<TmdbMovieDetails> {
   const url = new URL(`${API_ROOT}/movie/${id}`);
   url.searchParams.set('language', 'en-US');
+  url.searchParams.set('append_to_response', 'videos');
   return await requestJson<TmdbMovieDetails>(
     url,
     signal,

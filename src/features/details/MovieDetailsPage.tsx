@@ -7,6 +7,7 @@ import { RatingInput } from '@/components/ui/RatingInput';
 import { readOverlay, writeOverlay } from '@/lib/overlayState';
 import { useMovieDetails } from './useMovieDetails';
 import { CastSection } from './CastSection';
+import { findYoutubeTrailer } from './trailer';
 
 interface Props {
   movie: Movie;
@@ -39,6 +40,7 @@ export function MovieDetailsPage({
 }: Props) {
   const [statusMessage, setStatusMessage] = useState('');
   const [toast, setToast] = useState('');
+  const [trailerOpen, setTrailerOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const scrollSaveTimer = useRef<number | undefined>(undefined);
@@ -75,6 +77,8 @@ export function MovieDetailsPage({
     return () => window.cancelAnimationFrame(frame);
   }, [movie.id]);
 
+  useEffect(() => setTrailerOpen(false), [movie.id]);
+
   const selectedActorId = selectedActor?.id;
   useLayoutEffect(() => {
     if (!selectedActorId || actorAutoScrollId.current !== selectedActorId) return;
@@ -108,6 +112,7 @@ export function MovieDetailsPage({
   useEffect(() => () => window.clearTimeout(toastTimer.current), []);
 
   const backdrop = details?.backdrop_path ? tmdbPoster(details.backdrop_path, 'w780') : undefined;
+  const trailer = findYoutubeTrailer(details?.videos?.results);
   const poster = tmdbPoster(movie.posterPath, 'w500');
   const year = details?.release_date?.slice(0, 4) || movie.year;
   const watchedLabel = movie.watchedAt
@@ -283,6 +288,36 @@ export function MovieDetailsPage({
                   <span>Watchlist</span>
                 </button>
               </div>
+              {trailer && (
+                <>
+                  {!trailerOpen ? (
+                    <button className="details-trailer-button" type="button" onClick={() => setTrailerOpen(true)}>
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="m8 5 12 7-12 7V5Z" />
+                      </svg>
+                      Watch trailer
+                    </button>
+                  ) : (
+                    <section className="details-trailer-player" aria-label={`Trailer for ${movie.title}`}>
+                      <div className="details-trailer-heading">
+                        <h2>Trailer</h2>
+                        <button type="button" onClick={() => setTrailerOpen(false)}>
+                          Close trailer
+                        </button>
+                      </div>
+                      <div className="details-trailer-frame">
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&playsinline=1`}
+                          title={`${movie.title} trailer`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allowFullScreen
+                        />
+                      </div>
+                    </section>
+                  )}
+                </>
+              )}
               {!discoveryPreview && movie.status === 'seen' && (
                 <div className="details-inline-rating">
                   <RatingInput value={movie.rating} onChange={onSetRating} idPrefix={`details-${movie.id}`} />
