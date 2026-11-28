@@ -42,7 +42,8 @@ export function MovieDetailsPage({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const scrollSaveTimer = useRef<number | undefined>(undefined);
-  const restoredMovieId = useRef<string | undefined>(undefined);
+  const actorAutoScrollId = useRef<number | undefined>(undefined);
+  const actorAutoScrollStarted = useRef(false);
 
   const {
     details,
@@ -68,20 +69,23 @@ export function MovieDetailsPage({
       payload && typeof payload === 'object' && 'scrollTop' in payload && typeof payload.scrollTop === 'number'
         ? payload.scrollTop
         : 0;
-    restoredMovieId.current = savedScrollTop > 0 ? movie.id : undefined;
+    actorAutoScrollId.current = undefined;
+    actorAutoScrollStarted.current = false;
     const frame = window.requestAnimationFrame(() => dialog.scrollTo({ top: savedScrollTop }));
     return () => window.cancelAnimationFrame(frame);
   }, [movie.id]);
 
   const selectedActorId = selectedActor?.id;
   useLayoutEffect(() => {
-    if (!selectedActorId || restoredMovieId.current === movie.id) return;
+    if (!selectedActorId || actorAutoScrollId.current !== selectedActorId) return;
+    if (actorMoviesLoading) actorAutoScrollStarted.current = true;
     const frame = window.requestAnimationFrame(() => {
       const dialog = dialogRef.current;
       if (dialog) dialog.scrollTo({ top: dialog.scrollHeight, behavior: 'smooth' });
     });
+    if (actorAutoScrollStarted.current && !actorMoviesLoading) actorAutoScrollId.current = undefined;
     return () => window.cancelAnimationFrame(frame);
-  }, [movie.id, selectedActorId, actorMoviesLoading, actorMovies.length]);
+  }, [selectedActorId, actorMoviesLoading, actorMovies.length]);
 
   useModalScrollLock(true);
 
@@ -140,7 +144,8 @@ export function MovieDetailsPage({
   }
 
   function selectActor(actor?: TmdbCastMember) {
-    restoredMovieId.current = undefined;
+    actorAutoScrollId.current = actor?.id;
+    actorAutoScrollStarted.current = false;
     setSelectedActor(actor);
     onSelectActor(actor);
   }
