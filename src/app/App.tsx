@@ -187,6 +187,7 @@ export default function App() {
       onOpenAgenda={() => openSimple(agendaOpen, setAgendaOpen, agendaOverlay)}
       mobileSearchOpen={filters.mobileSearchOpen}
       onMobileSearchOpen={() => {
+        searchOriginTab.current = nav.activeTab;
         filters.setMobileSearchOpen(true);
         filters.setMobileFiltersOpen(false);
       }}
