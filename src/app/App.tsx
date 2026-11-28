@@ -33,6 +33,7 @@ export default function App() {
   const nav = useAppNavigation();
   const isWatchlist = nav.activeTab === 'watchlist';
   const [searchQuery, setSearchQuery] = useState('');
+  const searchOriginTab = useRef<AppTab | null>(null);
   /** Bumped on search-driven page switches so the destination search field keeps focus. */
   const [searchFocusRequest, setSearchFocusRequest] = useState(0);
   const filters = useCollectionFilters(movies, isWatchlist, searchQuery);
@@ -109,6 +110,7 @@ export default function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function switchTab(tab: AppTab) {
+    searchOriginTab.current = searchQuery.trim() ? tab : null;
     filters.setMobileFiltersOpen(false);
     if (!searchQuery.trim()) filters.setMobileSearchOpen(false);
     nav.switchTab(tab);
@@ -129,10 +131,20 @@ export default function App() {
     if (value.trim().length >= 2) prefetchDiscover();
     const destination = resolveSearchDestination(value);
     if (destination && destination !== nav.activeTab) {
+      searchOriginTab.current ??= nav.activeTab;
       filters.suppressSearchBlurOnScroll();
       nav.switchTab(destination);
       setSearchFocusRequest((request) => request + 1);
     }
+  }
+
+  function cancelSearch() {
+    const destination = searchOriginTab.current ?? nav.activeTab;
+    searchOriginTab.current = null;
+    setSearchQuery('');
+    filters.setMobileSearchOpen(false);
+    filters.setMobileFiltersOpen(false);
+    if (destination !== nav.activeTab) nav.switchTab(destination);
   }
 
   function openSimple(isOpen: boolean, setOpen: (v: boolean) => void, overlay: { open: (v: boolean) => void }) {
@@ -178,10 +190,7 @@ export default function App() {
         filters.setMobileSearchOpen(true);
         filters.setMobileFiltersOpen(false);
       }}
-      onMobileSearchClose={() => {
-        filters.setMobileSearchOpen(false);
-        changeSearchQuery('');
-      }}
+      onMobileSearchClose={cancelSearch}
       searchValue={searchQuery}
       onSearchChange={changeSearchQuery}
       onSearchFocus={prefetchDiscover}
