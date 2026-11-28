@@ -41,9 +41,7 @@ export function MovieDetailsPage({
   const [statusMessage, setStatusMessage] = useState('');
   const [toast, setToast] = useState('');
   const [trailerOpen, setTrailerOpen] = useState(false);
-  const [readyTrailerKey, setReadyTrailerKey] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const trailerFrameRef = useRef<HTMLIFrameElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const scrollSaveTimer = useRef<number | undefined>(undefined);
   const actorAutoScrollId = useRef<number | undefined>(undefined);
@@ -115,7 +113,6 @@ export function MovieDetailsPage({
 
   const backdrop = details?.backdrop_path ? tmdbPoster(details.backdrop_path, 'w780') : undefined;
   const trailer = findYoutubeTrailer(details?.videos?.results);
-  const trailerReady = trailer?.key === readyTrailerKey;
   const poster = tmdbPoster(movie.posterPath, 'w500');
   const year = details?.release_date?.slice(0, 4) || movie.year;
   const watchedLabel = movie.watchedAt
@@ -153,17 +150,9 @@ export function MovieDetailsPage({
 
   function openTrailer() {
     setTrailerOpen(true);
-    trailerFrameRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
-      'https://www.youtube-nocookie.com',
-    );
   }
 
   function closeTrailer() {
-    trailerFrameRef.current?.contentWindow?.postMessage(
-      JSON.stringify({ event: 'command', func: 'stopVideo', args: [] }),
-      'https://www.youtube-nocookie.com',
-    );
     setTrailerOpen(false);
   }
 
@@ -309,16 +298,11 @@ export function MovieDetailsPage({
               </div>
               {trailer && (
                 <>
-                  <button
-                    className="details-trailer-button"
-                    type="button"
-                    disabled={!trailerReady}
-                    onClick={openTrailer}
-                  >
+                  <button className="details-trailer-button" type="button" onClick={openTrailer}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="m8 5 12 7-12 7V5Z" />
                     </svg>
-                    {trailerReady ? 'Watch trailer' : 'Preparing trailer…'}
+                    Watch trailer
                   </button>
                   <section
                     className={`details-trailer-player${trailerOpen ? ' open' : ''}`}
@@ -334,12 +318,15 @@ export function MovieDetailsPage({
                     </div>
                     <div className="details-trailer-frame">
                       <iframe
-                        src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=0&enablejsapi=1&playsinline=0&origin=${encodeURIComponent(window.location.origin)}`}
+                        src={
+                          trailerOpen
+                            ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&playsinline=0`
+                            : undefined
+                        }
                         title={`${movie.title} trailer`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         referrerPolicy="strict-origin-when-cross-origin"
                         allowFullScreen
-                        onLoad={() => setReadyTrailerKey(trailer.key)}
                       />
                     </div>
                   </section>
