@@ -342,8 +342,11 @@ export function MovieDetailsPage({
           actorMoviesLoading={actorMoviesLoading}
           actorMoviesError={actorMoviesError}
           onOpenMovie={(film) => {
+            actorAutoScrollId.current = undefined;
+            actorAutoScrollStarted.current = false;
             saveScrollPosition(true);
             onOpenMovie(film);
+            window.requestAnimationFrame(() => dialogRef.current?.scrollTo({ top: 0 }));
           }}
         />
       </div>
