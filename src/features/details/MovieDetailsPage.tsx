@@ -42,6 +42,7 @@ export function MovieDetailsPage({
   const [toast, setToast] = useState('');
   const [trailerOpen, setTrailerOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const trailerPlayerRef = useRef<HTMLElement>(null);
   const trailerFrameRef = useRef<HTMLIFrameElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const scrollSaveTimer = useRef<number | undefined>(undefined);
@@ -165,11 +166,18 @@ export function MovieDetailsPage({
   }
 
   function openTrailer() {
-    if (window.matchMedia('(max-width: 650px)').matches) {
-      const request = trailerFrameRef.current?.requestFullscreen();
-      void request?.catch(() => {});
-    }
     setTrailerOpen(true);
+    if (trailerPlayerRef.current) trailerPlayerRef.current.inert = false;
+    if (window.matchMedia('(max-width: 650px)').matches) {
+      const trailerFrame = trailerFrameRef.current;
+      if (trailerFrame && typeof trailerFrame.requestFullscreen === 'function') {
+        try {
+          void trailerFrame.requestFullscreen().catch(() => {});
+        } catch {
+          // Keep the in-app player available when fullscreen is unsupported.
+        }
+      }
+    }
   }
 
   function closeTrailer() {
@@ -329,6 +337,7 @@ export function MovieDetailsPage({
                     Watch trailer
                   </button>
                   <section
+                    ref={trailerPlayerRef}
                     className={`details-trailer-player${trailerOpen ? ' open' : ''}`}
                     aria-label={`Trailer for ${movie.title}`}
                     aria-hidden={!trailerOpen}
