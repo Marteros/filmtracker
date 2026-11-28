@@ -60,7 +60,7 @@ export function useDiscovery(query: string, enabled = true) {
     const controller = new AbortController();
     setLoading(true);
     setError('');
-    if (debouncedQuery) {
+    if (debouncedQuery.length >= 2) {
       searchMovies(debouncedQuery, controller.signal)
         .then((results) => {
           if (!controller.signal.aborted) setSearchResults(results);
@@ -71,6 +71,9 @@ export function useDiscovery(query: string, enabled = true) {
         .finally(() => {
           if (!controller.signal.aborted) setLoading(false);
         });
+    } else if (debouncedQuery) {
+      setSearchResults([]);
+      setLoading(false);
     } else if (selectedSection) {
       setPage(1);
       setHasMore(true);

@@ -156,7 +156,12 @@ export function DiscoverPage({
           </button>
         </div>
       )}
-      {loading && !searchResults.length ? (
+      {debouncedQuery.length === 1 ? (
+        <div className="discover-message discover-empty">
+          <h2>Keep typing</h2>
+          <p>Enter at least 2 characters to search.</p>
+        </div>
+      ) : loading && !searchResults.length ? (
         <div
           className="discover-grid"
           role="status"

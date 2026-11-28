@@ -122,13 +122,12 @@ export default function App() {
   }
 
   /**
-   * One search box for the whole app. Each keystroke decides where the query
-   * belongs: Seen, then Watchlist, otherwise Discover.
+   * One search box for the whole app; searches always route to Discover.
    */
   function changeSearchQuery(value: string) {
     setSearchQuery(value);
     if (value.trim().length >= 2) prefetchDiscover();
-    const destination = resolveSearchDestination(movies, value);
+    const destination = resolveSearchDestination(value);
     if (destination && destination !== nav.activeTab) {
       filters.suppressSearchBlurOnScroll();
       nav.switchTab(destination);
