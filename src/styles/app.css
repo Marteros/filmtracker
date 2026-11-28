@@ -2581,7 +2581,7 @@ html.modal-open body {
     right: auto;
     bottom: 18px;
     left: 50%;
-    width: min(calc(100% - 48px), 520px);
+    width: min(calc(100% - 48px), 440px);
     padding: 6px 10px;
     transform: translateX(-50%);
     border: 1px solid var(--line-2);
