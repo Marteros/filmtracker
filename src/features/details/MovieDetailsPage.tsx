@@ -4,6 +4,7 @@ import { tmdbPoster } from '@/services/tmdb';
 import { shareOrCopyMovie } from '@/services/share';
 import { useModalScrollLock } from '@/hooks/useModalScrollLock';
 import { RatingInput } from '@/components/ui/RatingInput';
+import { readOverlay, writeOverlay } from '@/lib/overlayState';
 import { useMovieDetails } from './useMovieDetails';
 import { CastSection } from './CastSection';
 
@@ -40,6 +41,8 @@ export function MovieDetailsPage({
   const [toast, setToast] = useState('');
   const dialogRef = useRef<HTMLDialogElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
+  const scrollSaveTimer = useRef<number | undefined>(undefined);
+  const restoredMovieId = useRef<string | undefined>(undefined);
 
   const {
     details,
@@ -58,20 +61,31 @@ export function MovieDetailsPage({
   useEffect(() => setSelectedActor(historyActor), [historyActor, setSelectedActor]);
 
   useLayoutEffect(() => {
-    if (dialogRef.current) dialogRef.current.scrollTop = 0;
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    const payload = readOverlay(window.history.state, 'frameDetails');
+    const savedScrollTop =
+      payload && typeof payload === 'object' && 'scrollTop' in payload && typeof payload.scrollTop === 'number'
+        ? payload.scrollTop
+        : 0;
+    restoredMovieId.current = savedScrollTop > 0 ? movie.id : undefined;
+    const frame = window.requestAnimationFrame(() => dialog.scrollTo({ top: savedScrollTop }));
+    return () => window.cancelAnimationFrame(frame);
   }, [movie.id]);
 
   const selectedActorId = selectedActor?.id;
   useLayoutEffect(() => {
-    if (!selectedActorId) return;
+    if (!selectedActorId || restoredMovieId.current === movie.id) return;
     const frame = window.requestAnimationFrame(() => {
       const dialog = dialogRef.current;
       if (dialog) dialog.scrollTo({ top: dialog.scrollHeight, behavior: 'smooth' });
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [selectedActorId, actorMoviesLoading, actorMovies.length]);
+  }, [movie.id, selectedActorId, actorMoviesLoading, actorMovies.length]);
 
   useModalScrollLock(true);
+
+  useEffect(() => () => window.clearTimeout(scrollSaveTimer.current), []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -126,8 +140,26 @@ export function MovieDetailsPage({
   }
 
   function selectActor(actor?: TmdbCastMember) {
+    restoredMovieId.current = undefined;
     setSelectedActor(actor);
     onSelectActor(actor);
+  }
+
+  function saveScrollPosition(immediate = false) {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    window.clearTimeout(scrollSaveTimer.current);
+    const save = () => {
+      const payload = readOverlay(window.history.state, 'frameDetails');
+      if (!payload || typeof payload !== 'object') return;
+      const state = writeOverlay(window.history.state, 'frameDetails', {
+        ...payload,
+        scrollTop: dialog.scrollTop,
+      });
+      window.history.replaceState(state, '', window.location.href);
+    };
+    if (immediate) save();
+    else scrollSaveTimer.current = window.setTimeout(save, 150);
   }
 
   async function onShare() {
@@ -153,6 +185,7 @@ export function MovieDetailsPage({
       ref={dialogRef}
       className="details-dialog"
       aria-labelledby="details-title"
+      onScroll={() => saveScrollPosition()}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -303,7 +336,10 @@ export function MovieDetailsPage({
           actorMovies={actorMovies}
           actorMoviesLoading={actorMoviesLoading}
           actorMoviesError={actorMoviesError}
-          onOpenMovie={onOpenMovie}
+          onOpenMovie={(film) => {
+            saveScrollPosition(true);
+            onOpenMovie(film);
+          }}
         />
       </div>
       {toast && (
