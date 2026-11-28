@@ -1187,6 +1187,15 @@ html.modal-open body {
 .details-trailer-player {
   width: min(100%, 520px);
 }
+.details-trailer-player:not(.open) {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+}
 .details-trailer-heading {
   display: flex;
   align-items: center;
@@ -1605,31 +1614,6 @@ html.modal-open body {
   }
   .details-controls {
     grid-area: controls;
-  }
-  .details-trailer-player {
-    position: fixed;
-    z-index: 20;
-    inset: 0;
-    display: flex;
-    width: 100vw;
-    height: 100vh;
-    height: 100dvh;
-    max-width: none;
-    align-items: center;
-    justify-content: center;
-    padding: max(16px, env(safe-area-inset-top)) 0 max(16px, env(safe-area-inset-bottom));
-    background: #000;
-  }
-  .details-trailer-heading {
-    position: absolute;
-    top: max(16px, env(safe-area-inset-top));
-    right: 16px;
-    left: 16px;
-    margin: 0;
-  }
-  .details-trailer-frame {
-    width: min(100vw, 160dvh);
-    border-radius: 0;
   }
   .details-copy h1 {
     font-size: clamp(30px, 8vw, 44px);

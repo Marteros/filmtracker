@@ -42,6 +42,7 @@ export function MovieDetailsPage({
   const [toast, setToast] = useState('');
   const [trailerOpen, setTrailerOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const trailerFrameRef = useRef<HTMLIFrameElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const scrollSaveTimer = useRef<number | undefined>(undefined);
   const actorAutoScrollId = useRef<number | undefined>(undefined);
@@ -77,7 +78,19 @@ export function MovieDetailsPage({
     return () => window.cancelAnimationFrame(frame);
   }, [movie.id]);
 
-  useEffect(() => setTrailerOpen(false), [movie.id]);
+  useEffect(() => {
+    setTrailerOpen(false);
+    if (document.fullscreenElement === trailerFrameRef.current) void document.exitFullscreen();
+  }, [movie.id]);
+
+  useEffect(() => {
+    if (!trailerOpen) return;
+    const closeOnFullscreenExit = () => {
+      if (!document.fullscreenElement) setTrailerOpen(false);
+    };
+    document.addEventListener('fullscreenchange', closeOnFullscreenExit);
+    return () => document.removeEventListener('fullscreenchange', closeOnFullscreenExit);
+  }, [trailerOpen]);
 
   const selectedActorId = selectedActor?.id;
   useLayoutEffect(() => {
@@ -146,6 +159,19 @@ export function MovieDetailsPage({
     window.clearTimeout(toastTimer.current);
     setToast(message);
     toastTimer.current = window.setTimeout(() => setToast(''), 2500);
+  }
+
+  function openTrailer() {
+    if (window.matchMedia('(max-width: 650px)').matches) {
+      const request = trailerFrameRef.current?.requestFullscreen();
+      void request?.catch(() => {});
+    }
+    setTrailerOpen(true);
+  }
+
+  function closeTrailer() {
+    if (document.fullscreenElement === trailerFrameRef.current) void document.exitFullscreen();
+    setTrailerOpen(false);
   }
 
   function selectActor(actor?: TmdbCastMember) {
@@ -290,32 +316,39 @@ export function MovieDetailsPage({
               </div>
               {trailer && (
                 <>
-                  {!trailerOpen ? (
-                    <button className="details-trailer-button" type="button" onClick={() => setTrailerOpen(true)}>
-                      <svg viewBox="0 0 24 24" aria-hidden="true">
-                        <path d="m8 5 12 7-12 7V5Z" />
-                      </svg>
-                      Watch trailer
-                    </button>
-                  ) : (
-                    <section className="details-trailer-player" aria-label={`Trailer for ${movie.title}`}>
-                      <div className="details-trailer-heading">
-                        <h2>Trailer</h2>
-                        <button type="button" onClick={() => setTrailerOpen(false)}>
-                          Close trailer
-                        </button>
-                      </div>
-                      <div className="details-trailer-frame">
-                        <iframe
-                          src={`https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&playsinline=1`}
-                          title={`${movie.title} trailer`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          allowFullScreen
-                        />
-                      </div>
-                    </section>
-                  )}
+                  <button className="details-trailer-button" type="button" onClick={openTrailer}>
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="m8 5 12 7-12 7V5Z" />
+                    </svg>
+                    Watch trailer
+                  </button>
+                  <section
+                    className={`details-trailer-player${trailerOpen ? ' open' : ''}`}
+                    aria-label={`Trailer for ${movie.title}`}
+                    aria-hidden={!trailerOpen}
+                    inert={!trailerOpen}
+                  >
+                    <div className="details-trailer-heading">
+                      <h2>Trailer</h2>
+                      <button type="button" tabIndex={trailerOpen ? 0 : -1} onClick={closeTrailer}>
+                        Close trailer
+                      </button>
+                    </div>
+                    <div className="details-trailer-frame">
+                      <iframe
+                        ref={trailerFrameRef}
+                        src={
+                          trailerOpen
+                            ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&playsinline=1`
+                            : undefined
+                        }
+                        title={`${movie.title} trailer`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerPolicy="strict-origin-when-cross-origin"
+                        allowFullScreen
+                      />
+                    </div>
+                  </section>
                 </>
               )}
               {!discoveryPreview && movie.status === 'seen' && (
