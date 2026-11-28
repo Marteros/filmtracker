@@ -272,7 +272,7 @@ export function MovieDetailsPage({
             </div>
             <div className="details-controls">
               {movie.status === 'seen' && watchedLabel && <p className="details-watched">Seen on {watchedLabel}</p>}
-              <div className="details-status-actions" role="group" aria-label="List status">
+              <div className="details-status-actions" role="group" aria-label="Movie actions">
                 <button
                   type="button"
                   className={`details-status-button seen${!discoveryPreview && movie.status === 'seen' ? ' active' : ''}`}
@@ -295,15 +295,17 @@ export function MovieDetailsPage({
                   {!discoveryPreview && movie.status === 'watchlist' ? checkIcon : plusIcon}
                   <span>Watchlist</span>
                 </button>
-              </div>
-              {trailer && (
-                <>
+                {trailer && (
                   <button className="details-trailer-button" type="button" onClick={openTrailer}>
                     <svg viewBox="0 0 24 24" aria-hidden="true">
                       <path d="m8 5 12 7-12 7V5Z" />
                     </svg>
                     Watch trailer
                   </button>
+                )}
+              </div>
+              {trailer && (
+                <>
                   <section
                     className={`details-trailer-player${trailerOpen ? ' open' : ''}`}
                     aria-label={`Trailer for ${movie.title}`}
