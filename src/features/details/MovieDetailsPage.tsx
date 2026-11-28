@@ -80,7 +80,10 @@ export function MovieDetailsPage({
 
   useEffect(() => {
     setTrailerOpen(false);
-    if (document.fullscreenElement === trailerFrameRef.current) void document.exitFullscreen();
+    const trailerFrame = trailerFrameRef.current;
+    if (trailerFrame && document.fullscreenElement === trailerFrame && typeof document.exitFullscreen === 'function') {
+      void document.exitFullscreen().catch(() => {});
+    }
   }, [movie.id]);
 
   useEffect(() => {
@@ -170,7 +173,10 @@ export function MovieDetailsPage({
   }
 
   function closeTrailer() {
-    if (document.fullscreenElement === trailerFrameRef.current) void document.exitFullscreen();
+    const trailerFrame = trailerFrameRef.current;
+    if (trailerFrame && document.fullscreenElement === trailerFrame && typeof document.exitFullscreen === 'function') {
+      void document.exitFullscreen().catch(() => {});
+    }
     setTrailerOpen(false);
   }
 
