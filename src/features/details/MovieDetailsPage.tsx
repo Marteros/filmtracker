@@ -42,8 +42,6 @@ export function MovieDetailsPage({
   const [toast, setToast] = useState('');
   const [trailerOpen, setTrailerOpen] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const trailerPlayerRef = useRef<HTMLElement>(null);
-  const trailerFrameRef = useRef<HTMLIFrameElement>(null);
   const toastTimer = useRef<number | undefined>(undefined);
   const scrollSaveTimer = useRef<number | undefined>(undefined);
   const actorAutoScrollId = useRef<number | undefined>(undefined);
@@ -79,22 +77,7 @@ export function MovieDetailsPage({
     return () => window.cancelAnimationFrame(frame);
   }, [movie.id]);
 
-  useEffect(() => {
-    setTrailerOpen(false);
-    const trailerFrame = trailerFrameRef.current;
-    if (trailerFrame && document.fullscreenElement === trailerFrame && typeof document.exitFullscreen === 'function') {
-      void document.exitFullscreen().catch(() => {});
-    }
-  }, [movie.id]);
-
-  useEffect(() => {
-    if (!trailerOpen) return;
-    const closeOnFullscreenExit = () => {
-      if (!document.fullscreenElement) setTrailerOpen(false);
-    };
-    document.addEventListener('fullscreenchange', closeOnFullscreenExit);
-    return () => document.removeEventListener('fullscreenchange', closeOnFullscreenExit);
-  }, [trailerOpen]);
+  useEffect(() => setTrailerOpen(false), [movie.id]);
 
   const selectedActorId = selectedActor?.id;
   useLayoutEffect(() => {
@@ -167,24 +150,9 @@ export function MovieDetailsPage({
 
   function openTrailer() {
     setTrailerOpen(true);
-    if (trailerPlayerRef.current) trailerPlayerRef.current.inert = false;
-    if (window.matchMedia('(max-width: 650px)').matches) {
-      const trailerFrame = trailerFrameRef.current;
-      if (trailerFrame && typeof trailerFrame.requestFullscreen === 'function') {
-        try {
-          void trailerFrame.requestFullscreen().catch(() => {});
-        } catch {
-          // Keep the in-app player available when fullscreen is unsupported.
-        }
-      }
-    }
   }
 
   function closeTrailer() {
-    const trailerFrame = trailerFrameRef.current;
-    if (trailerFrame && document.fullscreenElement === trailerFrame && typeof document.exitFullscreen === 'function') {
-      void document.exitFullscreen().catch(() => {});
-    }
     setTrailerOpen(false);
   }
 
@@ -337,7 +305,6 @@ export function MovieDetailsPage({
                     Watch trailer
                   </button>
                   <section
-                    ref={trailerPlayerRef}
                     className={`details-trailer-player${trailerOpen ? ' open' : ''}`}
                     aria-label={`Trailer for ${movie.title}`}
                     aria-hidden={!trailerOpen}
@@ -351,10 +318,9 @@ export function MovieDetailsPage({
                     </div>
                     <div className="details-trailer-frame">
                       <iframe
-                        ref={trailerFrameRef}
                         src={
                           trailerOpen
-                            ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&playsinline=1`
+                            ? `https://www.youtube-nocookie.com/embed/${encodeURIComponent(trailer.key)}?autoplay=1&playsinline=0`
                             : undefined
                         }
                         title={`${movie.title} trailer`}
